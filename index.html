@@ -692,32 +692,46 @@
         </div>
 
         <!-- 3. RECORD JUMPS: Track mass usage -->
-        <div class="controls">
+        <div class="controls" style="grid-template-columns: 1fr 1fr 1fr;">
             <div class="control-section">
-                <h3>3. Record Jumps - Round Trip</h3>
+                <h3>3a. Battleship Round Trip</h3>
                 <div class="btn-group">
-                    <button class="btn-cold" onclick="recordJump('cold-cold')">
-                        COLD/COLD (-400 M)
+                    <button class="btn-cold" onclick="recordJump('bs-cold-cold')">
+                        BS COLD/COLD (-400 M)
                     </button>
-                    <button class="btn-hot" onclick="recordJump('hot-hot')">
-                        HOT/HOT (-600 M)
+                    <button class="btn-hot" onclick="recordJump('bs-hot-hot')">
+                        BS HOT/HOT (-600 M)
                     </button>
-                    <button class="btn-cold" onclick="recordJump('cold-hot')">
-                        COLD/HOT (-500 M)
-                    </button>
-                    <button class="btn-hot" onclick="recordJump('hot-cold')">
-                        HOT/COLD (-500 M)
+                    <button class="btn-cold" onclick="recordJump('bs-cold-hot')">
+                        BS COLD/HOT (-500 M)
                     </button>
                 </div>
             </div>
             <div class="control-section">
-                <h3>3. Record Jumps - One Way</h3>
+                <h3>3b. HIC (Devoter) Round Trip</h3>
                 <div class="btn-group">
-                    <button class="btn-cold" onclick="recordJump('cold-one')">
-                        COLD One-Way (-200 M)
+                    <button class="btn-cold" onclick="recordJump('hic-cold-cold')" style="background: linear-gradient(135deg, #2a5a5a, #3a7a7a);">
+                        HIC COLD/COLD (-60 M)
                     </button>
-                    <button class="btn-hot" onclick="recordJump('hot-one')">
-                        HOT One-Way (-300 M)
+                    <button class="btn-hot" onclick="recordJump('hic-hot-hot')" style="background: linear-gradient(135deg, #5a4a3a, #7a6a4a);">
+                        HIC HOT/HOT (-268 M)
+                    </button>
+                    <button class="btn-recovery" onclick="recordJump('hic-ent-ent')" style="background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
+                        HIC ENT/ENT (-3 M)
+                    </button>
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>3c. One-Way Pass</h3>
+                <div class="btn-group">
+                    <button class="btn-cold" onclick="recordJump('bs-cold-one')">
+                        BS Cold (-200 M)
+                    </button>
+                    <button class="btn-hot" onclick="recordJump('bs-hot-one')">
+                        BS Hot (-300 M)
+                    </button>
+                    <button class="btn-recovery" onclick="recordJump('hic-ent-one')" style="background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
+                        HIC Entangled (-1.5 M)
                     </button>
                 </div>
             </div>
@@ -725,12 +739,15 @@
 
         <!-- 4. ANALYSIS: Monte Carlo simulation -->
         <div class="monte-carlo">
-            <h3>4. Monte Carlo Analysis - Safe Rolling Sequences</h3>
+            <h3>4. Monte Carlo Analysis - Discovered Safe Sequences</h3>
             <div class="simulation-info">
-                Running 10,000 simulations per sequence to calculate rollout probability.
-                "Rollout" = hole collapses while you're on the wrong side (after odd passes).
-                <strong>Foolproof</strong> sequences have 0% rollout risk even in worst-case variance.
+                Running <strong>100,000 random simulations</strong> to discover optimal rolling sequences.
+                Each simulation picks a random hole mass, then random actions until collapse.
+                HICs are only considered when remaining mass is low. Best sequences shown below.
+                <br><span style="color: #6f6;">Foolproof</span> = 0% rollout in worst-case variance.
+                <span style="color: #fc8;">Risky</span> = some rollout chance.
             </div>
+            <div id="sim-status" style="color: #8af; margin-bottom: 10px;"></div>
             <div class="sequence-grid" id="sequence-grid">
                 <!-- Populated by JS -->
             </div>
@@ -772,14 +789,14 @@
                 <div class="unit">M (±10%: 1800-2200)</div>
             </div>
             <div class="spec-card">
-                <h3>Max Jump Mass</h3>
-                <div class="value">375</div>
-                <div class="unit">M</div>
-            </div>
-            <div class="spec-card">
-                <h3>Rolling Ship</h3>
+                <h3>Battleship (Higgs)</h3>
                 <div class="value">200 / 300</div>
                 <div class="unit">M Cold / Hot</div>
+            </div>
+            <div class="spec-card">
+                <h3>HIC (Devoter)</h3>
+                <div class="value">30 / 134 / 1.5</div>
+                <div class="unit">M Cold / Hot / Ent</div>
             </div>
         </div>
 
@@ -810,11 +827,19 @@
             baseMass: 2000,
             variance: 0.10,
             maxJumpMass: 375,
-            coldMass: 200,
-            hotMass: 300,
+            // Battleship (Higgs Megathron)
+            bsCold: 200,
+            bsHot: 300,
+            // HIC (Devoter with Higgs)
+            hicCold: 30,
+            hicHot: 134,
+            hicEnt: 1.5,
+            // Thresholds
             shrinkThreshold: 0.50,
             critThreshold: 0.10,
-            simulations: 10000
+            // MC settings
+            simulations: 100000,
+            hicThreshold: 300  // Only consider HIC when minRemaining < this
         };
 
         // State
@@ -826,64 +851,42 @@
             knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
         };
 
-        // Jump definitions
+        // Jump definitions for manual tracking
         const JUMPS = {
-            'cold-cold': { mass: CONFIG.coldMass * 2, label: 'Cold/Cold Round Trip' },
-            'hot-hot': { mass: CONFIG.hotMass * 2, label: 'Hot/Hot Round Trip' },
-            'cold-hot': { mass: CONFIG.coldMass + CONFIG.hotMass, label: 'Cold/Hot Round Trip' },
-            'hot-cold': { mass: CONFIG.hotMass + CONFIG.coldMass, label: 'Hot/Cold Round Trip' },
-            'cold-one': { mass: CONFIG.coldMass, label: 'Cold One-Way' },
-            'hot-one': { mass: CONFIG.hotMass, label: 'Hot One-Way' }
+            // Battleship jumps
+            'bs-cold-cold': { mass: CONFIG.bsCold * 2, label: 'BS Cold/Cold' },
+            'bs-hot-hot': { mass: CONFIG.bsHot * 2, label: 'BS Hot/Hot' },
+            'bs-cold-hot': { mass: CONFIG.bsCold + CONFIG.bsHot, label: 'BS Cold/Hot' },
+            'bs-cold-one': { mass: CONFIG.bsCold, label: 'BS Cold One-Way' },
+            'bs-hot-one': { mass: CONFIG.bsHot, label: 'BS Hot One-Way' },
+            // HIC jumps
+            'hic-cold-cold': { mass: CONFIG.hicCold * 2, label: 'HIC Cold/Cold' },
+            'hic-hot-hot': { mass: CONFIG.hicHot * 2, label: 'HIC Hot/Hot' },
+            'hic-ent-ent': { mass: CONFIG.hicEnt * 2, label: 'HIC Ent/Ent' },
+            'hic-ent-one': { mass: CONFIG.hicEnt, label: 'HIC Ent One-Way' }
         };
 
-        // Rolling sequences to analyze
-        const SEQUENCES = [
-            {
-                name: "2× Hot/Hot + Cold/Cold",
-                steps: ['hot', 'hot', 'hot', 'hot', 'cold', 'cold'],
-                description: "Standard safe roll from fresh"
-            },
-            {
-                name: "3× Hot/Hot",
-                steps: ['hot', 'hot', 'hot', 'hot', 'hot', 'hot'],
-                description: "Aggressive roll from fresh"
-            },
-            {
-                name: "Hot/Hot + Cold/Hot + Cold",
-                steps: ['hot', 'hot', 'cold', 'hot', 'cold'],
-                description: "Mixed approach"
-            },
-            {
-                name: "2× Hot/Hot + Cold",
-                steps: ['hot', 'hot', 'hot', 'hot', 'cold'],
-                description: "End with one-way cold"
-            },
-            {
-                name: "1× Cold/Cold (from shrink)",
-                steps: ['cold', 'cold'],
-                description: "Safe pass on shrunk hole",
-                fromState: 'shrink'
-            },
-            {
-                name: "1× Hot/Hot (from shrink)",
-                steps: ['hot', 'hot'],
-                description: "Risky pass on shrunk hole",
-                fromState: 'shrink'
-            },
-            {
-                name: "1× Cold (from crit)",
-                steps: ['cold'],
-                description: "One-way cold on crit",
-                fromState: 'crit'
-            }
-        ];
+        // Action types for MC simulation
+        const ACTIONS = {
+            'BS_HOT': { out: CONFIG.bsHot, back: CONFIG.bsHot, label: 'BS H/H', isHic: false },
+            'BS_COLD': { out: CONFIG.bsCold, back: CONFIG.bsCold, label: 'BS C/C', isHic: false },
+            'BS_MIXED': { out: CONFIG.bsHot, back: CONFIG.bsCold, label: 'BS H/C', isHic: false },
+            'HIC_HOT': { out: CONFIG.hicHot, back: CONFIG.hicHot, label: 'HIC H/H', isHic: true },
+            'HIC_COLD': { out: CONFIG.hicCold, back: CONFIG.hicCold, label: 'HIC C/C', isHic: true },
+            'HIC_ENT': { out: CONFIG.hicEnt, back: CONFIG.hicEnt, label: 'HIC E/E', isHic: true }
+        };
+
+        let discoveredSequences = [];
 
         function init() {
             loadState();
             createStarfield();
             createWormholeEffect();
-            runSimulations();
-            updateDisplay();
+            // Run simulations asynchronously to not block UI
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 100);
         }
 
         function createStarfield() {
@@ -917,126 +920,209 @@
             }
         }
 
-        // Monte Carlo simulation
-        function simulateSequence(sequence, startMassUsed, startMin, startMax) {
-            let rolledOut = 0;
-            let collapsed = 0;
+        // Pick a random action based on remaining mass
+        function pickRandomAction(minRemaining, maxRemaining) {
+            const avgRemaining = (minRemaining + maxRemaining) / 2;
+            const useHic = minRemaining < CONFIG.hicThreshold;
 
-            for (let sim = 0; sim < CONFIG.simulations; sim++) {
-                // Random initial wormhole mass within variance
-                const actualMass = startMin + Math.random() * (startMax - startMin);
-                let remainingMass = actualMass - startMassUsed;
-                let position = 'home'; // 'home' or 'away'
+            // Build weighted action list
+            let actions = [];
 
-                for (let i = 0; i < sequence.steps.length; i++) {
-                    const step = sequence.steps[i];
-                    const jumpMass = step === 'hot' ? CONFIG.hotMass : CONFIG.coldMass;
+            // Always consider BS actions if we have enough mass
+            if (avgRemaining > CONFIG.bsHot * 2) {
+                actions.push('BS_HOT', 'BS_HOT', 'BS_HOT');  // Prefer hot for speed
+                actions.push('BS_COLD');
+                actions.push('BS_MIXED');
+            } else if (avgRemaining > CONFIG.bsCold * 2) {
+                actions.push('BS_COLD', 'BS_COLD');
+                actions.push('BS_MIXED');
+            }
 
-                    remainingMass -= jumpMass;
-
-                    if (remainingMass <= 0) {
-                        // Hole collapsed
-                        collapsed++;
-                        if (position === 'home') {
-                            // We jumped out and hole collapsed - rolled out!
-                            rolledOut++;
-                        }
-                        break;
-                    }
-
-                    // Toggle position
-                    position = position === 'home' ? 'away' : 'home';
+            // Consider HIC when mass is low
+            if (useHic) {
+                if (avgRemaining > CONFIG.hicHot * 2) {
+                    actions.push('HIC_HOT');
+                }
+                if (avgRemaining > CONFIG.hicCold * 2) {
+                    actions.push('HIC_COLD', 'HIC_COLD');
+                }
+                if (avgRemaining > CONFIG.hicEnt * 2) {
+                    actions.push('HIC_ENT', 'HIC_ENT', 'HIC_ENT');  // Prefer entangled when low
                 }
             }
 
+            if (actions.length === 0) return null;
+            return actions[Math.floor(Math.random() * actions.length)];
+        }
+
+        // Run a single simulation and return the sequence
+        function runSingleSimulation(startMin, startMax, startMassUsed) {
+            // Pick random starting mass
+            const actualMass = startMin + Math.random() * (startMax - startMin);
+            let remaining = actualMass - startMassUsed;
+            let minRemaining = startMin - startMassUsed;
+            let maxRemaining = startMax - startMassUsed;
+
+            let sequence = [];
+            let position = 'home';
+            let rolledOut = false;
+
+            while (remaining > 0 && sequence.length < 20) {
+                const action = pickRandomAction(minRemaining, maxRemaining);
+                if (!action) break;
+
+                const act = ACTIONS[action];
+
+                // Jump out
+                remaining -= act.out;
+                minRemaining -= act.out;
+                maxRemaining -= act.out;
+
+                if (remaining <= 0) {
+                    // Collapsed while jumping out - rolled out!
+                    rolledOut = true;
+                    sequence.push(action);
+                    break;
+                }
+
+                position = 'away';
+
+                // Jump back
+                remaining -= act.back;
+                minRemaining -= act.back;
+                maxRemaining -= act.back;
+
+                sequence.push(action);
+
+                if (remaining <= 0) {
+                    // Collapsed while jumping back - safe (we made it home as it collapsed)
+                    position = 'home';
+                    break;
+                }
+
+                position = 'home';
+            }
+
             return {
-                rolloutRate: rolledOut / CONFIG.simulations,
-                collapseRate: collapsed / CONFIG.simulations
+                sequence: sequence,
+                rolledOut: rolledOut,
+                collapsed: remaining <= 0,
+                finalPosition: position
             };
         }
 
-        // Check if sequence is foolproof (works even with worst variance)
-        function isFoolproof(sequence, startMassUsed, minStart) {
-            let remainingMass = minStart - startMassUsed;
-            let position = 'home';
+        // Run discovery simulations to find best sequences
+        function runDiscoverySimulations() {
+            const statusEl = document.getElementById('sim-status');
+            statusEl.textContent = 'Running 100,000 simulations...';
 
-            for (let i = 0; i < sequence.steps.length; i++) {
-                const step = sequence.steps[i];
-                const jumpMass = step === 'hot' ? CONFIG.hotMass : CONFIG.coldMass;
+            const startMin = state.knownMinStart;
+            const startMax = state.knownMaxStart;
+            const startMassUsed = state.massUsed;
 
-                remainingMass -= jumpMass;
-                position = position === 'home' ? 'away' : 'home';
+            // Track sequences and their outcomes
+            const sequenceResults = {};
 
-                // If we're away and mass could be <= 0, not foolproof
-                if (position === 'away' && remainingMass <= 0) {
-                    return false;
+            for (let i = 0; i < CONFIG.simulations; i++) {
+                const result = runSingleSimulation(startMin, startMax, startMassUsed);
+                const seqKey = result.sequence.join(',');
+
+                if (!sequenceResults[seqKey]) {
+                    sequenceResults[seqKey] = {
+                        sequence: result.sequence,
+                        total: 0,
+                        rolledOut: 0,
+                        collapsed: 0
+                    };
                 }
+
+                sequenceResults[seqKey].total++;
+                if (result.rolledOut) sequenceResults[seqKey].rolledOut++;
+                if (result.collapsed) sequenceResults[seqKey].collapsed++;
+            }
+
+            // Convert to array and sort by safety (lowest rollout rate) then by frequency
+            discoveredSequences = Object.values(sequenceResults)
+                .filter(s => s.total >= 100)  // Only sequences that appeared enough times
+                .map(s => ({
+                    ...s,
+                    rolloutRate: s.rolledOut / s.total,
+                    collapseRate: s.collapsed / s.total
+                }))
+                .sort((a, b) => {
+                    // First by rollout rate (ascending)
+                    if (a.rolloutRate !== b.rolloutRate) return a.rolloutRate - b.rolloutRate;
+                    // Then by collapse rate (descending - we want sequences that actually close the hole)
+                    return b.collapseRate - a.collapseRate;
+                })
+                .slice(0, 12);  // Top 12 sequences
+
+            statusEl.textContent = `Analyzed ${CONFIG.simulations.toLocaleString()} simulations, found ${Object.keys(sequenceResults).length} unique sequences`;
+
+            displayDiscoveredSequences();
+        }
+
+        // Check if sequence is foolproof (works even with worst-case variance)
+        function isSequenceFoolproof(sequence, startMassUsed, minStart) {
+            let remaining = minStart - startMassUsed;
+
+            for (const actionKey of sequence) {
+                const act = ACTIONS[actionKey];
+
+                // Jump out
+                remaining -= act.out;
+                if (remaining <= 0) return false;  // Would collapse while outside
+
+                // Jump back
+                remaining -= act.back;
+                // It's OK if it collapses here - we're home
             }
 
             return true;
         }
 
-        function runSimulations() {
+        // Display discovered sequences
+        function displayDiscoveredSequences() {
             const grid = document.getElementById('sequence-grid');
             grid.innerHTML = '';
 
-            // Calculate current state
-            const currentMassUsed = state.massUsed;
-            const minRemaining = state.knownMinStart - currentMassUsed;
-            const maxRemaining = state.knownMaxStart - currentMassUsed;
+            const startMassUsed = state.massUsed;
+            const minStart = state.knownMinStart;
 
-            // Determine current state
-            const avgRemaining = (minRemaining + maxRemaining) / 2;
-            const currentState = avgRemaining <= CONFIG.baseMass * CONFIG.critThreshold ? 'crit' :
-                                 avgRemaining <= CONFIG.baseMass * CONFIG.shrinkThreshold ? 'shrink' : 'fresh';
-
-            SEQUENCES.forEach(seq => {
-                // Skip sequences not meant for current state
-                if (seq.fromState && seq.fromState !== currentState) return;
-                if (!seq.fromState && currentState !== 'fresh') return;
-
-                let startMassUsed = currentMassUsed;
-                let startMin = state.knownMinStart;
-                let startMax = state.knownMaxStart;
-
-                // For state-specific sequences, use that state's starting point
-                // Account for variance in original hole mass
-                if (seq.fromState === 'shrink') {
-                    startMassUsed = 0;
-                    startMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold; // 180 M
-                    startMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold; // 1100 M
-                } else if (seq.fromState === 'crit') {
-                    startMassUsed = 0;
-                    startMin = 0;
-                    startMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold; // 220 M
-                }
-
-                const result = simulateSequence(seq, startMassUsed, startMin, startMax);
-                const foolproof = isFoolproof(seq, startMassUsed, startMin);
+            discoveredSequences.forEach(seq => {
+                const foolproof = isSequenceFoolproof(seq.sequence, startMassUsed, minStart);
 
                 const card = document.createElement('div');
-                const riskClass = result.rolloutRate === 0 ? 'safe' :
-                                  result.rolloutRate < 0.05 ? 'risky' : 'dangerous';
+                const riskClass = seq.rolloutRate === 0 ? 'safe' :
+                                  seq.rolloutRate < 0.01 ? 'risky' : 'dangerous';
                 card.className = `sequence-card ${riskClass}`;
 
-                const rolloutPercent = (result.rolloutRate * 100).toFixed(2);
-                const collapsePercent = (result.collapseRate * 100).toFixed(1);
+                // Calculate total mass
+                const totalMass = seq.sequence.reduce((sum, actionKey) => {
+                    const act = ACTIONS[actionKey];
+                    return sum + act.out + act.back;
+                }, 0);
+
+                // Format sequence nicely
+                const seqStr = seq.sequence.map(a => ACTIONS[a].label).join(' → ');
+
+                const rolloutPercent = (seq.rolloutRate * 100).toFixed(2);
+                const collapsePercent = (seq.collapseRate * 100).toFixed(1);
 
                 card.innerHTML = `
                     <div class="sequence-name">
-                        ${seq.name}
+                        ${seq.sequence.length} round trips
                         ${foolproof ? '<span class="foolproof-badge">Foolproof</span>' : ''}
                     </div>
-                    <div class="sequence-detail">${seq.description}</div>
-                    <div class="sequence-detail">Steps: ${seq.steps.map(s => s.toUpperCase()).join(' → ')}</div>
-                    <div class="sequence-detail">Total mass: ${seq.steps.reduce((sum, s) => sum + (s === 'hot' ? CONFIG.hotMass : CONFIG.coldMass), 0)} M</div>
+                    <div class="sequence-detail" style="font-size: 0.95em; color: #ccc;">${seqStr}</div>
+                    <div class="sequence-detail">Total mass: ${totalMass.toFixed(1)} M | Seen: ${seq.total.toLocaleString()}x</div>
                     <div class="probability-bar">
-                        <div class="probability-fill ${riskClass}" style="width: ${Math.max(100 - result.rolloutRate * 100, 0)}%"></div>
+                        <div class="probability-fill ${riskClass}" style="width: ${Math.max(100 - seq.rolloutRate * 100, 0)}%"></div>
                     </div>
                     <div class="probability-text ${riskClass}">
-                        ${result.rolloutRate === 0 ? '0%' : rolloutPercent + '%'} Rollout Risk
+                        ${seq.rolloutRate === 0 ? '0%' : rolloutPercent + '%'} Rollout Risk
                     </div>
-                    <div class="sequence-detail">${collapsePercent}% chance hole collapses during sequence</div>
+                    <div class="sequence-detail">${collapsePercent}% collapsed the hole</div>
                 `;
 
                 grid.appendChild(card);
@@ -1053,15 +1139,13 @@
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
-            runSimulations();
-            updateDisplay();
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 10);
         }
 
         function recoverFromShrink() {
-            // Reset to shrink state - we know mass is between 10% and 50% of ORIGINAL mass
-            // Original could have been 1800-2200 M, so:
-            // Min: smallest hole at crit boundary = 1800 * 0.10 = 180 M
-            // Max: largest hole just shrunk = 2200 * 0.50 = 1100 M
             state.massUsed = 0;
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
@@ -1074,15 +1158,13 @@
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
-            runSimulations();
-            updateDisplay();
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 10);
         }
 
         function recoverFromCrit() {
-            // Reset to crit state - we know mass is between 0% and 10% of ORIGINAL mass
-            // Original could have been 1800-2200 M, so:
-            // Min: 0 (could collapse any moment)
-            // Max: largest hole just went crit = 2200 * 0.10 = 220 M
             state.massUsed = 0;
             state.knownMinStart = 0;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
@@ -1095,15 +1177,16 @@
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
-            runSimulations();
-            updateDisplay();
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 10);
         }
 
         function setFreshHole() {
-            // Brand new hole spawn - full variance range, no mass used
             state.massUsed = 0;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance); // 1800 M
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 M
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = false;
             state.history = [];
             state.history.push({
@@ -1114,18 +1197,16 @@
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
-            runSimulations();
-            updateDisplay();
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 10);
         }
 
         function setUnknownFresh() {
-            // Unknown mass passed but hole still shows as fresh (not shrunk)
-            // Remaining mass is 50-100% of original (which was 1800-2200)
-            // Min: 50% of smallest hole = 1800 * 0.50 = 900 M
-            // Max: 100% of largest hole = 2200 M
             state.massUsed = 0;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold; // 900 M
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 M
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold;
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = true;
             state.history = [];
             state.history.push({
@@ -1136,8 +1217,10 @@
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
-            runSimulations();
-            updateDisplay();
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 10);
         }
 
         function applyKnownMass() {
@@ -1149,10 +1232,9 @@
                 return;
             }
 
-            // Start fresh and apply known mass
             state.massUsed = knownMass;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance); // 1800 M
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 M
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = false;
             state.history = [];
             state.history.push({
@@ -1165,8 +1247,10 @@
 
             input.value = '';
             saveState();
-            runSimulations();
-            updateDisplay();
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 10);
         }
 
         function undoLast() {
@@ -1179,8 +1263,10 @@
                     state.massUsed -= last.mass;
                 }
                 saveState();
-                runSimulations();
-                updateDisplay();
+                setTimeout(() => {
+                    runDiscoverySimulations();
+                    updateDisplay();
+                }, 10);
             }
         }
 
@@ -1194,8 +1280,10 @@
                     knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
                 };
                 saveState();
-                runSimulations();
-                updateDisplay();
+                setTimeout(() => {
+                    runDiscoverySimulations();
+                    updateDisplay();
+                }, 10);
             }
         }
 
@@ -1248,40 +1336,39 @@
         }
 
         function updatePredictions(minRemaining, maxRemaining) {
-            const hotHotMass = CONFIG.hotMass * 2;
+            const bsHotHot = CONFIG.bsHot * 2;
 
-            // Safe passes = how many hot/hot can we do with guaranteed return?
-            // After each round trip, we need min mass > 0
+            // Safe BS hot/hot passes
             let safePasses = 0;
             let testMass = minRemaining;
-            while (testMass > hotHotMass) {
-                testMass -= hotHotMass;
+            while (testMass > bsHotHot) {
+                testMass -= bsHotHot;
                 safePasses++;
             }
 
-            document.getElementById('passes-safe').textContent = safePasses + ' Hot/Hot';
+            document.getElementById('passes-safe').textContent = safePasses + ' BS Hot/Hot';
             document.getElementById('passes-safe').className = 'value ' + (safePasses > 0 ? 'safe' : 'warning');
 
             // Mass after next hot/hot (worst case)
-            const minAfterNext = minRemaining - hotHotMass;
+            const minAfterNext = minRemaining - bsHotHot;
             document.getElementById('mass-after-next').textContent = Math.round(minAfterNext) + ' M';
             document.getElementById('mass-after-next').className = 'value ' + (minAfterNext > 0 ? 'safe' : 'warning');
 
             // Next hot/hot safe?
             const nextSafe = minAfterNext > 0;
-            document.getElementById('next-safe').textContent = nextSafe ? 'YES' : 'NO - RISK OF ROLLOUT';
+            document.getElementById('next-safe').textContent = nextSafe ? 'YES' : 'NO - USE HIC';
             document.getElementById('next-safe').className = 'value ' + (nextSafe ? 'safe' : 'warning');
 
-            // Rollout risk for next single hot pass
-            // Simulate just one hot pass
+            // Rollout risk for next BS hot pass
             let rollouts = 0;
-            for (let i = 0; i < CONFIG.simulations; i++) {
+            const sims = 10000;
+            for (let i = 0; i < sims; i++) {
                 const actualRemaining = minRemaining + Math.random() * (maxRemaining - minRemaining);
-                if (actualRemaining - CONFIG.hotMass <= 0) {
+                if (actualRemaining - CONFIG.bsHot <= 0) {
                     rollouts++;
                 }
             }
-            const riskPercent = ((rollouts / CONFIG.simulations) * 100).toFixed(1);
+            const riskPercent = ((rollouts / sims) * 100).toFixed(1);
             document.getElementById('rollout-risk').textContent = riskPercent + '%';
             document.getElementById('rollout-risk').className = 'value ' + (rollouts === 0 ? 'safe' : 'warning');
         }

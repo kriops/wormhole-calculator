@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EEDVR Wormhole Rolling Calculator | J215101</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a2a 100%);
+            min-height: 100vh;
+            color: #e0e0ff;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Starfield background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Wormhole animation */
+        .wormhole-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wormhole-ring {
+            position: absolute;
+            border: 2px solid;
+            border-radius: 50%;
+            animation: pulse 4s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(20, 20, 50, 0.8);
+            border: 1px solid #4a4a8a;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(100, 100, 200, 0.3);
+        }
+
+        h1 {
+            color: #8af;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(136, 170, 255, 0.5);
+        }
+
+        .system-info {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .system-info span {
+            color: #6cf;
+        }
+
+        .wh-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .spec-card {
+            background: rgba(30, 30, 60, 0.9);
+            border: 1px solid #3a3a6a;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .spec-card h3 {
+            color: #7af;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .spec-card .value {
+            color: #fff;
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+
+        .spec-card .unit {
+            color: #888;
+            font-size: 0.8em;
+        }
+
+        .mass-display {
+            background: rgba(20, 20, 50, 0.9);
+            border: 2px solid #4a4a8a;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .mass-bar-container {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            height: 40px;
+            margin: 20px 0;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #3a3a6a;
+        }
+
+        .mass-bar {
+            height: 100%;
+            transition: width 0.5s ease, background 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .mass-bar.fresh {
+            background: linear-gradient(90deg, #2d5a2d, #4a8a4a);
+            box-shadow: 0 0 20px rgba(74, 138, 74, 0.5);
+        }
+
+        .mass-bar.shrink {
+            background: linear-gradient(90deg, #8a6a2d, #c4a044);
+            box-shadow: 0 0 20px rgba(196, 160, 68, 0.5);
+        }
+
+        .mass-bar.crit {
+            background: linear-gradient(90deg, #8a2d2d, #c44444);
+            box-shadow: 0 0 20px rgba(196, 68, 68, 0.5);
+            animation: critPulse 1s infinite;
+        }
+
+        @keyframes critPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .mass-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .mass-labels .threshold {
+            position: relative;
+        }
+
+        .mass-remaining {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .status-fresh {
+            background: rgba(74, 138, 74, 0.3);
+            border: 2px solid #4a8a4a;
+            color: #8f8;
+        }
+
+        .status-shrink {
+            background: rgba(196, 160, 68, 0.3);
+            border: 2px solid #c4a044;
+            color: #fc8;
+        }
+
+        .status-crit {
+            background: rgba(196, 68, 68, 0.3);
+            border: 2px solid #c44444;
+            color: #f88;
+            animation: critPulse 1s infinite;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-section {
+            background: rgba(30, 30, 60, 0.9);
+            border: 1px solid #3a3a6a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .control-section h3 {
+            color: #8af;
+            margin-bottom: 15px;
+            font-size: 1em;
+            border-bottom: 1px solid #3a3a6a;
+            padding-bottom: 10px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cold {
+            background: linear-gradient(135deg, #2a4a6a, #3a6a9a);
+            color: #adf;
+            border: 1px solid #4a8aaa;
+        }
+
+        .btn-cold:hover {
+            background: linear-gradient(135deg, #3a5a7a, #4a7aaa);
+            box-shadow: 0 0 15px rgba(100, 150, 200, 0.5);
+        }
+
+        .btn-hot {
+            background: linear-gradient(135deg, #6a3a2a, #9a5a3a);
+            color: #fca;
+            border: 1px solid #aa6a4a;
+        }
+
+        .btn-hot:hover {
+            background: linear-gradient(135deg, #7a4a3a, #aa6a4a);
+            box-shadow: 0 0 15px rgba(200, 100, 80, 0.5);
+        }
+
+        .btn-recovery {
+            background: linear-gradient(135deg, #4a3a6a, #6a4a9a);
+            color: #daf;
+            border: 1px solid #8a6aaa;
+        }
+
+        .btn-recovery:hover {
+            background: linear-gradient(135deg, #5a4a7a, #7a5aaa);
+            box-shadow: 0 0 15px rgba(150, 100, 200, 0.5);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #3a3a3a, #5a5a5a);
+            color: #ccc;
+            border: 1px solid #6a6a6a;
+        }
+
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #4a4a4a, #6a6a6a);
+        }
+
+        .btn-undo {
+            background: linear-gradient(135deg, #5a4a2a, #7a6a3a);
+            color: #ed9;
+            border: 1px solid #8a7a4a;
+        }
+
+        .btn-undo:hover {
+            background: linear-gradient(135deg, #6a5a3a, #8a7a4a);
+        }
+
+        .history {
+            background: rgba(20, 20, 50, 0.9);
+            border: 1px solid #3a3a6a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .history h3 {
+            color: #8af;
+            margin-bottom: 15px;
+            font-size: 1em;
+            border-bottom: 1px solid #3a3a6a;
+            padding-bottom: 10px;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+
+        .history-item {
+            padding: 8px;
+            border-bottom: 1px solid rgba(60, 60, 100, 0.5);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-item .action {
+            color: #aaa;
+        }
+
+        .history-item .mass-change {
+            font-weight: bold;
+        }
+
+        .history-item .mass-change.negative {
+            color: #f88;
+        }
+
+        .history-item .mass-change.recovery {
+            color: #8f8;
+        }
+
+        .recovery-section {
+            background: rgba(80, 40, 80, 0.3);
+            border: 2px solid #8a4a8a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .recovery-section h3 {
+            color: #faf;
+            margin-bottom: 10px;
+        }
+
+        .recovery-section p {
+            color: #caa;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .prediction {
+            background: rgba(30, 30, 60, 0.9);
+            border: 1px solid #3a3a6a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .prediction h3 {
+            color: #8af;
+            margin-bottom: 15px;
+            font-size: 1em;
+            border-bottom: 1px solid #3a3a6a;
+            padding-bottom: 10px;
+        }
+
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .prediction-item {
+            background: rgba(40, 40, 70, 0.5);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .prediction-item .label {
+            color: #888;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .prediction-item .value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #f88;
+        }
+
+        .safe {
+            color: #8f8;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        footer a {
+            color: #88f;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            .mass-remaining {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Starfield -->
+    <div class="stars" id="stars"></div>
+
+    <!-- Wormhole background effect -->
+    <div class="wormhole-bg" id="wormhole-bg"></div>
+
+    <div class="container">
+        <header>
+            <h1>EEDVR Wormhole Rolling Calculator</h1>
+            <div class="system-info">
+                Home System: <span>J215101</span> | Static: <span>C247 (C3 Static)</span>
+            </div>
+        </header>
+
+        <div class="wh-specs">
+            <div class="spec-card">
+                <h3>Wormhole Type</h3>
+                <div class="value">C247</div>
+                <div class="unit">Leads to C3</div>
+            </div>
+            <div class="spec-card">
+                <h3>Total Mass</h3>
+                <div class="value">2,000</div>
+                <div class="unit">Mt (±10%)</div>
+            </div>
+            <div class="spec-card">
+                <h3>Max Jump Mass</h3>
+                <div class="value">375</div>
+                <div class="unit">Mt</div>
+            </div>
+            <div class="spec-card">
+                <h3>Rolling Ship</h3>
+                <div class="value">0.2 / 0.3</div>
+                <div class="unit">Mt Cold / Hot</div>
+            </div>
+        </div>
+
+        <div class="mass-display">
+            <h2>Estimated Mass Remaining</h2>
+            <div class="mass-bar-container">
+                <div class="mass-bar fresh" id="mass-bar" style="width: 100%"></div>
+            </div>
+            <div class="mass-labels">
+                <span class="threshold">0%</span>
+                <span class="threshold">10% CRIT</span>
+                <span class="threshold">50% SHRINK</span>
+                <span class="threshold">100%</span>
+            </div>
+            <div class="mass-remaining" id="mass-remaining">2,000 Mt</div>
+            <div class="status-badge status-fresh" id="status-badge">FRESH</div>
+            <div id="uncertainty" style="color: #888; font-size: 0.9em; margin-top: 10px;"></div>
+        </div>
+
+        <div class="controls">
+            <div class="control-section">
+                <h3>Record Jump (Round Trip)</h3>
+                <div class="btn-group">
+                    <button class="btn-cold" onclick="recordJump('cold-cold')">
+                        COLD/COLD (-0.4 Mt)
+                    </button>
+                    <button class="btn-hot" onclick="recordJump('hot-hot')">
+                        HOT/HOT (-0.6 Mt)
+                    </button>
+                    <button class="btn-cold" onclick="recordJump('cold-hot')">
+                        COLD/HOT (-0.5 Mt)
+                    </button>
+                    <button class="btn-hot" onclick="recordJump('hot-cold')">
+                        HOT/COLD (-0.5 Mt)
+                    </button>
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>Single Pass</h3>
+                <div class="btn-group">
+                    <button class="btn-cold" onclick="recordJump('cold-one')">
+                        COLD One-Way (-0.2 Mt)
+                    </button>
+                    <button class="btn-hot" onclick="recordJump('hot-one')">
+                        HOT One-Way (-0.3 Mt)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="recovery-section">
+            <h3>Mass Recovery Mode</h3>
+            <p>If unknown mass passed through before you started tracking, use these when the hole shrinks:</p>
+            <div class="btn-group" style="flex-direction: row; flex-wrap: wrap; gap: 10px;">
+                <button class="btn-recovery" onclick="recoverFromShrink()">
+                    Hole Just Shrunk (Reset to 50%)
+                </button>
+                <button class="btn-recovery" onclick="recoverFromCrit()">
+                    Hole Just Crit (Reset to 10%)
+                </button>
+            </div>
+        </div>
+
+        <div class="prediction">
+            <h3>Predictions</h3>
+            <div class="prediction-grid">
+                <div class="prediction-item">
+                    <div class="label">Passes Until Shrink</div>
+                    <div class="value" id="passes-shrink">-</div>
+                </div>
+                <div class="prediction-item">
+                    <div class="label">Passes Until Crit</div>
+                    <div class="value" id="passes-crit">-</div>
+                </div>
+                <div class="prediction-item">
+                    <div class="label">Passes Until Collapse</div>
+                    <div class="value" id="passes-collapse">-</div>
+                </div>
+                <div class="prediction-item">
+                    <div class="label">Next Hot/Hot Safe?</div>
+                    <div class="value" id="next-safe">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="history">
+            <h3>Jump History</h3>
+            <div style="margin-bottom: 10px;">
+                <button class="btn-undo" onclick="undoLast()">Undo Last</button>
+                <button class="btn-reset" onclick="resetCalculator()">Reset All</button>
+            </div>
+            <div class="history-list" id="history-list">
+                <div class="history-item">
+                    <span class="action">No jumps recorded</span>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            EEDVR Wormhole Calculator | J215101 C247 Static<br>
+            <a href="https://wiki.eveuniversity.org/Wormhole_attributes" target="_blank">EVE University Wormhole Guide</a>
+        </footer>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            whType: 'C247',
+            baseMass: 2000, // Mt
+            variance: 0.10, // ±10%
+            maxJumpMass: 300, // Mt
+            coldMass: 0.2, // Mt
+            hotMass: 0.3, // Mt
+            shrinkThreshold: 0.50,
+            critThreshold: 0.10
+        };
+
+        // State
+        let state = {
+            currentMass: CONFIG.baseMass,
+            minPossibleMass: CONFIG.baseMass * (1 - CONFIG.variance),
+            maxPossibleMass: CONFIG.baseMass * (1 + CONFIG.variance),
+            history: [],
+            hasUnknownMass: false
+        };
+
+        // Jump definitions
+        const JUMPS = {
+            'cold-cold': { mass: CONFIG.coldMass * 2, label: 'Cold/Cold Round Trip' },
+            'hot-hot': { mass: CONFIG.hotMass * 2, label: 'Hot/Hot Round Trip' },
+            'cold-hot': { mass: CONFIG.coldMass + CONFIG.hotMass, label: 'Cold/Hot Round Trip' },
+            'hot-cold': { mass: CONFIG.hotMass + CONFIG.coldMass, label: 'Hot/Cold Round Trip' },
+            'cold-one': { mass: CONFIG.coldMass, label: 'Cold One-Way' },
+            'hot-one': { mass: CONFIG.hotMass, label: 'Hot One-Way' }
+        };
+
+        // Initialize
+        function init() {
+            loadState();
+            createStarfield();
+            createWormholeEffect();
+            updateDisplay();
+        }
+
+        // Create starfield background
+        function createStarfield() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        // Create wormhole effect
+        function createWormholeEffect() {
+            const container = document.getElementById('wormhole-bg');
+            const colors = ['#4af', '#84f', '#a4f', '#f4a', '#fa4'];
+            for (let i = 0; i < 8; i++) {
+                const ring = document.createElement('div');
+                ring.className = 'wormhole-ring';
+                const size = 100 + i * 80;
+                ring.style.width = size + 'px';
+                ring.style.height = size + 'px';
+                ring.style.left = (400 - size/2) + 'px';
+                ring.style.top = (400 - size/2) + 'px';
+                ring.style.borderColor = colors[i % colors.length];
+                ring.style.animationDelay = (i * 0.5) + 's';
+                container.appendChild(ring);
+            }
+        }
+
+        // Record a jump
+        function recordJump(type) {
+            const jump = JUMPS[type];
+            state.currentMass -= jump.mass;
+            state.history.push({
+                type: type,
+                label: jump.label,
+                mass: -jump.mass,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            updateDisplay();
+        }
+
+        // Recovery from shrink (unknown mass passed)
+        function recoverFromShrink() {
+            const shrinkMass = CONFIG.baseMass * CONFIG.shrinkThreshold;
+            state.currentMass = shrinkMass;
+            state.hasUnknownMass = true;
+            state.history.push({
+                type: 'recovery-shrink',
+                label: 'Recovered: Hole Shrunk',
+                mass: 0,
+                note: 'Reset to 50% (' + shrinkMass + ' Mt)',
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            updateDisplay();
+        }
+
+        // Recovery from crit
+        function recoverFromCrit() {
+            const critMass = CONFIG.baseMass * CONFIG.critThreshold;
+            state.currentMass = critMass;
+            state.hasUnknownMass = true;
+            state.history.push({
+                type: 'recovery-crit',
+                label: 'Recovered: Hole Crit',
+                mass: 0,
+                note: 'Reset to 10% (' + critMass + ' Mt)',
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            updateDisplay();
+        }
+
+        // Undo last action
+        function undoLast() {
+            if (state.history.length > 0) {
+                const last = state.history.pop();
+                if (last.type.startsWith('recovery')) {
+                    // Can't really undo recovery - just note it
+                    alert('Recovery actions cannot be undone. Use Reset instead.');
+                    state.history.push(last);
+                } else {
+                    state.currentMass -= last.mass; // Subtract negative = add back
+                }
+                saveState();
+                updateDisplay();
+            }
+        }
+
+        // Reset calculator
+        function resetCalculator() {
+            if (confirm('Reset all tracking? This cannot be undone.')) {
+                state = {
+                    currentMass: CONFIG.baseMass,
+                    minPossibleMass: CONFIG.baseMass * (1 - CONFIG.variance),
+                    maxPossibleMass: CONFIG.baseMass * (1 + CONFIG.variance),
+                    history: [],
+                    hasUnknownMass: false
+                };
+                saveState();
+                updateDisplay();
+            }
+        }
+
+        // Update display
+        function updateDisplay() {
+            const percentage = Math.max(0, state.currentMass / CONFIG.baseMass * 100);
+            const massBar = document.getElementById('mass-bar');
+            const massRemaining = document.getElementById('mass-remaining');
+            const statusBadge = document.getElementById('status-badge');
+            const uncertainty = document.getElementById('uncertainty');
+
+            // Update mass bar
+            massBar.style.width = percentage + '%';
+
+            // Determine status
+            let status, statusClass;
+            const massPercent = state.currentMass / CONFIG.baseMass;
+
+            if (massPercent <= CONFIG.critThreshold) {
+                status = 'CRITICAL';
+                statusClass = 'crit';
+            } else if (massPercent <= CONFIG.shrinkThreshold) {
+                status = 'SHRUNK';
+                statusClass = 'shrink';
+            } else {
+                status = 'FRESH';
+                statusClass = 'fresh';
+            }
+
+            massBar.className = 'mass-bar ' + statusClass;
+            statusBadge.className = 'status-badge status-' + statusClass;
+            statusBadge.textContent = status;
+
+            // Update mass display
+            massRemaining.textContent = state.currentMass.toFixed(1) + ' Mt';
+
+            // Uncertainty note
+            if (state.hasUnknownMass) {
+                uncertainty.textContent = '(Recovered from unknown mass - estimates may vary)';
+            } else {
+                const minMass = state.currentMass - (CONFIG.baseMass * CONFIG.variance);
+                const maxMass = state.currentMass + (CONFIG.baseMass * CONFIG.variance);
+                uncertainty.textContent = 'Range: ' + Math.max(0, minMass).toFixed(0) + ' - ' + maxMass.toFixed(0) + ' Mt (±10% variance)';
+            }
+
+            // Update predictions
+            updatePredictions();
+
+            // Update history
+            updateHistory();
+        }
+
+        // Update predictions
+        function updatePredictions() {
+            const hotHotMass = CONFIG.hotMass * 2;
+            const coldColdMass = CONFIG.coldMass * 2;
+
+            const shrinkMass = CONFIG.baseMass * CONFIG.shrinkThreshold;
+            const critMass = CONFIG.baseMass * CONFIG.critThreshold;
+
+            // Passes until shrink (using conservative hot/hot)
+            const passesToShrink = state.currentMass > shrinkMass
+                ? Math.floor((state.currentMass - shrinkMass) / hotHotMass)
+                : 0;
+
+            // Passes until crit
+            const passesToCrit = state.currentMass > critMass
+                ? Math.floor((state.currentMass - critMass) / hotHotMass)
+                : 0;
+
+            // Passes until collapse
+            const passesToCollapse = Math.floor(state.currentMass / hotHotMass);
+
+            // Is next hot/hot safe?
+            const afterNextHotHot = state.currentMass - hotHotMass;
+            const nextSafe = afterNextHotHot > 0;
+
+            document.getElementById('passes-shrink').textContent = passesToShrink > 0 ? passesToShrink + ' Hot/Hot' : 'SHRUNK';
+            document.getElementById('passes-shrink').className = 'value ' + (passesToShrink > 2 ? 'safe' : 'warning');
+
+            document.getElementById('passes-crit').textContent = passesToCrit > 0 ? passesToCrit + ' Hot/Hot' : 'CRIT';
+            document.getElementById('passes-crit').className = 'value ' + (passesToCrit > 1 ? 'safe' : 'warning');
+
+            document.getElementById('passes-collapse').textContent = passesToCollapse + ' Hot/Hot';
+            document.getElementById('passes-collapse').className = 'value ' + (passesToCollapse > 0 ? 'safe' : 'warning');
+
+            document.getElementById('next-safe').textContent = nextSafe ? 'YES' : 'NO - WILL COLLAPSE';
+            document.getElementById('next-safe').className = 'value ' + (nextSafe ? 'safe' : 'warning');
+        }
+
+        // Update history display
+        function updateHistory() {
+            const container = document.getElementById('history-list');
+
+            if (state.history.length === 0) {
+                container.innerHTML = '<div class="history-item"><span class="action">No jumps recorded</span></div>';
+                return;
+            }
+
+            container.innerHTML = state.history.slice().reverse().map(item => {
+                const massClass = item.type.startsWith('recovery') ? 'recovery' : 'negative';
+                const massDisplay = item.type.startsWith('recovery')
+                    ? item.note
+                    : (item.mass.toFixed(1) + ' Mt');
+
+                return `
+                    <div class="history-item">
+                        <span class="action">${item.timestamp} - ${item.label}</span>
+                        <span class="mass-change ${massClass}">${massDisplay}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem('eedvr-wh-calc', JSON.stringify(state));
+        }
+
+        // Load state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('eedvr-wh-calc');
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Failed to load saved state');
+                }
+            }
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>

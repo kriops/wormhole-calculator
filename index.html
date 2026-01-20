@@ -1066,8 +1066,10 @@
                     collapseRate: s.collapsed / s.total
                 }))
                 .sort((a, b) => {
-                    // First by rollout rate (ascending)
+                    // First by rollout rate (ascending - safer is better)
                     if (a.rolloutRate !== b.rolloutRate) return a.rolloutRate - b.rolloutRate;
+                    // Then by sequence length (ascending - fewer trips is faster)
+                    if (a.sequence.length !== b.sequence.length) return a.sequence.length - b.sequence.length;
                     // Then by collapse rate (descending - we want sequences that actually close the hole)
                     return b.collapseRate - a.collapseRate;
                 })

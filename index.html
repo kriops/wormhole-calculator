@@ -753,15 +753,14 @@
             </div>
         </div>
 
-        <!-- 4. ANALYSIS: Monte Carlo simulation -->
+        <!-- 4. ANALYSIS: Strategy recommendation -->
         <div class="monte-carlo">
-            <h3>4. Monte Carlo Analysis - Discovered Safe Sequences</h3>
+            <h3>4. Recommended Strategy</h3>
             <div class="simulation-info">
-                Running <strong>100,000 random simulations</strong> to discover optimal rolling sequences.
-                Each simulation picks a random hole mass, then random actions until collapse.
-                HICs are only considered when remaining mass is low. Best sequences shown below.
-                <br><span style="color: #6f6;">Foolproof</span> = 0% rollout in worst-case variance.
-                <span style="color: #fc8;">Risky</span> = some rollout chance.
+                Shows the <strong>optimal greedy strategy</strong>: always pick the highest-mass action that's guaranteed safe given worst-case remaining mass.
+                Validated with <strong>1,000,000 simulations</strong> across the full uncertainty range.
+                <br><span style="color: #6f6;">GUARANTEED SAFE</span> = survives even if actual mass is at minimum estimate.
+                <span style="color: #fc8;">Risk %</span> = probability of rollout given uncertainty.
             </div>
             <div id="sim-status" style="color: #8af; margin-bottom: 10px;"></div>
             <div class="sequence-grid" id="sequence-grid">
@@ -854,8 +853,7 @@
             shrinkThreshold: 0.50,
             critThreshold: 0.10,
             // MC settings
-            simulations: 100000,
-            hicThreshold: 300  // Only consider HIC when minRemaining < this
+            simulations: 1000000
         };
 
         // State
@@ -892,15 +890,15 @@
             'HIC_ENT': { out: CONFIG.hicEnt, back: CONFIG.hicEnt, label: 'HIC E/E', isHic: true }
         };
 
-        let discoveredSequences = [];
+        let recommendedStrategy = null;
 
         function init() {
             loadState();
             createStarfield();
             createWormholeEffect();
-            // Run simulations asynchronously to not block UI
+            // Run analysis asynchronously to not block UI
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 100);
         }
@@ -936,215 +934,279 @@
             }
         }
 
-        // Pick a random action based on remaining mass
-        function pickRandomAction(minRemaining, maxRemaining) {
-            const avgRemaining = (minRemaining + maxRemaining) / 2;
-            const useHic = minRemaining < CONFIG.hicThreshold;
+        // Get the best guaranteed-safe action for current worst-case mass
+        // Returns the action that uses the most mass while being safe
+        function getBestSafeAction(minRemaining) {
+            // Actions sorted by mass used (descending) - we want to close fast
+            const actionsByMass = [
+                { key: 'BS_HOT', mass: ACTIONS.BS_HOT.out + ACTIONS.BS_HOT.back, outMass: ACTIONS.BS_HOT.out },
+                { key: 'BS_MIXED', mass: ACTIONS.BS_MIXED.out + ACTIONS.BS_MIXED.back, outMass: ACTIONS.BS_MIXED.out },
+                { key: 'BS_COLD', mass: ACTIONS.BS_COLD.out + ACTIONS.BS_COLD.back, outMass: ACTIONS.BS_COLD.out },
+                { key: 'HIC_HOT', mass: ACTIONS.HIC_HOT.out + ACTIONS.HIC_HOT.back, outMass: ACTIONS.HIC_HOT.out },
+                { key: 'HIC_COLD', mass: ACTIONS.HIC_COLD.out + ACTIONS.HIC_COLD.back, outMass: ACTIONS.HIC_COLD.out },
+                { key: 'HIC_ENT', mass: ACTIONS.HIC_ENT.out + ACTIONS.HIC_ENT.back, outMass: ACTIONS.HIC_ENT.out }
+            ].sort((a, b) => b.mass - a.mass);
 
-            // Build weighted action list
-            let actions = [];
-
-            // Always consider BS actions if we have enough mass
-            if (avgRemaining > CONFIG.bsHot * 2) {
-                actions.push('BS_HOT', 'BS_HOT', 'BS_HOT');  // Prefer hot for speed
-                actions.push('BS_COLD');
-                actions.push('BS_MIXED');
-            } else if (avgRemaining > CONFIG.bsCold * 2) {
-                actions.push('BS_COLD', 'BS_COLD');
-                actions.push('BS_MIXED');
-            }
-
-            // Consider HIC when mass is low
-            if (useHic) {
-                if (avgRemaining > CONFIG.hicHot * 2) {
-                    actions.push('HIC_HOT');
-                }
-                if (avgRemaining > CONFIG.hicCold * 2) {
-                    actions.push('HIC_COLD', 'HIC_COLD');
-                }
-                if (avgRemaining > CONFIG.hicEnt * 2) {
-                    actions.push('HIC_ENT', 'HIC_ENT', 'HIC_ENT');  // Prefer entangled when low
+            // Find first action where we won't roll out (survive the outbound jump in worst case)
+            for (const action of actionsByMass) {
+                if (minRemaining > action.outMass) {
+                    return action.key;
                 }
             }
-
-            if (actions.length === 0) return null;
-            return actions[Math.floor(Math.random() * actions.length)];
+            return null; // No safe action - hole might collapse on any jump
         }
 
-        // Run a single simulation and return the sequence
-        function runSingleSimulation(startMin, startMax, startMassUsed) {
-            // Pick random starting mass
-            const actualMass = startMin + Math.random() * (startMax - startMin);
-            let remaining = actualMass - startMassUsed;
-            let minRemaining = startMin - startMassUsed;
-            let maxRemaining = startMax - startMassUsed;
+        // Build the greedy safe strategy: always pick highest-mass safe action
+        function buildGreedyStrategy(minRemaining, maxRemaining) {
+            const sequence = [];
+            let min = minRemaining;
+            let max = maxRemaining;
 
-            let sequence = [];
-            let position = 'home';
-            let rolledOut = false;
-
-            while (remaining > 0 && sequence.length < 20) {
-                const action = pickRandomAction(minRemaining, maxRemaining);
-                if (!action) break;
+            while (min > 0 && sequence.length < 30) {
+                const action = getBestSafeAction(min);
+                if (!action) break; // No safe action available
 
                 const act = ACTIONS[action];
-
-                // Jump out
-                remaining -= act.out;
-                minRemaining -= act.out;
-                maxRemaining -= act.out;
-
-                if (remaining <= 0) {
-                    // Collapsed while jumping out - rolled out!
-                    rolledOut = true;
-                    sequence.push(action);
-                    break;
-                }
-
-                position = 'away';
-
-                // Jump back
-                remaining -= act.back;
-                minRemaining -= act.back;
-                maxRemaining -= act.back;
-
                 sequence.push(action);
 
-                if (remaining <= 0) {
-                    // Collapsed while jumping back - safe (we made it home as it collapsed)
-                    position = 'home';
-                    break;
+                // Update ranges after round trip
+                min -= (act.out + act.back);
+                max -= (act.out + act.back);
+            }
+
+            return sequence;
+        }
+
+        // Validate strategy with Monte Carlo - run it 1M times with random starting masses
+        function validateStrategy(sequence, startMin, startMax, massUsed) {
+            let rollouts = 0;
+            let collapses = 0;
+
+            for (let i = 0; i < CONFIG.simulations; i++) {
+                const actualMass = startMin + Math.random() * (startMax - startMin);
+                let remaining = actualMass - massUsed;
+                let rolledOut = false;
+
+                for (const actionKey of sequence) {
+                    const act = ACTIONS[actionKey];
+
+                    // Jump out
+                    remaining -= act.out;
+                    if (remaining <= 0) {
+                        rolledOut = true;
+                        break;
+                    }
+
+                    // Jump back
+                    remaining -= act.back;
+                    if (remaining <= 0) {
+                        // Collapsed on return - we're home, safe
+                        break;
+                    }
                 }
 
-                position = 'home';
+                if (rolledOut) rollouts++;
+                if (remaining <= 0) collapses++;
             }
 
             return {
-                sequence: sequence,
-                rolledOut: rolledOut,
-                collapsed: remaining <= 0,
-                finalPosition: position
+                rolloutRate: rollouts / CONFIG.simulations,
+                collapseRate: collapses / CONFIG.simulations,
+                rollouts,
+                collapses,
+                total: CONFIG.simulations
             };
         }
 
-        // Run discovery simulations to find best sequences
-        function runDiscoverySimulations() {
+        // Calculate risk for a single action given current state
+        function calculateActionRisk(actionKey, startMin, startMax, massUsed) {
+            const act = ACTIONS[actionKey];
+            const minRemaining = startMin - massUsed;
+            const maxRemaining = startMax - massUsed;
+
+            // Guaranteed safe if worst-case survives outbound
+            const guaranteedSafe = minRemaining > act.out;
+
+            // Run quick simulation for probability
+            let rollouts = 0;
+            const quickSims = 100000;
+            for (let i = 0; i < quickSims; i++) {
+                const actual = startMin + Math.random() * (startMax - startMin);
+                const remaining = actual - massUsed;
+                if (remaining - act.out <= 0) rollouts++;
+            }
+
+            return {
+                guaranteedSafe,
+                rolloutRisk: rollouts / quickSims,
+                minAfter: Math.max(0, minRemaining - act.out - act.back),
+                maxAfter: Math.max(0, maxRemaining - act.out - act.back)
+            };
+        }
+
+        // Main analysis function
+        function runStrategyAnalysis() {
             const statusEl = document.getElementById('sim-status');
-            statusEl.textContent = 'Running 100,000 simulations...';
+            statusEl.textContent = 'Analyzing optimal strategy...';
 
             const startMin = state.knownMinStart;
             const startMax = state.knownMaxStart;
-            const startMassUsed = state.massUsed;
+            const massUsed = state.massUsed;
+            const minRemaining = startMin - massUsed;
+            const maxRemaining = startMax - massUsed;
 
-            // Track sequences and their outcomes
-            const sequenceResults = {};
+            // Build greedy strategy
+            const sequence = buildGreedyStrategy(minRemaining, maxRemaining);
 
-            for (let i = 0; i < CONFIG.simulations; i++) {
-                const result = runSingleSimulation(startMin, startMax, startMassUsed);
-                const seqKey = result.sequence.join(',');
+            // Validate with MC
+            const validation = validateStrategy(sequence, startMin, startMax, massUsed);
 
-                if (!sequenceResults[seqKey]) {
-                    sequenceResults[seqKey] = {
-                        sequence: result.sequence,
-                        total: 0,
-                        rolledOut: 0,
-                        collapsed: 0
-                    };
-                }
+            // Get next recommended action
+            const nextAction = sequence.length > 0 ? sequence[0] : null;
 
-                sequenceResults[seqKey].total++;
-                if (result.rolledOut) sequenceResults[seqKey].rolledOut++;
-                if (result.collapsed) sequenceResults[seqKey].collapsed++;
+            // Calculate risks for all possible next actions
+            const actionRisks = {};
+            for (const key of Object.keys(ACTIONS)) {
+                actionRisks[key] = calculateActionRisk(key, startMin, startMax, massUsed);
             }
 
-            // Convert to array and sort by safety (lowest rollout rate) then by frequency
-            discoveredSequences = Object.values(sequenceResults)
-                .filter(s => s.total >= 100)  // Only sequences that appeared enough times
-                .map(s => ({
-                    ...s,
-                    rolloutRate: s.rolledOut / s.total,
-                    collapseRate: s.collapsed / s.total
-                }))
-                .sort((a, b) => {
-                    // First by rollout rate (ascending - safer is better)
-                    if (a.rolloutRate !== b.rolloutRate) return a.rolloutRate - b.rolloutRate;
-                    // Then by sequence length (ascending - fewer trips is faster)
-                    if (a.sequence.length !== b.sequence.length) return a.sequence.length - b.sequence.length;
-                    // Then by collapse rate (descending - we want sequences that actually close the hole)
-                    return b.collapseRate - a.collapseRate;
-                })
-                .slice(0, 12);  // Top 12 sequences
+            recommendedStrategy = {
+                sequence,
+                validation,
+                nextAction,
+                actionRisks,
+                minRemaining,
+                maxRemaining
+            };
 
-            statusEl.textContent = `Analyzed ${CONFIG.simulations.toLocaleString()} simulations, found ${Object.keys(sequenceResults).length} unique sequences`;
+            statusEl.textContent = `Strategy validated with ${CONFIG.simulations.toLocaleString()} simulations`;
 
-            displayDiscoveredSequences();
+            displayStrategyAnalysis();
         }
 
-        // Check if sequence is foolproof (works even with worst-case variance)
-        function isSequenceFoolproof(sequence, startMassUsed, minStart) {
-            let remaining = minStart - startMassUsed;
-
-            for (const actionKey of sequence) {
-                const act = ACTIONS[actionKey];
-
-                // Jump out
-                remaining -= act.out;
-                if (remaining <= 0) return false;  // Would collapse while outside
-
-                // Jump back
-                remaining -= act.back;
-                // It's OK if it collapses here - we're home
-            }
-
-            return true;
-        }
-
-        // Display discovered sequences
-        function displayDiscoveredSequences() {
+        // Display the strategy analysis
+        function displayStrategyAnalysis() {
             const grid = document.getElementById('sequence-grid');
             grid.innerHTML = '';
 
-            const startMassUsed = state.massUsed;
-            const minStart = state.knownMinStart;
+            if (!recommendedStrategy) return;
 
-            discoveredSequences.forEach(seq => {
-                const foolproof = isSequenceFoolproof(seq.sequence, startMassUsed, minStart);
+            const { sequence, validation, nextAction, actionRisks, minRemaining, maxRemaining } = recommendedStrategy;
 
-                const card = document.createElement('div');
-                const riskClass = seq.rolloutRate === 0 ? 'safe' :
-                                  seq.rolloutRate < 0.01 ? 'risky' : 'dangerous';
-                card.className = `sequence-card ${riskClass}`;
+            // Card 1: Next Recommended Action (prominent)
+            const nextCard = document.createElement('div');
+            nextCard.className = 'sequence-card safe';
+            nextCard.style.gridColumn = '1 / -1';
+            nextCard.style.borderWidth = '3px';
 
-                // Calculate total mass
-                const totalMass = seq.sequence.reduce((sum, actionKey) => {
-                    const act = ACTIONS[actionKey];
+            if (nextAction) {
+                const act = ACTIONS[nextAction];
+                const risk = actionRisks[nextAction];
+                const totalMass = act.out + act.back;
+
+                nextCard.innerHTML = `
+                    <div class="sequence-name" style="font-size: 1.3em;">
+                        RECOMMENDED NEXT: ${act.label}
+                        ${risk.guaranteedSafe ? '<span class="foolproof-badge">GUARANTEED SAFE</span>' : ''}
+                    </div>
+                    <div class="sequence-detail" style="font-size: 1.1em; color: #8f8; margin: 10px 0;">
+                        Round trip uses ${totalMass} M (${act.out} M out, ${act.back} M back)
+                    </div>
+                    <div class="sequence-detail">
+                        After this action: ${Math.round(risk.minAfter)}-${Math.round(risk.maxAfter)} M remaining
+                    </div>
+                    ${!risk.guaranteedSafe ? `<div class="sequence-detail" style="color: #fc8;">Rollout risk: ${(risk.rolloutRisk * 100).toFixed(3)}%</div>` : ''}
+                `;
+            } else {
+                nextCard.className = 'sequence-card dangerous';
+                nextCard.innerHTML = `
+                    <div class="sequence-name" style="font-size: 1.3em; color: #f88;">
+                        NO SAFE ACTIONS AVAILABLE
+                    </div>
+                    <div class="sequence-detail" style="color: #faa;">
+                        Worst-case remaining mass (${Math.round(minRemaining)} M) is too low for any round trip.
+                        Consider a one-way pass or accept rollout risk.
+                    </div>
+                `;
+            }
+            grid.appendChild(nextCard);
+
+            // Card 2: Full recommended sequence
+            if (sequence.length > 0) {
+                const seqCard = document.createElement('div');
+                const isGuaranteed = validation.rolloutRate === 0;
+                seqCard.className = `sequence-card ${isGuaranteed ? 'safe' : 'risky'}`;
+
+                const totalMass = sequence.reduce((sum, key) => {
+                    const act = ACTIONS[key];
                     return sum + act.out + act.back;
                 }, 0);
 
-                // Format sequence nicely
-                const seqStr = seq.sequence.map(a => ACTIONS[a].label).join(' → ');
+                const seqStr = sequence.map(a => ACTIONS[a].label).join(' → ');
+                const rolloutPercent = (validation.rolloutRate * 100).toFixed(4);
 
-                const rolloutPercent = (seq.rolloutRate * 100).toFixed(2);
-                const collapsePercent = (seq.collapseRate * 100).toFixed(1);
-
-                card.innerHTML = `
+                seqCard.innerHTML = `
                     <div class="sequence-name">
-                        ${seq.sequence.length} round trips
-                        ${foolproof ? '<span class="foolproof-badge">Foolproof</span>' : ''}
+                        Full Strategy: ${sequence.length} round trips
+                        ${isGuaranteed ? '<span class="foolproof-badge">0% ROLLOUT</span>' : ''}
                     </div>
-                    <div class="sequence-detail" style="font-size: 0.95em; color: #ccc;">${seqStr}</div>
-                    <div class="sequence-detail">Total mass: ${totalMass.toFixed(1)} M | Seen: ${seq.total.toLocaleString()}x</div>
+                    <div class="sequence-detail" style="font-size: 0.95em; color: #ccc; line-height: 1.4;">${seqStr}</div>
+                    <div class="sequence-detail">Total mass: ${totalMass} M</div>
                     <div class="probability-bar">
-                        <div class="probability-fill ${riskClass}" style="width: ${Math.max(100 - seq.rolloutRate * 100, 0)}%"></div>
+                        <div class="probability-fill ${isGuaranteed ? 'safe' : 'risky'}" style="width: ${Math.max(100 - validation.rolloutRate * 100, 0)}%"></div>
                     </div>
-                    <div class="probability-text ${riskClass}">
-                        ${seq.rolloutRate === 0 ? '0%' : rolloutPercent + '%'} Rollout Risk
+                    <div class="probability-text ${isGuaranteed ? 'safe' : 'risky'}">
+                        ${validation.rolloutRate === 0 ? '0%' : rolloutPercent + '%'} Rollout Risk
                     </div>
-                    <div class="sequence-detail">${collapsePercent}% collapsed the hole</div>
+                    <div class="sequence-detail">${(validation.collapseRate * 100).toFixed(1)}% close the hole completely</div>
                 `;
+                grid.appendChild(seqCard);
+            }
 
-                grid.appendChild(card);
-            });
+            // Card 3: Action comparison table
+            const compareCard = document.createElement('div');
+            compareCard.className = 'sequence-card';
+            compareCard.style.background = 'rgba(30, 35, 50, 0.9)';
+
+            let tableRows = '';
+            const sortedActions = Object.entries(actionRisks)
+                .sort((a, b) => {
+                    // Sort by: guaranteed safe first, then by mass (descending)
+                    if (a[1].guaranteedSafe !== b[1].guaranteedSafe) {
+                        return b[1].guaranteedSafe - a[1].guaranteedSafe;
+                    }
+                    const massA = ACTIONS[a[0]].out + ACTIONS[a[0]].back;
+                    const massB = ACTIONS[b[0]].out + ACTIONS[b[0]].back;
+                    return massB - massA;
+                });
+
+            for (const [key, risk] of sortedActions) {
+                const act = ACTIONS[key];
+                const mass = act.out + act.back;
+                const statusColor = risk.guaranteedSafe ? '#8f8' : (risk.rolloutRisk < 0.01 ? '#fc8' : '#f88');
+                const statusText = risk.guaranteedSafe ? 'SAFE' : `${(risk.rolloutRisk * 100).toFixed(2)}%`;
+
+                tableRows += `
+                    <tr style="border-bottom: 1px solid #3a3a5a;">
+                        <td style="padding: 6px; color: #ccc;">${act.label}</td>
+                        <td style="padding: 6px; text-align: right;">${mass} M</td>
+                        <td style="padding: 6px; text-align: right; color: ${statusColor}; font-weight: bold;">${statusText}</td>
+                    </tr>
+                `;
+            }
+
+            compareCard.innerHTML = `
+                <div class="sequence-name">All Actions - Risk Analysis</div>
+                <table style="width: 100%; font-size: 0.9em; margin-top: 10px;">
+                    <tr style="color: #888; border-bottom: 1px solid #4a4a6a;">
+                        <th style="padding: 6px; text-align: left;">Action</th>
+                        <th style="padding: 6px; text-align: right;">Mass</th>
+                        <th style="padding: 6px; text-align: right;">Risk</th>
+                    </tr>
+                    ${tableRows}
+                </table>
+            `;
+            grid.appendChild(compareCard);
         }
 
         function recordJump(type) {
@@ -1158,7 +1220,7 @@
             });
             saveState();
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 10);
         }
@@ -1177,7 +1239,7 @@
             });
             saveState();
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 10);
         }
@@ -1196,7 +1258,7 @@
             });
             saveState();
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 10);
         }
@@ -1240,7 +1302,7 @@
             });
             saveState();
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 10);
         }
@@ -1282,7 +1344,7 @@
             });
             saveState();
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 10);
         }
@@ -1302,7 +1364,7 @@
             });
             saveState();
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 10);
         }
@@ -1322,7 +1384,7 @@
             });
             saveState();
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 10);
         }
@@ -1352,7 +1414,7 @@
             input.value = '';
             saveState();
             setTimeout(() => {
-                runDiscoverySimulations();
+                runStrategyAnalysis();
                 updateDisplay();
             }, 10);
         }
@@ -1368,7 +1430,7 @@
                 }
                 saveState();
                 setTimeout(() => {
-                    runDiscoverySimulations();
+                    runStrategyAnalysis();
                     updateDisplay();
                 }, 10);
             }
@@ -1385,7 +1447,7 @@
                 };
                 saveState();
                 setTimeout(() => {
-                    runDiscoverySimulations();
+                    runStrategyAnalysis();
                     updateDisplay();
                 }, 10);
             }

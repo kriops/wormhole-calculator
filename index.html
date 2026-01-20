@@ -637,12 +637,12 @@
                     <div style="color: #8cf; font-size: 0.9em; margin-bottom: 10px; border-bottom: 1px solid #3a6a5a; padding-bottom: 5px;">Known State</div>
 
                     <button class="btn-recovery" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #2a6a4a, #3a8a6a);" onclick="setFreshHole()">
-                        Fresh Hole (1800-2200 Mt)
+                        Fresh Hole (1800-2200 M)
                     </button>
 
                     <div style="color: #888; font-size: 0.8em; margin-bottom: 5px;">Import from tracker:</div>
                     <div style="display: flex; gap: 8px;">
-                        <input type="number" id="known-mass-input" placeholder="Mass (Mt)"
+                        <input type="number" id="known-mass-input" placeholder="Mass (M)"
                                style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #4a8aaa;
                                       background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace; font-size: 0.9em;">
                         <button class="btn-cold" style="padding: 8px 12px;" onclick="applyKnownMass()">
@@ -656,13 +656,13 @@
                     <div style="color: #fc8; font-size: 0.9em; margin-bottom: 10px; border-bottom: 1px solid #6a5a3a; padding-bottom: 5px;">Unknown Mass (by visual state)</div>
 
                     <button class="btn-recovery" style="width: 100%; margin-bottom: 8px; background: linear-gradient(135deg, #5a6a2a, #7a8a3a);" onclick="setUnknownFresh()">
-                        Still Fresh (900-2200 Mt)
+                        Still Fresh (900-2200 M)
                     </button>
                     <button class="btn-recovery" style="width: 100%; margin-bottom: 8px; background: linear-gradient(135deg, #6a5a2a, #8a7a3a);" onclick="recoverFromShrink()">
-                        Shrunk (180-1100 Mt)
+                        Shrunk (180-1100 M)
                     </button>
                     <button class="btn-recovery" style="width: 100%; background: linear-gradient(135deg, #6a3a3a, #8a4a4a);" onclick="recoverFromCrit()">
-                        Critical (0-220 Mt)
+                        Critical (0-220 M)
                     </button>
                 </div>
             </div>
@@ -684,9 +684,9 @@
                 <span>50% SHRINK</span>
                 <span>100%</span>
             </div>
-            <div class="mass-remaining" id="mass-remaining">2,000 Mt</div>
+            <div class="mass-remaining" id="mass-remaining">2,000 M</div>
             <div class="variance-range" id="variance-range">
-                Possible range: <span class="min" id="range-min">1800</span> - <span class="max" id="range-max">2200</span> Mt
+                Possible range: <span class="min" id="range-min">1800</span> - <span class="max" id="range-max">2200</span> M
             </div>
             <div class="status-badge status-fresh" id="status-badge">FRESH</div>
         </div>
@@ -697,16 +697,16 @@
                 <h3>3. Record Jumps - Round Trip</h3>
                 <div class="btn-group">
                     <button class="btn-cold" onclick="recordJump('cold-cold')">
-                        COLD/COLD (-400 Mt)
+                        COLD/COLD (-400 M)
                     </button>
                     <button class="btn-hot" onclick="recordJump('hot-hot')">
-                        HOT/HOT (-600 Mt)
+                        HOT/HOT (-600 M)
                     </button>
                     <button class="btn-cold" onclick="recordJump('cold-hot')">
-                        COLD/HOT (-500 Mt)
+                        COLD/HOT (-500 M)
                     </button>
                     <button class="btn-hot" onclick="recordJump('hot-cold')">
-                        HOT/COLD (-500 Mt)
+                        HOT/COLD (-500 M)
                     </button>
                 </div>
             </div>
@@ -714,10 +714,10 @@
                 <h3>3. Record Jumps - One Way</h3>
                 <div class="btn-group">
                     <button class="btn-cold" onclick="recordJump('cold-one')">
-                        COLD One-Way (-200 Mt)
+                        COLD One-Way (-200 M)
                     </button>
                     <button class="btn-hot" onclick="recordJump('hot-one')">
-                        HOT One-Way (-300 Mt)
+                        HOT One-Way (-300 M)
                     </button>
                 </div>
             </div>
@@ -769,17 +769,17 @@
             <div class="spec-card">
                 <h3>Total Mass</h3>
                 <div class="value">2,000</div>
-                <div class="unit">Mt (±10%: 1800-2200)</div>
+                <div class="unit">M (±10%: 1800-2200)</div>
             </div>
             <div class="spec-card">
                 <h3>Max Jump Mass</h3>
                 <div class="value">375</div>
-                <div class="unit">Mt</div>
+                <div class="unit">M</div>
             </div>
             <div class="spec-card">
                 <h3>Rolling Ship</h3>
                 <div class="value">200 / 300</div>
-                <div class="unit">Mt Cold / Hot</div>
+                <div class="unit">M Cold / Hot</div>
             </div>
         </div>
 
@@ -1003,12 +1003,12 @@
                 // Account for variance in original hole mass
                 if (seq.fromState === 'shrink') {
                     startMassUsed = 0;
-                    startMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold; // 180 Mt
-                    startMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold; // 1100 Mt
+                    startMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold; // 180 M
+                    startMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold; // 1100 M
                 } else if (seq.fromState === 'crit') {
                     startMassUsed = 0;
                     startMin = 0;
-                    startMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold; // 220 Mt
+                    startMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold; // 220 M
                 }
 
                 const result = simulateSequence(seq, startMassUsed, startMin, startMax);
@@ -1029,7 +1029,7 @@
                     </div>
                     <div class="sequence-detail">${seq.description}</div>
                     <div class="sequence-detail">Steps: ${seq.steps.map(s => s.toUpperCase()).join(' → ')}</div>
-                    <div class="sequence-detail">Total mass: ${seq.steps.reduce((sum, s) => sum + (s === 'hot' ? CONFIG.hotMass : CONFIG.coldMass), 0)} Mt</div>
+                    <div class="sequence-detail">Total mass: ${seq.steps.reduce((sum, s) => sum + (s === 'hot' ? CONFIG.hotMass : CONFIG.coldMass), 0)} M</div>
                     <div class="probability-bar">
                         <div class="probability-fill ${riskClass}" style="width: ${Math.max(100 - result.rolloutRate * 100, 0)}%"></div>
                     </div>
@@ -1059,9 +1059,9 @@
 
         function recoverFromShrink() {
             // Reset to shrink state - we know mass is between 10% and 50% of ORIGINAL mass
-            // Original could have been 1800-2200 Mt, so:
-            // Min: smallest hole at crit boundary = 1800 * 0.10 = 180 Mt
-            // Max: largest hole just shrunk = 2200 * 0.50 = 1100 Mt
+            // Original could have been 1800-2200 M, so:
+            // Min: smallest hole at crit boundary = 1800 * 0.10 = 180 M
+            // Max: largest hole just shrunk = 2200 * 0.50 = 1100 M
             state.massUsed = 0;
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
@@ -1070,7 +1070,7 @@
                 type: 'recovery-shrink',
                 label: 'Recovered: Hole Shrunk',
                 mass: 0,
-                note: 'Reset to shrink state (10-50%)',
+                note: 'Reset to shrink state (180-1100 M)',
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
@@ -1080,9 +1080,9 @@
 
         function recoverFromCrit() {
             // Reset to crit state - we know mass is between 0% and 10% of ORIGINAL mass
-            // Original could have been 1800-2200 Mt, so:
+            // Original could have been 1800-2200 M, so:
             // Min: 0 (could collapse any moment)
-            // Max: largest hole just went crit = 2200 * 0.10 = 220 Mt
+            // Max: largest hole just went crit = 2200 * 0.10 = 220 M
             state.massUsed = 0;
             state.knownMinStart = 0;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
@@ -1091,7 +1091,7 @@
                 type: 'recovery-crit',
                 label: 'Recovered: Hole Crit',
                 mass: 0,
-                note: 'Reset to crit state (0-220 Mt)',
+                note: 'Reset to crit state (0-220 M)',
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
@@ -1102,15 +1102,15 @@
         function setFreshHole() {
             // Brand new hole spawn - full variance range, no mass used
             state.massUsed = 0;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance); // 1800 Mt
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 Mt
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance); // 1800 M
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 M
             state.hasUnknownMass = false;
             state.history = [];
             state.history.push({
                 type: 'setup-fresh',
                 label: 'New Fresh Hole',
                 mass: 0,
-                note: 'Fresh spawn (1800-2200 Mt)',
+                note: 'Fresh spawn (1800-2200 M)',
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
@@ -1121,18 +1121,18 @@
         function setUnknownFresh() {
             // Unknown mass passed but hole still shows as fresh (not shrunk)
             // Remaining mass is 50-100% of original (which was 1800-2200)
-            // Min: 50% of smallest hole = 1800 * 0.50 = 900 Mt
-            // Max: 100% of largest hole = 2200 Mt
+            // Min: 50% of smallest hole = 1800 * 0.50 = 900 M
+            // Max: 100% of largest hole = 2200 M
             state.massUsed = 0;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold; // 900 Mt
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 Mt
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold; // 900 M
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 M
             state.hasUnknownMass = true;
             state.history = [];
             state.history.push({
                 type: 'setup-unknown-fresh',
                 label: 'Unknown Mass (Still Fresh)',
                 mass: 0,
-                note: 'Unknown but >50% (900-2200 Mt)',
+                note: 'Unknown but >50% (900-2200 M)',
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
@@ -1145,21 +1145,21 @@
             const knownMass = parseFloat(input.value);
 
             if (isNaN(knownMass) || knownMass < 0) {
-                alert('Please enter a valid mass value (in Mt)');
+                alert('Please enter a valid mass value (in M)');
                 return;
             }
 
             // Start fresh and apply known mass
             state.massUsed = knownMass;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance); // 1800 Mt
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 Mt
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance); // 1800 M
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 M
             state.hasUnknownMass = false;
             state.history = [];
             state.history.push({
                 type: 'setup-known-mass',
                 label: 'Known Mass Applied',
                 mass: knownMass,
-                note: 'Imported ' + knownMass + ' Mt from tracker',
+                note: 'Imported ' + knownMass + ' M from tracker',
                 timestamp: new Date().toLocaleTimeString()
             });
 
@@ -1217,8 +1217,8 @@
             overlay.style.width = (maxPercent - minPercent) + '%';
 
             // Variance labels
-            document.getElementById('var-min-label').textContent = Math.round(minRemaining) + ' Mt';
-            document.getElementById('var-max-label').textContent = Math.round(maxRemaining) + ' Mt';
+            document.getElementById('var-min-label').textContent = Math.round(minRemaining) + ' M';
+            document.getElementById('var-max-label').textContent = Math.round(maxRemaining) + ' M';
 
             // Determine status based on average
             let status, statusClass;
@@ -1238,7 +1238,7 @@
             document.getElementById('status-badge').textContent = status;
 
             // Update displays
-            document.getElementById('mass-remaining').textContent = Math.round(avgRemaining) + ' Mt';
+            document.getElementById('mass-remaining').textContent = Math.round(avgRemaining) + ' M';
             document.getElementById('range-min').textContent = Math.round(minRemaining);
             document.getElementById('range-max').textContent = Math.round(maxRemaining);
 
@@ -1264,7 +1264,7 @@
 
             // Mass after next hot/hot (worst case)
             const minAfterNext = minRemaining - hotHotMass;
-            document.getElementById('mass-after-next').textContent = Math.round(minAfterNext) + ' Mt';
+            document.getElementById('mass-after-next').textContent = Math.round(minAfterNext) + ' M';
             document.getElementById('mass-after-next').className = 'value ' + (minAfterNext > 0 ? 'safe' : 'warning');
 
             // Next hot/hot safe?
@@ -1298,7 +1298,7 @@
                 const massClass = item.type.startsWith('recovery') ? 'recovery' : 'negative';
                 const massDisplay = item.type.startsWith('recovery')
                     ? item.note
-                    : ('-' + item.mass + ' Mt');
+                    : ('-' + item.mass + ' M');
 
                 return `
                     <div class="history-item">

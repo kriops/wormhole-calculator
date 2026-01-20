@@ -713,8 +713,14 @@
                     <button class="btn-hot" onclick="recordJump('hic-hot-hot')" style="background: linear-gradient(135deg, #5a4a3a, #7a6a4a);">
                         HOT/HOT (-268 M)
                     </button>
+                    <button class="btn-cold" onclick="recordJump('hic-cold-hot')" style="background: linear-gradient(135deg, #3a5a5a, #4a7a6a);">
+                        COLD/HOT (-164 M)
+                    </button>
                     <button class="btn-cold" onclick="recordJump('hic-cold-cold')" style="background: linear-gradient(135deg, #2a5a5a, #3a7a7a);">
                         COLD/COLD (-60 M)
+                    </button>
+                    <button class="btn-recovery" onclick="recordJump('hic-ent-hot')" style="background: linear-gradient(135deg, #5a3a5a, #7a4a6a);">
+                        ENT/HOT (-135.5 M)
                     </button>
                     <button class="btn-recovery" onclick="recordJump('hic-ent-ent')" style="background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
                         ENT/ENT (-3 M)
@@ -874,7 +880,9 @@
             // HIC jumps
             'hic-cold-cold': { mass: CONFIG.hicCold * 2, label: 'HIC Cold/Cold' },
             'hic-hot-hot': { mass: CONFIG.hicHot * 2, label: 'HIC Hot/Hot' },
+            'hic-cold-hot': { mass: CONFIG.hicCold + CONFIG.hicHot, label: 'HIC Cold/Hot' },
             'hic-ent-ent': { mass: CONFIG.hicEnt * 2, label: 'HIC Ent/Ent' },
+            'hic-ent-hot': { mass: CONFIG.hicEnt + CONFIG.hicHot, label: 'HIC Ent/Hot' },
             'hic-ent-one': { mass: CONFIG.hicEnt, label: 'HIC Ent One-Way' }
         };
 
@@ -885,7 +893,9 @@
             'BS_MIXED': { out: CONFIG.bsHot, back: CONFIG.bsCold, label: 'BS H/C', isHic: false },
             'HIC_HOT': { out: CONFIG.hicHot, back: CONFIG.hicHot, label: 'HIC H/H', isHic: true },
             'HIC_COLD': { out: CONFIG.hicCold, back: CONFIG.hicCold, label: 'HIC C/C', isHic: true },
-            'HIC_ENT': { out: CONFIG.hicEnt, back: CONFIG.hicEnt, label: 'HIC E/E', isHic: true }
+            'HIC_COLD_HOT': { out: CONFIG.hicCold, back: CONFIG.hicHot, label: 'HIC C/H', isHic: true },
+            'HIC_ENT': { out: CONFIG.hicEnt, back: CONFIG.hicEnt, label: 'HIC E/E', isHic: true },
+            'HIC_ENT_HOT': { out: CONFIG.hicEnt, back: CONFIG.hicHot, label: 'HIC E/H', isHic: true }
         };
 
         let recommendedStrategy = null;

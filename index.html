@@ -20,7 +20,6 @@
             position: relative;
         }
 
-        /* Starfield background */
         .stars {
             position: fixed;
             top: 0;
@@ -43,7 +42,6 @@
             50% { opacity: 1; }
         }
 
-        /* Wormhole animation */
         .wormhole-bg {
             position: fixed;
             top: 50%;
@@ -71,7 +69,7 @@
         .container {
             position: relative;
             z-index: 1;
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -146,9 +144,9 @@
         .mass-bar-container {
             background: rgba(0, 0, 0, 0.5);
             border-radius: 10px;
-            height: 40px;
+            height: 50px;
             margin: 20px 0;
-            overflow: hidden;
+            overflow: visible;
             position: relative;
             border: 1px solid #3a3a6a;
         }
@@ -157,6 +155,9 @@
             height: 100%;
             transition: width 0.5s ease, background 0.5s ease;
             border-radius: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         .mass-bar.fresh {
@@ -175,6 +176,38 @@
             animation: critPulse 1s infinite;
         }
 
+        .variance-overlay {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.1) 2px,
+                rgba(255, 255, 255, 0.1) 4px
+            );
+            border-radius: 10px;
+            pointer-events: none;
+            border-left: 2px dashed rgba(255, 100, 100, 0.8);
+            border-right: 2px dashed rgba(100, 255, 100, 0.8);
+        }
+
+        .variance-label {
+            position: absolute;
+            top: -20px;
+            font-size: 0.7em;
+            white-space: nowrap;
+        }
+
+        .variance-label.min {
+            color: #f88;
+        }
+
+        .variance-label.max {
+            color: #8f8;
+        }
+
         @keyframes critPulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
@@ -188,15 +221,20 @@
             margin-top: 5px;
         }
 
-        .mass-labels .threshold {
-            position: relative;
-        }
-
         .mass-remaining {
             font-size: 2.5em;
             font-weight: bold;
             margin: 10px 0;
         }
+
+        .variance-range {
+            font-size: 1em;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .variance-range .min { color: #f88; }
+        .variance-range .max { color: #8f8; }
 
         .status-badge {
             display: inline-block;
@@ -318,6 +356,124 @@
             background: linear-gradient(135deg, #6a5a3a, #8a7a4a);
         }
 
+        /* Monte Carlo Section */
+        .monte-carlo {
+            background: rgba(20, 40, 60, 0.9);
+            border: 2px solid #2a6a8a;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .monte-carlo h3 {
+            color: #6cf;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .monte-carlo h3::before {
+            content: "🎲";
+        }
+
+        .simulation-info {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .sequence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .sequence-card {
+            background: rgba(30, 40, 60, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #3a5a7a;
+        }
+
+        .sequence-card.safe {
+            border-color: #4a8a4a;
+            background: rgba(30, 60, 40, 0.8);
+        }
+
+        .sequence-card.risky {
+            border-color: #8a6a2a;
+            background: rgba(60, 50, 30, 0.8);
+        }
+
+        .sequence-card.dangerous {
+            border-color: #8a3a3a;
+            background: rgba(60, 30, 30, 0.8);
+        }
+
+        .sequence-name {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .sequence-detail {
+            color: #aaa;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .probability-bar {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .probability-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .probability-fill.safe {
+            background: linear-gradient(90deg, #2d8a2d, #4aca4a);
+        }
+
+        .probability-fill.risky {
+            background: linear-gradient(90deg, #8a6a2d, #caa044);
+        }
+
+        .probability-fill.dangerous {
+            background: linear-gradient(90deg, #8a2d2d, #ca4444);
+        }
+
+        .probability-text {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .probability-text.safe { color: #8f8; }
+        .probability-text.risky { color: #fc8; }
+        .probability-text.dangerous { color: #f88; }
+
+        .foolproof-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2a6a2a, #4a9a4a);
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 10px;
+            text-transform: uppercase;
+        }
+
         .history {
             background: rgba(20, 20, 50, 0.9);
             border: 1px solid #3a3a6a;
@@ -426,13 +582,8 @@
             font-weight: bold;
         }
 
-        .warning {
-            color: #f88;
-        }
-
-        .safe {
-            color: #8f8;
-        }
+        .warning { color: #f88; }
+        .safe { color: #8f8; }
 
         footer {
             text-align: center;
@@ -457,14 +608,15 @@
             .mass-remaining {
                 font-size: 1.8em;
             }
+
+            .sequence-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Starfield -->
     <div class="stars" id="stars"></div>
-
-    <!-- Wormhole background effect -->
     <div class="wormhole-bg" id="wormhole-bg"></div>
 
     <div class="container">
@@ -484,7 +636,7 @@
             <div class="spec-card">
                 <h3>Total Mass</h3>
                 <div class="value">2,000</div>
-                <div class="unit">Mt (±10%)</div>
+                <div class="unit">Mt (±10%: 1800-2200)</div>
             </div>
             <div class="spec-card">
                 <h3>Max Jump Mass</h3>
@@ -502,16 +654,22 @@
             <h2>Estimated Mass Remaining</h2>
             <div class="mass-bar-container">
                 <div class="mass-bar fresh" id="mass-bar" style="width: 100%"></div>
+                <div class="variance-overlay" id="variance-overlay">
+                    <span class="variance-label min" id="var-min-label"></span>
+                    <span class="variance-label max" id="var-max-label" style="right: 0;"></span>
+                </div>
             </div>
             <div class="mass-labels">
-                <span class="threshold">0%</span>
-                <span class="threshold">10% CRIT</span>
-                <span class="threshold">50% SHRINK</span>
-                <span class="threshold">100%</span>
+                <span>0%</span>
+                <span>10% CRIT</span>
+                <span>50% SHRINK</span>
+                <span>100%</span>
             </div>
             <div class="mass-remaining" id="mass-remaining">2,000 Mt</div>
+            <div class="variance-range" id="variance-range">
+                Possible range: <span class="min" id="range-min">1800</span> - <span class="max" id="range-max">2200</span> Mt
+            </div>
             <div class="status-badge status-fresh" id="status-badge">FRESH</div>
-            <div id="uncertainty" style="color: #888; font-size: 0.9em; margin-top: 10px;"></div>
         </div>
 
         <div class="controls">
@@ -545,9 +703,21 @@
             </div>
         </div>
 
+        <div class="monte-carlo">
+            <h3>Monte Carlo Simulation - Safe Rolling Sequences</h3>
+            <div class="simulation-info">
+                Running 10,000 simulations per sequence to calculate rollout probability.
+                "Rollout" = hole collapses while you're on the wrong side (after odd passes).
+                <strong>Foolproof</strong> sequences have 0% rollout risk even in worst-case variance.
+            </div>
+            <div class="sequence-grid" id="sequence-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
         <div class="recovery-section">
             <h3>Mass Recovery Mode</h3>
-            <p>If unknown mass passed through before you started tracking, use these when the hole shrinks:</p>
+            <p>If unknown mass passed through before you started tracking, use these when the hole changes state:</p>
             <div class="btn-group" style="flex-direction: row; flex-wrap: wrap; gap: 10px;">
                 <button class="btn-recovery" onclick="recoverFromShrink()">
                     Hole Just Shrunk (Reset to 50%)
@@ -559,23 +729,23 @@
         </div>
 
         <div class="prediction">
-            <h3>Predictions</h3>
+            <h3>Conservative Predictions (Worst-Case Variance)</h3>
             <div class="prediction-grid">
                 <div class="prediction-item">
-                    <div class="label">Passes Until Shrink</div>
-                    <div class="value" id="passes-shrink">-</div>
+                    <div class="label">Safe Hot/Hot Passes</div>
+                    <div class="value" id="passes-safe">-</div>
                 </div>
                 <div class="prediction-item">
-                    <div class="label">Passes Until Crit</div>
-                    <div class="value" id="passes-crit">-</div>
-                </div>
-                <div class="prediction-item">
-                    <div class="label">Passes Until Collapse</div>
-                    <div class="value" id="passes-collapse">-</div>
+                    <div class="label">Min Mass After Next Hot/Hot</div>
+                    <div class="value" id="mass-after-next">-</div>
                 </div>
                 <div class="prediction-item">
                     <div class="label">Next Hot/Hot Safe?</div>
                     <div class="value" id="next-safe">-</div>
+                </div>
+                <div class="prediction-item">
+                    <div class="label">Rollout Risk Next Pass</div>
+                    <div class="value" id="rollout-risk">-</div>
                 </div>
             </div>
         </div>
@@ -603,22 +773,23 @@
         // Configuration
         const CONFIG = {
             whType: 'C247',
-            baseMass: 2000, // Mt
-            variance: 0.10, // ±10%
-            maxJumpMass: 300, // Mt
-            coldMass: 200, // Mt
-            hotMass: 300, // Mt
+            baseMass: 2000,
+            variance: 0.10,
+            maxJumpMass: 375,
+            coldMass: 200,
+            hotMass: 300,
             shrinkThreshold: 0.50,
-            critThreshold: 0.10
+            critThreshold: 0.10,
+            simulations: 10000
         };
 
         // State
         let state = {
-            currentMass: CONFIG.baseMass,
-            minPossibleMass: CONFIG.baseMass * (1 - CONFIG.variance),
-            maxPossibleMass: CONFIG.baseMass * (1 + CONFIG.variance),
+            massUsed: 0,
             history: [],
-            hasUnknownMass: false
+            hasUnknownMass: false,
+            knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
+            knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
         };
 
         // Jump definitions
@@ -631,15 +802,56 @@
             'hot-one': { mass: CONFIG.hotMass, label: 'Hot One-Way' }
         };
 
-        // Initialize
+        // Rolling sequences to analyze
+        const SEQUENCES = [
+            {
+                name: "2× Hot/Hot + Cold/Cold",
+                steps: ['hot', 'hot', 'hot', 'hot', 'cold', 'cold'],
+                description: "Standard safe roll from fresh"
+            },
+            {
+                name: "3× Hot/Hot",
+                steps: ['hot', 'hot', 'hot', 'hot', 'hot', 'hot'],
+                description: "Aggressive roll from fresh"
+            },
+            {
+                name: "Hot/Hot + Cold/Hot + Cold",
+                steps: ['hot', 'hot', 'cold', 'hot', 'cold'],
+                description: "Mixed approach"
+            },
+            {
+                name: "2× Hot/Hot + Cold",
+                steps: ['hot', 'hot', 'hot', 'hot', 'cold'],
+                description: "End with one-way cold"
+            },
+            {
+                name: "1× Cold/Cold (from shrink)",
+                steps: ['cold', 'cold'],
+                description: "Safe pass on shrunk hole",
+                fromState: 'shrink'
+            },
+            {
+                name: "1× Hot/Hot (from shrink)",
+                steps: ['hot', 'hot'],
+                description: "Risky pass on shrunk hole",
+                fromState: 'shrink'
+            },
+            {
+                name: "1× Cold (from crit)",
+                steps: ['cold'],
+                description: "One-way cold on crit",
+                fromState: 'crit'
+            }
+        ];
+
         function init() {
             loadState();
             createStarfield();
             createWormholeEffect();
+            runSimulations();
             updateDisplay();
         }
 
-        // Create starfield background
         function createStarfield() {
             const container = document.getElementById('stars');
             for (let i = 0; i < 200; i++) {
@@ -654,7 +866,6 @@
             }
         }
 
-        // Create wormhole effect
         function createWormholeEffect() {
             const container = document.getElementById('wormhole-bg');
             const colors = ['#4af', '#84f', '#a4f', '#f4a', '#fa4'];
@@ -672,102 +883,238 @@
             }
         }
 
-        // Record a jump
+        // Monte Carlo simulation
+        function simulateSequence(sequence, startMassUsed, startMin, startMax) {
+            let rolledOut = 0;
+            let collapsed = 0;
+
+            for (let sim = 0; sim < CONFIG.simulations; sim++) {
+                // Random initial wormhole mass within variance
+                const actualMass = startMin + Math.random() * (startMax - startMin);
+                let remainingMass = actualMass - startMassUsed;
+                let position = 'home'; // 'home' or 'away'
+
+                for (let i = 0; i < sequence.steps.length; i++) {
+                    const step = sequence.steps[i];
+                    const jumpMass = step === 'hot' ? CONFIG.hotMass : CONFIG.coldMass;
+
+                    remainingMass -= jumpMass;
+
+                    if (remainingMass <= 0) {
+                        // Hole collapsed
+                        collapsed++;
+                        if (position === 'home') {
+                            // We jumped out and hole collapsed - rolled out!
+                            rolledOut++;
+                        }
+                        break;
+                    }
+
+                    // Toggle position
+                    position = position === 'home' ? 'away' : 'home';
+                }
+            }
+
+            return {
+                rolloutRate: rolledOut / CONFIG.simulations,
+                collapseRate: collapsed / CONFIG.simulations
+            };
+        }
+
+        // Check if sequence is foolproof (works even with worst variance)
+        function isFoolproof(sequence, startMassUsed, minStart) {
+            let remainingMass = minStart - startMassUsed;
+            let position = 'home';
+
+            for (let i = 0; i < sequence.steps.length; i++) {
+                const step = sequence.steps[i];
+                const jumpMass = step === 'hot' ? CONFIG.hotMass : CONFIG.coldMass;
+
+                remainingMass -= jumpMass;
+                position = position === 'home' ? 'away' : 'home';
+
+                // If we're away and mass could be <= 0, not foolproof
+                if (position === 'away' && remainingMass <= 0) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function runSimulations() {
+            const grid = document.getElementById('sequence-grid');
+            grid.innerHTML = '';
+
+            // Calculate current state
+            const currentMassUsed = state.massUsed;
+            const minRemaining = state.knownMinStart - currentMassUsed;
+            const maxRemaining = state.knownMaxStart - currentMassUsed;
+
+            // Determine current state
+            const avgRemaining = (minRemaining + maxRemaining) / 2;
+            const currentState = avgRemaining <= CONFIG.baseMass * CONFIG.critThreshold ? 'crit' :
+                                 avgRemaining <= CONFIG.baseMass * CONFIG.shrinkThreshold ? 'shrink' : 'fresh';
+
+            SEQUENCES.forEach(seq => {
+                // Skip sequences not meant for current state
+                if (seq.fromState && seq.fromState !== currentState) return;
+                if (!seq.fromState && currentState !== 'fresh') return;
+
+                let startMassUsed = currentMassUsed;
+                let startMin = state.knownMinStart;
+                let startMax = state.knownMaxStart;
+
+                // For state-specific sequences, use that state's starting point
+                if (seq.fromState === 'shrink') {
+                    startMassUsed = 0;
+                    startMin = CONFIG.baseMass * CONFIG.shrinkThreshold * 0.9; // Could be anywhere in shrink range
+                    startMax = CONFIG.baseMass * CONFIG.shrinkThreshold;
+                } else if (seq.fromState === 'crit') {
+                    startMassUsed = 0;
+                    startMin = 0;
+                    startMax = CONFIG.baseMass * CONFIG.critThreshold;
+                }
+
+                const result = simulateSequence(seq, startMassUsed, startMin, startMax);
+                const foolproof = isFoolproof(seq, startMassUsed, startMin);
+
+                const card = document.createElement('div');
+                const riskClass = result.rolloutRate === 0 ? 'safe' :
+                                  result.rolloutRate < 0.05 ? 'risky' : 'dangerous';
+                card.className = `sequence-card ${riskClass}`;
+
+                const rolloutPercent = (result.rolloutRate * 100).toFixed(2);
+                const collapsePercent = (result.collapseRate * 100).toFixed(1);
+
+                card.innerHTML = `
+                    <div class="sequence-name">
+                        ${seq.name}
+                        ${foolproof ? '<span class="foolproof-badge">Foolproof</span>' : ''}
+                    </div>
+                    <div class="sequence-detail">${seq.description}</div>
+                    <div class="sequence-detail">Steps: ${seq.steps.map(s => s.toUpperCase()).join(' → ')}</div>
+                    <div class="sequence-detail">Total mass: ${seq.steps.reduce((sum, s) => sum + (s === 'hot' ? CONFIG.hotMass : CONFIG.coldMass), 0)} Mt</div>
+                    <div class="probability-bar">
+                        <div class="probability-fill ${riskClass}" style="width: ${Math.max(100 - result.rolloutRate * 100, 0)}%"></div>
+                    </div>
+                    <div class="probability-text ${riskClass}">
+                        ${result.rolloutRate === 0 ? '0%' : rolloutPercent + '%'} Rollout Risk
+                    </div>
+                    <div class="sequence-detail">${collapsePercent}% chance hole collapses during sequence</div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
         function recordJump(type) {
             const jump = JUMPS[type];
-            state.currentMass -= jump.mass;
+            state.massUsed += jump.mass;
             state.history.push({
                 type: type,
                 label: jump.label,
-                mass: -jump.mass,
+                mass: jump.mass,
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
+            runSimulations();
             updateDisplay();
         }
 
-        // Recovery from shrink (unknown mass passed)
         function recoverFromShrink() {
-            const shrinkMass = CONFIG.baseMass * CONFIG.shrinkThreshold;
-            state.currentMass = shrinkMass;
+            // Reset to shrink state - we know mass is between 10% and 50%
+            state.massUsed = 0;
+            state.knownMinStart = CONFIG.baseMass * CONFIG.critThreshold;
+            state.knownMaxStart = CONFIG.baseMass * CONFIG.shrinkThreshold;
             state.hasUnknownMass = true;
             state.history.push({
                 type: 'recovery-shrink',
                 label: 'Recovered: Hole Shrunk',
                 mass: 0,
-                note: 'Reset to 50% (' + shrinkMass + ' Mt)',
+                note: 'Reset to shrink state (10-50%)',
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
+            runSimulations();
             updateDisplay();
         }
 
-        // Recovery from crit
         function recoverFromCrit() {
-            const critMass = CONFIG.baseMass * CONFIG.critThreshold;
-            state.currentMass = critMass;
+            // Reset to crit state - we know mass is between 0% and 10%
+            state.massUsed = 0;
+            state.knownMinStart = 0;
+            state.knownMaxStart = CONFIG.baseMass * CONFIG.critThreshold;
             state.hasUnknownMass = true;
             state.history.push({
                 type: 'recovery-crit',
                 label: 'Recovered: Hole Crit',
                 mass: 0,
-                note: 'Reset to 10% (' + critMass + ' Mt)',
+                note: 'Reset to crit state (0-10%)',
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
+            runSimulations();
             updateDisplay();
         }
 
-        // Undo last action
         function undoLast() {
             if (state.history.length > 0) {
                 const last = state.history.pop();
                 if (last.type.startsWith('recovery')) {
-                    // Can't really undo recovery - just note it
                     alert('Recovery actions cannot be undone. Use Reset instead.');
                     state.history.push(last);
                 } else {
-                    state.currentMass -= last.mass; // Subtract negative = add back
+                    state.massUsed -= last.mass;
                 }
                 saveState();
+                runSimulations();
                 updateDisplay();
             }
         }
 
-        // Reset calculator
         function resetCalculator() {
             if (confirm('Reset all tracking? This cannot be undone.')) {
                 state = {
-                    currentMass: CONFIG.baseMass,
-                    minPossibleMass: CONFIG.baseMass * (1 - CONFIG.variance),
-                    maxPossibleMass: CONFIG.baseMass * (1 + CONFIG.variance),
+                    massUsed: 0,
                     history: [],
-                    hasUnknownMass: false
+                    hasUnknownMass: false,
+                    knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
+                    knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
                 };
                 saveState();
+                runSimulations();
                 updateDisplay();
             }
         }
 
-        // Update display
         function updateDisplay() {
-            const percentage = Math.max(0, state.currentMass / CONFIG.baseMass * 100);
-            const massBar = document.getElementById('mass-bar');
-            const massRemaining = document.getElementById('mass-remaining');
-            const statusBadge = document.getElementById('status-badge');
-            const uncertainty = document.getElementById('uncertainty');
+            const minRemaining = Math.max(0, state.knownMinStart - state.massUsed);
+            const maxRemaining = Math.max(0, state.knownMaxStart - state.massUsed);
+            const avgRemaining = (minRemaining + maxRemaining) / 2;
 
             // Update mass bar
-            massBar.style.width = percentage + '%';
+            const massBar = document.getElementById('mass-bar');
+            const avgPercent = (avgRemaining / CONFIG.baseMass) * 100;
+            massBar.style.width = avgPercent + '%';
 
-            // Determine status
+            // Update variance overlay
+            const overlay = document.getElementById('variance-overlay');
+            const minPercent = (minRemaining / (CONFIG.baseMass * 1.1)) * 100;
+            const maxPercent = (maxRemaining / (CONFIG.baseMass * 1.1)) * 100;
+            overlay.style.left = minPercent + '%';
+            overlay.style.width = (maxPercent - minPercent) + '%';
+
+            // Variance labels
+            document.getElementById('var-min-label').textContent = Math.round(minRemaining) + ' Mt';
+            document.getElementById('var-max-label').textContent = Math.round(maxRemaining) + ' Mt';
+
+            // Determine status based on average
             let status, statusClass;
-            const massPercent = state.currentMass / CONFIG.baseMass;
-
-            if (massPercent <= CONFIG.critThreshold) {
+            if (avgRemaining <= CONFIG.baseMass * CONFIG.critThreshold) {
                 status = 'CRITICAL';
                 statusClass = 'crit';
-            } else if (massPercent <= CONFIG.shrinkThreshold) {
+            } else if (avgRemaining <= CONFIG.baseMass * CONFIG.shrinkThreshold) {
                 status = 'SHRUNK';
                 statusClass = 'shrink';
             } else {
@@ -776,67 +1123,58 @@
             }
 
             massBar.className = 'mass-bar ' + statusClass;
-            statusBadge.className = 'status-badge status-' + statusClass;
-            statusBadge.textContent = status;
+            document.getElementById('status-badge').className = 'status-badge status-' + statusClass;
+            document.getElementById('status-badge').textContent = status;
 
-            // Update mass display
-            massRemaining.textContent = state.currentMass.toFixed(1) + ' Mt';
+            // Update displays
+            document.getElementById('mass-remaining').textContent = Math.round(avgRemaining) + ' Mt';
+            document.getElementById('range-min').textContent = Math.round(minRemaining);
+            document.getElementById('range-max').textContent = Math.round(maxRemaining);
 
-            // Uncertainty note
-            if (state.hasUnknownMass) {
-                uncertainty.textContent = '(Recovered from unknown mass - estimates may vary)';
-            } else {
-                const minMass = state.currentMass - (CONFIG.baseMass * CONFIG.variance);
-                const maxMass = state.currentMass + (CONFIG.baseMass * CONFIG.variance);
-                uncertainty.textContent = 'Range: ' + Math.max(0, minMass).toFixed(0) + ' - ' + maxMass.toFixed(0) + ' Mt (±10% variance)';
-            }
-
-            // Update predictions
-            updatePredictions();
-
-            // Update history
+            // Update predictions (worst-case)
+            updatePredictions(minRemaining, maxRemaining);
             updateHistory();
         }
 
-        // Update predictions
-        function updatePredictions() {
+        function updatePredictions(minRemaining, maxRemaining) {
             const hotHotMass = CONFIG.hotMass * 2;
-            const coldColdMass = CONFIG.coldMass * 2;
 
-            const shrinkMass = CONFIG.baseMass * CONFIG.shrinkThreshold;
-            const critMass = CONFIG.baseMass * CONFIG.critThreshold;
+            // Safe passes = how many hot/hot can we do with guaranteed return?
+            // After each round trip, we need min mass > 0
+            let safePasses = 0;
+            let testMass = minRemaining;
+            while (testMass > hotHotMass) {
+                testMass -= hotHotMass;
+                safePasses++;
+            }
 
-            // Passes until shrink (using conservative hot/hot)
-            const passesToShrink = state.currentMass > shrinkMass
-                ? Math.floor((state.currentMass - shrinkMass) / hotHotMass)
-                : 0;
+            document.getElementById('passes-safe').textContent = safePasses + ' Hot/Hot';
+            document.getElementById('passes-safe').className = 'value ' + (safePasses > 0 ? 'safe' : 'warning');
 
-            // Passes until crit
-            const passesToCrit = state.currentMass > critMass
-                ? Math.floor((state.currentMass - critMass) / hotHotMass)
-                : 0;
+            // Mass after next hot/hot (worst case)
+            const minAfterNext = minRemaining - hotHotMass;
+            document.getElementById('mass-after-next').textContent = Math.round(minAfterNext) + ' Mt';
+            document.getElementById('mass-after-next').className = 'value ' + (minAfterNext > 0 ? 'safe' : 'warning');
 
-            // Passes until collapse
-            const passesToCollapse = Math.floor(state.currentMass / hotHotMass);
-
-            // Is next hot/hot safe?
-            const afterNextHotHot = state.currentMass - hotHotMass;
-            const nextSafe = afterNextHotHot > 0;
-
-            document.getElementById('passes-shrink').textContent = passesToShrink > 0 ? passesToShrink + ' Hot/Hot' : 'SHRUNK';
-            document.getElementById('passes-shrink').className = 'value ' + (passesToShrink > 2 ? 'safe' : 'warning');
-
-            document.getElementById('passes-crit').textContent = passesToCrit > 0 ? passesToCrit + ' Hot/Hot' : 'CRIT';
-            document.getElementById('passes-crit').className = 'value ' + (passesToCrit > 1 ? 'safe' : 'warning');
-
-            document.getElementById('passes-collapse').textContent = passesToCollapse + ' Hot/Hot';
-            document.getElementById('passes-collapse').className = 'value ' + (passesToCollapse > 0 ? 'safe' : 'warning');
-
-            document.getElementById('next-safe').textContent = nextSafe ? 'YES' : 'NO - WILL COLLAPSE';
+            // Next hot/hot safe?
+            const nextSafe = minAfterNext > 0;
+            document.getElementById('next-safe').textContent = nextSafe ? 'YES' : 'NO - RISK OF ROLLOUT';
             document.getElementById('next-safe').className = 'value ' + (nextSafe ? 'safe' : 'warning');
+
+            // Rollout risk for next single hot pass
+            // Simulate just one hot pass
+            let rollouts = 0;
+            for (let i = 0; i < CONFIG.simulations; i++) {
+                const actualRemaining = minRemaining + Math.random() * (maxRemaining - minRemaining);
+                if (actualRemaining - CONFIG.hotMass <= 0) {
+                    rollouts++;
+                }
+            }
+            const riskPercent = ((rollouts / CONFIG.simulations) * 100).toFixed(1);
+            document.getElementById('rollout-risk').textContent = riskPercent + '%';
+            document.getElementById('rollout-risk').className = 'value ' + (rollouts === 0 ? 'safe' : 'warning');
         }
 
-        // Update history display
         function updateHistory() {
             const container = document.getElementById('history-list');
 
@@ -849,7 +1187,7 @@
                 const massClass = item.type.startsWith('recovery') ? 'recovery' : 'negative';
                 const massDisplay = item.type.startsWith('recovery')
                     ? item.note
-                    : (item.mass.toFixed(1) + ' Mt');
+                    : ('-' + item.mass + ' Mt');
 
                 return `
                     <div class="history-item">
@@ -860,24 +1198,25 @@
             }).join('');
         }
 
-        // Save state to localStorage
         function saveState() {
-            localStorage.setItem('eedvr-wh-calc', JSON.stringify(state));
+            localStorage.setItem('eedvr-wh-calc-v2', JSON.stringify(state));
         }
 
-        // Load state from localStorage
         function loadState() {
-            const saved = localStorage.getItem('eedvr-wh-calc');
+            const saved = localStorage.getItem('eedvr-wh-calc-v2');
             if (saved) {
                 try {
-                    state = JSON.parse(saved);
+                    const loaded = JSON.parse(saved);
+                    state = {
+                        ...state,
+                        ...loaded
+                    };
                 } catch (e) {
                     console.error('Failed to load saved state');
                 }
             }
         }
 
-        // Initialize on load
         window.onload = init;
     </script>
 </body>

@@ -966,14 +966,15 @@
                 let startMax = state.knownMaxStart;
 
                 // For state-specific sequences, use that state's starting point
+                // Account for variance in original hole mass
                 if (seq.fromState === 'shrink') {
                     startMassUsed = 0;
-                    startMin = CONFIG.baseMass * CONFIG.shrinkThreshold * 0.9; // Could be anywhere in shrink range
-                    startMax = CONFIG.baseMass * CONFIG.shrinkThreshold;
+                    startMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold; // 180 Mt
+                    startMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold; // 1100 Mt
                 } else if (seq.fromState === 'crit') {
                     startMassUsed = 0;
                     startMin = 0;
-                    startMax = CONFIG.baseMass * CONFIG.critThreshold;
+                    startMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold; // 220 Mt
                 }
 
                 const result = simulateSequence(seq, startMassUsed, startMin, startMax);
@@ -1023,10 +1024,13 @@
         }
 
         function recoverFromShrink() {
-            // Reset to shrink state - we know mass is between 10% and 50%
+            // Reset to shrink state - we know mass is between 10% and 50% of ORIGINAL mass
+            // Original could have been 1800-2200 Mt, so:
+            // Min: smallest hole at crit boundary = 1800 * 0.10 = 180 Mt
+            // Max: largest hole just shrunk = 2200 * 0.50 = 1100 Mt
             state.massUsed = 0;
-            state.knownMinStart = CONFIG.baseMass * CONFIG.critThreshold;
-            state.knownMaxStart = CONFIG.baseMass * CONFIG.shrinkThreshold;
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
             state.hasUnknownMass = true;
             state.history.push({
                 type: 'recovery-shrink',
@@ -1041,10 +1045,13 @@
         }
 
         function recoverFromCrit() {
-            // Reset to crit state - we know mass is between 0% and 10%
+            // Reset to crit state - we know mass is between 0% and 10% of ORIGINAL mass
+            // Original could have been 1800-2200 Mt, so:
+            // Min: 0 (could collapse any moment)
+            // Max: largest hole just went crit = 2200 * 0.10 = 220 Mt
             state.massUsed = 0;
             state.knownMinStart = 0;
-            state.knownMaxStart = CONFIG.baseMass * CONFIG.critThreshold;
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
             state.hasUnknownMass = true;
             state.history.push({
                 type: 'recovery-crit',

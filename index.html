@@ -493,7 +493,7 @@
             </div>
             <div class="spec-card">
                 <h3>Rolling Ship</h3>
-                <div class="value">0.2 / 0.3</div>
+                <div class="value">200 / 300</div>
                 <div class="unit">Mt Cold / Hot</div>
             </div>
         </div>
@@ -519,16 +519,16 @@
                 <h3>Record Jump (Round Trip)</h3>
                 <div class="btn-group">
                     <button class="btn-cold" onclick="recordJump('cold-cold')">
-                        COLD/COLD (-0.4 Mt)
+                        COLD/COLD (-400 Mt)
                     </button>
                     <button class="btn-hot" onclick="recordJump('hot-hot')">
-                        HOT/HOT (-0.6 Mt)
+                        HOT/HOT (-600 Mt)
                     </button>
                     <button class="btn-cold" onclick="recordJump('cold-hot')">
-                        COLD/HOT (-0.5 Mt)
+                        COLD/HOT (-500 Mt)
                     </button>
                     <button class="btn-hot" onclick="recordJump('hot-cold')">
-                        HOT/COLD (-0.5 Mt)
+                        HOT/COLD (-500 Mt)
                     </button>
                 </div>
             </div>
@@ -536,10 +536,10 @@
                 <h3>Single Pass</h3>
                 <div class="btn-group">
                     <button class="btn-cold" onclick="recordJump('cold-one')">
-                        COLD One-Way (-0.2 Mt)
+                        COLD One-Way (-200 Mt)
                     </button>
                     <button class="btn-hot" onclick="recordJump('hot-one')">
-                        HOT One-Way (-0.3 Mt)
+                        HOT One-Way (-300 Mt)
                     </button>
                 </div>
             </div>
@@ -606,8 +606,8 @@
             baseMass: 2000, // Mt
             variance: 0.10, // ±10%
             maxJumpMass: 300, // Mt
-            coldMass: 0.2, // Mt
-            hotMass: 0.3, // Mt
+            coldMass: 200, // Mt
+            hotMass: 300, // Mt
             shrinkThreshold: 0.50,
             critThreshold: 0.10
         };

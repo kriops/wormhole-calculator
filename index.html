@@ -1054,10 +1054,11 @@
             return { success: true, steps };  // Didn't collapse but no more actions
         }
 
-        // MCTS: Evaluate an action by running many simulations to terminal
+        // Evaluate an action: immediate safety + simulation for avg steps
         function evaluateActionMCTS(actionKey, belief, startMin, startMax, massUsed, numSims) {
             const act = ACTIONS[actionKey];
-            let successes = 0;
+            let immediateSuccesses = 0;  // Survived this action's outbound jump
+            let terminalSuccesses = 0;   // Successfully closed hole without rollout
             let totalSteps = 0;
 
             for (let i = 0; i < numSims; i++) {
@@ -1065,24 +1066,30 @@
                 const originalMass = startMin + Math.random() * (startMax - startMin);
                 const trueMass = originalMass - massUsed;
 
-                // Check immediate rollout
+                // Check immediate rollout on THIS action
                 if (trueMass <= act.out) {
                     // Would roll out on this action
                     continue;
                 }
 
+                // This action succeeded (didn't roll out)
+                immediateSuccesses++;
+
                 const result = simulateFromAction(actionKey, belief, originalMass, trueMass);
                 if (result.success) {
-                    successes++;
+                    terminalSuccesses++;
                     totalSteps += result.steps;
                 }
             }
 
+            // Success rate = probability THIS action doesn't cause rollout
+            // (not penalized for bad luck in future actions)
             return {
-                successRate: successes / numSims,
-                rolloutRate: 1 - (successes / numSims),
-                avgSteps: successes > 0 ? totalSteps / successes : Infinity,
-                successes,
+                successRate: immediateSuccesses / numSims,
+                terminalRate: terminalSuccesses / numSims,
+                rolloutRate: 1 - (immediateSuccesses / numSims),
+                avgSteps: terminalSuccesses > 0 ? totalSteps / terminalSuccesses : Infinity,
+                successes: immediateSuccesses,
                 total: numSims
             };
         }

@@ -627,96 +627,9 @@
             </div>
         </header>
 
-        <div class="wh-specs">
-            <div class="spec-card">
-                <h3>Wormhole Type</h3>
-                <div class="value">C247</div>
-                <div class="unit">Leads to C3</div>
-            </div>
-            <div class="spec-card">
-                <h3>Total Mass</h3>
-                <div class="value">2,000</div>
-                <div class="unit">Mt (±10%: 1800-2200)</div>
-            </div>
-            <div class="spec-card">
-                <h3>Max Jump Mass</h3>
-                <div class="value">375</div>
-                <div class="unit">Mt</div>
-            </div>
-            <div class="spec-card">
-                <h3>Rolling Ship</h3>
-                <div class="value">200 / 300</div>
-                <div class="unit">Mt Cold / Hot</div>
-            </div>
-        </div>
-
-        <div class="mass-display">
-            <h2>Estimated Mass Remaining</h2>
-            <div class="mass-bar-container">
-                <div class="mass-bar fresh" id="mass-bar" style="width: 100%"></div>
-                <div class="variance-overlay" id="variance-overlay">
-                    <span class="variance-label min" id="var-min-label"></span>
-                    <span class="variance-label max" id="var-max-label" style="right: 0;"></span>
-                </div>
-            </div>
-            <div class="mass-labels">
-                <span>0%</span>
-                <span>10% CRIT</span>
-                <span>50% SHRINK</span>
-                <span>100%</span>
-            </div>
-            <div class="mass-remaining" id="mass-remaining">2,000 Mt</div>
-            <div class="variance-range" id="variance-range">
-                Possible range: <span class="min" id="range-min">1800</span> - <span class="max" id="range-max">2200</span> Mt
-            </div>
-            <div class="status-badge status-fresh" id="status-badge">FRESH</div>
-        </div>
-
-        <div class="controls">
-            <div class="control-section">
-                <h3>Record Jump (Round Trip)</h3>
-                <div class="btn-group">
-                    <button class="btn-cold" onclick="recordJump('cold-cold')">
-                        COLD/COLD (-400 Mt)
-                    </button>
-                    <button class="btn-hot" onclick="recordJump('hot-hot')">
-                        HOT/HOT (-600 Mt)
-                    </button>
-                    <button class="btn-cold" onclick="recordJump('cold-hot')">
-                        COLD/HOT (-500 Mt)
-                    </button>
-                    <button class="btn-hot" onclick="recordJump('hot-cold')">
-                        HOT/COLD (-500 Mt)
-                    </button>
-                </div>
-            </div>
-            <div class="control-section">
-                <h3>Single Pass</h3>
-                <div class="btn-group">
-                    <button class="btn-cold" onclick="recordJump('cold-one')">
-                        COLD One-Way (-200 Mt)
-                    </button>
-                    <button class="btn-hot" onclick="recordJump('hot-one')">
-                        HOT One-Way (-300 Mt)
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="monte-carlo">
-            <h3>Monte Carlo Simulation - Safe Rolling Sequences</h3>
-            <div class="simulation-info">
-                Running 10,000 simulations per sequence to calculate rollout probability.
-                "Rollout" = hole collapses while you're on the wrong side (after odd passes).
-                <strong>Foolproof</strong> sequences have 0% rollout risk even in worst-case variance.
-            </div>
-            <div class="sequence-grid" id="sequence-grid">
-                <!-- Populated by JS -->
-            </div>
-        </div>
-
+        <!-- 1. SETUP: First thing user does -->
         <div class="recovery-section" style="border-color: #2a8a6a; background: rgba(40, 80, 60, 0.3);">
-            <h3 style="color: #6fa;">Hole Setup</h3>
+            <h3 style="color: #6fa;">1. Hole Setup</h3>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <!-- Left column: Known state -->
@@ -755,8 +668,77 @@
             </div>
         </div>
 
+        <!-- 2. CURRENT STATE: Shows mass after setup -->
+        <div class="mass-display">
+            <h3 style="color: #8af; margin-bottom: 15px;">2. Current Mass Estimate</h3>
+            <div class="mass-bar-container">
+                <div class="mass-bar fresh" id="mass-bar" style="width: 100%"></div>
+                <div class="variance-overlay" id="variance-overlay">
+                    <span class="variance-label min" id="var-min-label"></span>
+                    <span class="variance-label max" id="var-max-label" style="right: 0;"></span>
+                </div>
+            </div>
+            <div class="mass-labels">
+                <span>0%</span>
+                <span>10% CRIT</span>
+                <span>50% SHRINK</span>
+                <span>100%</span>
+            </div>
+            <div class="mass-remaining" id="mass-remaining">2,000 Mt</div>
+            <div class="variance-range" id="variance-range">
+                Possible range: <span class="min" id="range-min">1800</span> - <span class="max" id="range-max">2200</span> Mt
+            </div>
+            <div class="status-badge status-fresh" id="status-badge">FRESH</div>
+        </div>
+
+        <!-- 3. RECORD JUMPS: Track mass usage -->
+        <div class="controls">
+            <div class="control-section">
+                <h3>3. Record Jumps - Round Trip</h3>
+                <div class="btn-group">
+                    <button class="btn-cold" onclick="recordJump('cold-cold')">
+                        COLD/COLD (-400 Mt)
+                    </button>
+                    <button class="btn-hot" onclick="recordJump('hot-hot')">
+                        HOT/HOT (-600 Mt)
+                    </button>
+                    <button class="btn-cold" onclick="recordJump('cold-hot')">
+                        COLD/HOT (-500 Mt)
+                    </button>
+                    <button class="btn-hot" onclick="recordJump('hot-cold')">
+                        HOT/COLD (-500 Mt)
+                    </button>
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>3. Record Jumps - One Way</h3>
+                <div class="btn-group">
+                    <button class="btn-cold" onclick="recordJump('cold-one')">
+                        COLD One-Way (-200 Mt)
+                    </button>
+                    <button class="btn-hot" onclick="recordJump('hot-one')">
+                        HOT One-Way (-300 Mt)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. ANALYSIS: Monte Carlo simulation -->
+        <div class="monte-carlo">
+            <h3>4. Monte Carlo Analysis - Safe Rolling Sequences</h3>
+            <div class="simulation-info">
+                Running 10,000 simulations per sequence to calculate rollout probability.
+                "Rollout" = hole collapses while you're on the wrong side (after odd passes).
+                <strong>Foolproof</strong> sequences have 0% rollout risk even in worst-case variance.
+            </div>
+            <div class="sequence-grid" id="sequence-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- 5. PREDICTIONS: Conservative estimates -->
         <div class="prediction">
-            <h3>Conservative Predictions (Worst-Case Variance)</h3>
+            <h3>5. Conservative Predictions (Worst-Case)</h3>
             <div class="prediction-grid">
                 <div class="prediction-item">
                     <div class="label">Safe Hot/Hot Passes</div>
@@ -777,6 +759,31 @@
             </div>
         </div>
 
+        <!-- 6. REFERENCE: WH specs -->
+        <div class="wh-specs">
+            <div class="spec-card">
+                <h3>Wormhole Type</h3>
+                <div class="value">C247</div>
+                <div class="unit">Leads to C3</div>
+            </div>
+            <div class="spec-card">
+                <h3>Total Mass</h3>
+                <div class="value">2,000</div>
+                <div class="unit">Mt (±10%: 1800-2200)</div>
+            </div>
+            <div class="spec-card">
+                <h3>Max Jump Mass</h3>
+                <div class="value">375</div>
+                <div class="unit">Mt</div>
+            </div>
+            <div class="spec-card">
+                <h3>Rolling Ship</h3>
+                <div class="value">200 / 300</div>
+                <div class="unit">Mt Cold / Hot</div>
+            </div>
+        </div>
+
+        <!-- 7. HISTORY: Log of actions -->
         <div class="history">
             <h3>Jump History</h3>
             <div style="margin-bottom: 10px;">

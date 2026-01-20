@@ -1106,15 +1106,29 @@
                 });
             }
 
-            // Sort by: success rate (desc), then steps (asc), then mass (desc)
+            // Sort by: prefer higher mass when success rates are comparable
+            // Logic: Among "safe enough" actions (>= 99% success), prefer higher mass
+            // Only sacrifice mass for significantly better success rate
             results.sort((a, b) => {
-                if (Math.abs(b.successRate - a.successRate) > 0.0001) {
+                const SAFE_THRESHOLD = 0.99;  // 99% success = "safe enough"
+                const aIsSafe = a.successRate >= SAFE_THRESHOLD;
+                const bIsSafe = b.successRate >= SAFE_THRESHOLD;
+
+                // If both are safe, prefer higher mass (faster rolling)
+                if (aIsSafe && bIsSafe) {
+                    return b.mass - a.mass;
+                }
+
+                // If only one is safe, prefer the safe one
+                if (aIsSafe !== bIsSafe) {
+                    return bIsSafe - aIsSafe;
+                }
+
+                // If neither is safe, prefer higher success rate, then higher mass
+                if (Math.abs(b.successRate - a.successRate) > 0.01) {
                     return b.successRate - a.successRate;
                 }
-                if (Math.abs(a.avgSteps - b.avgSteps) > 0.1) {
-                    return a.avgSteps - b.avgSteps;  // Fewer steps is better
-                }
-                return b.mass - a.mass;  // Higher mass is faster
+                return b.mass - a.mass;
             });
 
             return results;

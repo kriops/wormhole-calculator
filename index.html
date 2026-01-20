@@ -737,6 +737,22 @@
             </div>
         </div>
 
+        <!-- 3.5 STATE CHANGE: When hole visual changes while tracking -->
+        <div class="control-section" style="margin-bottom: 20px; border-color: #6a5a2a; background: rgba(60, 50, 30, 0.5);">
+            <h3 style="color: #fc8;">3.5 State Change Observed</h3>
+            <p style="color: #aaa; font-size: 0.85em; margin-bottom: 12px;">
+                Use when hole visual changes <strong>while you're tracking mass</strong>. This combines your tracking data with the new visual state to narrow the estimate.
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button class="btn-recovery" onclick="holeJustShrunk()" style="background: linear-gradient(135deg, #6a5a2a, #8a7a3a); border-color: #aa9a4a;">
+                    Hole Just Shrunk
+                </button>
+                <button class="btn-recovery" onclick="holeJustCrit()" style="background: linear-gradient(135deg, #6a3a3a, #8a4a4a); border-color: #aa5a5a;">
+                    Hole Just Went Crit
+                </button>
+            </div>
+        </div>
+
         <!-- 4. ANALYSIS: Monte Carlo simulation -->
         <div class="monte-carlo">
             <h3>4. Monte Carlo Analysis - Discovered Safe Sequences</h3>
@@ -1174,6 +1190,92 @@
                 label: 'Recovered: Hole Crit',
                 mass: 0,
                 note: 'Reset to crit state (0-220 M)',
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 10);
+        }
+
+        // State change observed while tracking - combine tracking data with state info
+        function holeJustShrunk() {
+            // Calculate current tracked range
+            const trackedMin = state.knownMinStart - state.massUsed;
+            const trackedMax = state.knownMaxStart - state.massUsed;
+
+            // Shrink means remaining is 10%-50% of original (with variance)
+            const shrinkMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;  // 180 M
+            const shrinkMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold; // 1100 M
+
+            // Intersect the ranges
+            let newMin = Math.max(trackedMin, shrinkMin);
+            let newMax = Math.min(trackedMax, shrinkMax);
+            let note;
+
+            // Handle invalid intersection (tracking was wrong)
+            if (newMin > newMax) {
+                newMin = shrinkMin;
+                newMax = shrinkMax;
+                note = `Tracking inconsistent, reset to ${Math.round(shrinkMin)}-${Math.round(shrinkMax)} M`;
+            } else {
+                note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
+            }
+
+            // Reset massUsed and set new narrower starting range
+            state.massUsed = 0;
+            state.knownMinStart = newMin;
+            state.knownMaxStart = newMax;
+            state.hasUnknownMass = false;
+
+            state.history.push({
+                type: 'state-shrunk',
+                label: 'Hole Shrunk (Combined)',
+                mass: 0,
+                note: note,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            setTimeout(() => {
+                runDiscoverySimulations();
+                updateDisplay();
+            }, 10);
+        }
+
+        function holeJustCrit() {
+            // Calculate current tracked range
+            const trackedMin = state.knownMinStart - state.massUsed;
+            const trackedMax = state.knownMaxStart - state.massUsed;
+
+            // Crit means remaining is 0%-10% of original (with variance)
+            const critMin = 0;
+            const critMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold; // 220 M
+
+            // Intersect the ranges
+            let newMin = Math.max(trackedMin, critMin);
+            let newMax = Math.min(trackedMax, critMax);
+            let note;
+
+            // Handle invalid intersection (tracking was wrong)
+            if (newMin > newMax) {
+                newMin = critMin;
+                newMax = critMax;
+                note = `Tracking inconsistent, reset to ${Math.round(critMin)}-${Math.round(critMax)} M`;
+            } else {
+                note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
+            }
+
+            state.massUsed = 0;
+            state.knownMinStart = newMin;
+            state.knownMaxStart = newMax;
+            state.hasUnknownMass = false;
+
+            state.history.push({
+                type: 'state-crit',
+                label: 'Hole Crit (Combined)',
+                mass: 0,
+                note: note,
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();

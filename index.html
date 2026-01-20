@@ -715,16 +715,43 @@
             </div>
         </div>
 
-        <div class="recovery-section">
-            <h3>Mass Recovery Mode</h3>
-            <p>If unknown mass passed through before you started tracking, use these when the hole changes state:</p>
-            <div class="btn-group" style="flex-direction: row; flex-wrap: wrap; gap: 10px;">
-                <button class="btn-recovery" onclick="recoverFromShrink()">
-                    Hole Just Shrunk (Reset to 50%)
-                </button>
-                <button class="btn-recovery" onclick="recoverFromCrit()">
-                    Hole Just Crit (Reset to 10%)
-                </button>
+        <div class="recovery-section" style="border-color: #2a8a6a; background: rgba(40, 80, 60, 0.3);">
+            <h3 style="color: #6fa;">Hole Setup</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Left column: Known state -->
+                <div>
+                    <div style="color: #8cf; font-size: 0.9em; margin-bottom: 10px; border-bottom: 1px solid #3a6a5a; padding-bottom: 5px;">Known State</div>
+
+                    <button class="btn-recovery" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #2a6a4a, #3a8a6a);" onclick="setFreshHole()">
+                        Fresh Hole (1800-2200 Mt)
+                    </button>
+
+                    <div style="color: #888; font-size: 0.8em; margin-bottom: 5px;">Import from tracker:</div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="known-mass-input" placeholder="Mass (Mt)"
+                               style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #4a8aaa;
+                                      background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace; font-size: 0.9em;">
+                        <button class="btn-cold" style="padding: 8px 12px;" onclick="applyKnownMass()">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right column: Unknown mass recovery -->
+                <div>
+                    <div style="color: #fc8; font-size: 0.9em; margin-bottom: 10px; border-bottom: 1px solid #6a5a3a; padding-bottom: 5px;">Unknown Mass (by visual state)</div>
+
+                    <button class="btn-recovery" style="width: 100%; margin-bottom: 8px; background: linear-gradient(135deg, #5a6a2a, #7a8a3a);" onclick="setUnknownFresh()">
+                        Still Fresh (900-2200 Mt)
+                    </button>
+                    <button class="btn-recovery" style="width: 100%; margin-bottom: 8px; background: linear-gradient(135deg, #6a5a2a, #8a7a3a);" onclick="recoverFromShrink()">
+                        Shrunk (180-1100 Mt)
+                    </button>
+                    <button class="btn-recovery" style="width: 100%; background: linear-gradient(135deg, #6a3a3a, #8a4a4a);" onclick="recoverFromCrit()">
+                        Critical (0-220 Mt)
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1057,9 +1084,79 @@
                 type: 'recovery-crit',
                 label: 'Recovered: Hole Crit',
                 mass: 0,
-                note: 'Reset to crit state (0-10%)',
+                note: 'Reset to crit state (0-220 Mt)',
                 timestamp: new Date().toLocaleTimeString()
             });
+            saveState();
+            runSimulations();
+            updateDisplay();
+        }
+
+        function setFreshHole() {
+            // Brand new hole spawn - full variance range, no mass used
+            state.massUsed = 0;
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance); // 1800 Mt
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 Mt
+            state.hasUnknownMass = false;
+            state.history = [];
+            state.history.push({
+                type: 'setup-fresh',
+                label: 'New Fresh Hole',
+                mass: 0,
+                note: 'Fresh spawn (1800-2200 Mt)',
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            runSimulations();
+            updateDisplay();
+        }
+
+        function setUnknownFresh() {
+            // Unknown mass passed but hole still shows as fresh (not shrunk)
+            // Remaining mass is 50-100% of original (which was 1800-2200)
+            // Min: 50% of smallest hole = 1800 * 0.50 = 900 Mt
+            // Max: 100% of largest hole = 2200 Mt
+            state.massUsed = 0;
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold; // 900 Mt
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 Mt
+            state.hasUnknownMass = true;
+            state.history = [];
+            state.history.push({
+                type: 'setup-unknown-fresh',
+                label: 'Unknown Mass (Still Fresh)',
+                mass: 0,
+                note: 'Unknown but >50% (900-2200 Mt)',
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            runSimulations();
+            updateDisplay();
+        }
+
+        function applyKnownMass() {
+            const input = document.getElementById('known-mass-input');
+            const knownMass = parseFloat(input.value);
+
+            if (isNaN(knownMass) || knownMass < 0) {
+                alert('Please enter a valid mass value (in Mt)');
+                return;
+            }
+
+            // Start fresh and apply known mass
+            state.massUsed = knownMass;
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance); // 1800 Mt
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance); // 2200 Mt
+            state.hasUnknownMass = false;
+            state.history = [];
+            state.history.push({
+                type: 'setup-known-mass',
+                label: 'Known Mass Applied',
+                mass: knownMass,
+                note: 'Imported ' + knownMass + ' Mt from tracker',
+                timestamp: new Date().toLocaleTimeString()
+            });
+
+            input.value = '';
             saveState();
             runSimulations();
             updateDisplay();
@@ -1068,8 +1165,8 @@
         function undoLast() {
             if (state.history.length > 0) {
                 const last = state.history.pop();
-                if (last.type.startsWith('recovery')) {
-                    alert('Recovery actions cannot be undone. Use Reset instead.');
+                if (last.type.startsWith('recovery') || last.type.startsWith('setup')) {
+                    alert('Setup/recovery actions cannot be undone. Use a new setup instead.');
                     state.history.push(last);
                 } else {
                     state.massUsed -= last.mass;

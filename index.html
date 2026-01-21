@@ -939,6 +939,77 @@
         .warning { color: #f88; }
         .safe { color: #8f8; }
 
+        /* Fittings Section */
+        .fittings-section {
+            background: rgba(20, 30, 50, 0.9);
+            border: 2px solid #3a5a7a;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .fittings-section h3 {
+            color: #8cf;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .fittings-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .fitting-card {
+            background: rgba(10, 20, 40, 0.8);
+            border: 1px solid #2a4a6a;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .fitting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a4a6a;
+        }
+
+        .ship-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #fc8;
+        }
+
+        .fit-name {
+            font-size: 0.9em;
+            color: #8af;
+        }
+
+        .fitting-mass {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .mass-cold { color: #8cf; }
+        .mass-hot { color: #f88; }
+        .mass-ent { color: #a8f; }
+
+        .fitting-text {
+            font-size: 0.75em;
+            color: #aaa;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 0;
+        }
+
         footer {
             text-align: center;
             padding: 20px;
@@ -973,6 +1044,10 @@
 
             .mcts-distribution {
                 flex: none;
+            }
+
+            .fittings-container {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -1165,6 +1240,95 @@
                 <h3>HIC (Devoter)</h3>
                 <div class="value">30 / 134 / 1.5</div>
                 <div class="unit">M Cold / Hot / Ent</div>
+            </div>
+        </div>
+
+        <!-- 7. FITTINGS: Reference builds -->
+        <div class="fittings-section">
+            <h3>Ship Fittings</h3>
+            <div class="fittings-container">
+                <div class="fitting-card">
+                    <div class="fitting-header">
+                        <span class="ship-name">Apocalypse</span>
+                        <span class="fit-name">WH Roller - Bulk</span>
+                    </div>
+                    <div class="fitting-mass">
+                        <span class="mass-cold">Cold: 200M</span>
+                        <span class="mass-hot">Hot: 300M</span>
+                    </div>
+                    <pre class="fitting-text">[Apocalypse, WH Roller - Bulk]
+Damage Control II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+
+500MN Y-T8 Compact Microwarpdrive
+Large Micro Jump Drive
+Warp Scrambler II
+Eutectic Compact Cap Recharger
+
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Core Probe Launcher I
+
+Large Higgs Anchor I
+Large Transverse Bulkhead I
+Large Transverse Bulkhead I
+
+Hornet EC-300 x5
+
+Mobile Depot
+Prototype Cloaking Device I
+Warp Core Stabilizer I
+Core Scanner Probe I x16</pre>
+                </div>
+                <div class="fitting-card">
+                    <div class="fitting-header">
+                        <span class="ship-name">Devoter</span>
+                        <span class="fit-name">WH Roller - Precision</span>
+                    </div>
+                    <div class="fitting-mass">
+                        <span class="mass-cold">Cold: 30M</span>
+                        <span class="mass-hot">Hot: 134M</span>
+                        <span class="mass-ent">Ent: 1.5M</span>
+                    </div>
+                    <pre class="fitting-text">[Devoter, WH Roller - Precision]
+Nanofiber Internal Structure II
+Nanofiber Internal Structure II
+Nanofiber Internal Structure II
+Inertial Stabilizers II
+Capacitor Flux Coil II
+Reactor Control Unit II
+Co-Processor II
+
+500MN Y-T8 Compact Microwarpdrive
+Eutectic Compact Cap Recharger
+100MN Y-S8 Compact Afterburner
+
+Zero-Point Mass Entangler
+Zero-Point Mass Entangler
+Zero-Point Mass Entangler
+Zero-Point Mass Entangler
+Core Probe Launcher I, Sisters Core Scanner Probe
+Prototype Cloaking Device I
+
+Medium Higgs Anchor I
+Medium Ancillary Current Router II
+
+Hornet EC-300 x10
+
+Sisters Core Scanner Probe x8
+Warp Core Stabilizer I</pre>
+                </div>
             </div>
         </div>
 

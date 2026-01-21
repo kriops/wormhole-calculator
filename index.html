@@ -688,7 +688,10 @@
             <div class="variance-range" id="variance-range">
                 Possible range: <span class="min" id="range-min">1800</span> - <span class="max" id="range-max">2200</span> M
             </div>
-            <div class="status-badge status-fresh" id="status-badge">FRESH</div>
+            <div style="display: flex; gap: 15px; justify-content: center; align-items: center; margin-top: 10px;">
+                <div class="status-badge status-fresh" id="status-badge">FRESH</div>
+                <div class="status-badge" id="position-badge" style="background: rgba(74, 138, 74, 0.3); border: 2px solid #4a8a4a; color: #8f8;">HOME</div>
+            </div>
         </div>
 
         <!-- 3. RECORD: Actions and Observations side by side -->
@@ -742,17 +745,44 @@
                 </div>
             </div>
             <div class="control-section" style="border-color: #8a6a2a; background: rgba(80, 60, 30, 0.4);">
-                <h3 style="color: #fc8;">3d. Observed State</h3>
+                <h3 style="color: #fc8;">3d. Observed</h3>
                 <div class="btn-group">
-                    <button class="btn-recovery" onclick="holeJustShrunk()" style="background: linear-gradient(135deg, #7a6a2a, #9a8a3a); border-color: #ba9a4a; font-size: 1.1em; padding: 15px;">
-                        HOLE SHRUNK
+                    <button class="btn-recovery" onclick="holeJustShrunk()" style="background: linear-gradient(135deg, #7a6a2a, #9a8a3a); border-color: #ba9a4a; font-size: 1em; padding: 12px;">
+                        SHRUNK
                     </button>
-                    <button class="btn-recovery" onclick="holeJustCrit()" style="background: linear-gradient(135deg, #7a3a3a, #9a4a4a); border-color: #ba5a5a; font-size: 1.1em; padding: 15px;">
-                        HOLE CRIT
+                    <button class="btn-recovery" onclick="holeJustCrit()" style="background: linear-gradient(135deg, #7a3a3a, #9a4a4a); border-color: #ba5a5a; font-size: 1em; padding: 12px;">
+                        CRIT
                     </button>
                 </div>
-                <div style="color: #aaa; font-size: 0.75em; margin-top: 8px; text-align: center;">
-                    Narrows estimate using visual state
+            </div>
+        </div>
+
+        <!-- Single Jump Tracking (for mid-roundtrip observations) -->
+        <div class="control-section" style="margin-bottom: 20px; border-color: #5a7a8a; background: rgba(40, 60, 80, 0.4);">
+            <h3 style="color: #8cf;">Single Jump Tracking <span id="position-indicator" style="font-size: 0.8em;">(You are HOME)</span></h3>
+            <p style="color: #aaa; font-size: 0.8em; margin-bottom: 10px;">
+                Use when you need to record a jump and observation separately (e.g., you jumped out, saw shrink, deciding how to return).
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div id="outbound-buttons">
+                    <div style="color: #8af; font-size: 0.85em; margin-bottom: 8px;">Jump OUT (home → away)</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                        <button class="btn-hot" onclick="recordJumpOut('BS_HOT')" style="padding: 8px; font-size: 0.85em;">BS Hot</button>
+                        <button class="btn-cold" onclick="recordJumpOut('BS_COLD')" style="padding: 8px; font-size: 0.85em;">BS Cold</button>
+                        <button class="btn-hot" onclick="recordJumpOut('HIC_HOT')" style="padding: 8px; font-size: 0.85em;">HIC Hot</button>
+                        <button class="btn-cold" onclick="recordJumpOut('HIC_COLD')" style="padding: 8px; font-size: 0.85em;">HIC Cold</button>
+                        <button class="btn-recovery" onclick="recordJumpOut('HIC_ENT')" style="padding: 8px; font-size: 0.85em; grid-column: 1 / -1;">HIC Ent</button>
+                    </div>
+                </div>
+                <div id="return-buttons">
+                    <div style="color: #fa8; font-size: 0.85em; margin-bottom: 8px;">Jump BACK (away → home)</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                        <button class="btn-hot" onclick="recordJumpBack('BS_HOT')" style="padding: 8px; font-size: 0.85em;">BS Hot</button>
+                        <button class="btn-cold" onclick="recordJumpBack('BS_COLD')" style="padding: 8px; font-size: 0.85em;">BS Cold</button>
+                        <button class="btn-hot" onclick="recordJumpBack('HIC_HOT')" style="padding: 8px; font-size: 0.85em;">HIC Hot</button>
+                        <button class="btn-cold" onclick="recordJumpBack('HIC_COLD')" style="padding: 8px; font-size: 0.85em;">HIC Cold</button>
+                        <button class="btn-recovery" onclick="recordJumpBack('HIC_ENT')" style="padding: 8px; font-size: 0.85em; grid-column: 1 / -1;">HIC Ent</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -866,7 +896,8 @@
             history: [],
             hasUnknownMass: false,
             knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
-            knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
+            knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance),
+            position: 'home'  // 'home' or 'away'
         };
 
         // Jump definitions for manual tracking
@@ -887,10 +918,20 @@
         };
 
         // Action types for MC simulation
+        // Single jump actions (the atomic unit)
+        const SINGLE_JUMPS = {
+            'BS_HOT': { mass: CONFIG.bsHot, label: 'BS Hot', ship: 'BS' },
+            'BS_COLD': { mass: CONFIG.bsCold, label: 'BS Cold', ship: 'BS' },
+            'HIC_HOT': { mass: CONFIG.hicHot, label: 'HIC Hot', ship: 'HIC' },
+            'HIC_COLD': { mass: CONFIG.hicCold, label: 'HIC Cold', ship: 'HIC' },
+            'HIC_ENT': { mass: CONFIG.hicEnt, label: 'HIC Ent', ship: 'HIC' }
+        };
+
+        // Round trip combinations (for convenience display, built from single jumps)
         const ACTIONS = {
             'BS_HOT': { out: CONFIG.bsHot, back: CONFIG.bsHot, label: 'BS H/H', isHic: false },
             'BS_COLD': { out: CONFIG.bsCold, back: CONFIG.bsCold, label: 'BS C/C', isHic: false },
-            'BS_MIXED': { out: CONFIG.bsHot, back: CONFIG.bsCold, label: 'BS H/C', isHic: false },
+            'BS_COLD_HOT': { out: CONFIG.bsCold, back: CONFIG.bsHot, label: 'BS C/H', isHic: false },
             'HIC_HOT': { out: CONFIG.hicHot, back: CONFIG.hicHot, label: 'HIC H/H', isHic: true },
             'HIC_COLD': { out: CONFIG.hicCold, back: CONFIG.hicCold, label: 'HIC C/C', isHic: true },
             'HIC_COLD_HOT': { out: CONFIG.hicCold, back: CONFIG.hicHot, label: 'HIC C/H', isHic: true },
@@ -999,39 +1040,70 @@
             return null;
         }
 
-        // Simulate from taking a specific first action until terminal
+        // Pick best return action when away (maximize mass while being safe-ish)
+        function pickReturnAction(belief) {
+            // When returning, we WANT to collapse the hole ideally
+            // Pick highest mass that doesn't guarantee rollout
+            const returns = [
+                { key: 'BS_HOT', mass: CONFIG.bsHot },
+                { key: 'BS_COLD', mass: CONFIG.bsCold },
+                { key: 'HIC_HOT', mass: CONFIG.hicHot },
+                { key: 'HIC_COLD', mass: CONFIG.hicCold },
+                { key: 'HIC_ENT', mass: CONFIG.hicEnt }
+            ].sort((a, b) => b.mass - a.mass);
+
+            // If hole might collapse, pick something that uses good mass
+            // Prefer to collapse it on the way home
+            for (const r of returns) {
+                // If max remaining > mass, we might survive. If min < mass, might collapse (good!)
+                if (belief.max > r.mass || belief.min <= r.mass) {
+                    return r;
+                }
+            }
+            return returns[returns.length - 1];  // Safest option
+        }
+
+        // Simulate from taking a specific outbound action until terminal
+        // Models: jump out -> observe -> jump back -> repeat
         // Returns { success: bool, steps: number }
         function simulateFromAction(firstActionKey, belief, originalMass, trueMass) {
             let remaining = trueMass;
             let currentBelief = { min: belief.min, max: belief.max };
             let steps = 1;
+            let position = 'home';
 
-            // Execute first action
+            // Execute first action (outbound)
             const firstAct = ACTIONS[firstActionKey];
 
-            // Outbound jump
-            const prevRemaining = remaining;
+            // OUTBOUND JUMP
+            let prevRemaining = remaining;
             remaining -= firstAct.out;
+            position = 'away';
+
             if (remaining <= 0) {
-                return { success: false, steps };  // Rollout on first action
+                return { success: false, steps };  // Collapsed while jumping OUT = rollout
             }
 
-            // Check for observation after outbound (before return)
-            // Note: observation happens when we're on the other side and see the hole state
+            // OBSERVATION while away
             currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prevRemaining);
             currentBelief.min = Math.max(0, currentBelief.min - firstAct.out);
             currentBelief.max = Math.max(0, currentBelief.max - firstAct.out);
 
-            // Return jump
+            // RETURN JUMP (use the back mass from the action)
+            prevRemaining = remaining;
             remaining -= firstAct.back;
+            position = 'home';
+
+            // Observation after return
+            currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prevRemaining);
             currentBelief.min = Math.max(0, currentBelief.min - firstAct.back);
             currentBelief.max = Math.max(0, currentBelief.max - firstAct.back);
 
             if (remaining <= 0) {
-                return { success: true, steps };  // Collapsed on return - home safe
+                return { success: true, steps };  // Collapsed while jumping HOME = success!
             }
 
-            // Continue with more actions until terminal
+            // Continue with more round trips until terminal
             while (remaining > 0 && steps < 30) {
                 const actionKey = pickSimulationAction(currentBelief);
                 if (!actionKey) break;
@@ -1039,25 +1111,32 @@
                 const act = ACTIONS[actionKey];
                 steps++;
 
-                // Outbound
-                const prev = remaining;
+                // OUTBOUND
+                prevRemaining = remaining;
                 remaining -= act.out;
+                position = 'away';
+
                 if (remaining <= 0) {
                     return { success: false, steps };  // Rollout
                 }
 
-                // Update belief with observation
-                currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prev);
+                // Observation while away
+                currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prevRemaining);
                 currentBelief.min = Math.max(0, currentBelief.min - act.out);
                 currentBelief.max = Math.max(0, currentBelief.max - act.out);
 
-                // Return
+                // RETURN
+                prevRemaining = remaining;
                 remaining -= act.back;
+                position = 'home';
+
+                // Observation after return
+                currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prevRemaining);
                 currentBelief.min = Math.max(0, currentBelief.min - act.back);
                 currentBelief.max = Math.max(0, currentBelief.max - act.back);
 
                 if (remaining <= 0) {
-                    return { success: true, steps };  // Home safe
+                    return { success: true, steps };  // Collapsed while jumping HOME = success!
                 }
             }
 
@@ -1356,6 +1435,50 @@
             }, 10);
         }
 
+        // Record a single outbound jump (home -> away)
+        function recordJumpOut(jumpType) {
+            if (state.position !== 'home') {
+                alert('You are already away! Record a return jump or observation first.');
+                return;
+            }
+            const jump = SINGLE_JUMPS[jumpType];
+            state.massUsed += jump.mass;
+            state.position = 'away';
+            state.history.push({
+                type: 'jump-out-' + jumpType,
+                label: jump.label + ' OUT',
+                mass: jump.mass,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        // Record a single return jump (away -> home)
+        function recordJumpBack(jumpType) {
+            if (state.position !== 'away') {
+                alert('You are already home! Record an outbound jump first.');
+                return;
+            }
+            const jump = SINGLE_JUMPS[jumpType];
+            state.massUsed += jump.mass;
+            state.position = 'home';
+            state.history.push({
+                type: 'jump-back-' + jumpType,
+                label: jump.label + ' BACK',
+                mass: jump.mass,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
         function recoverFromShrink() {
             state.massUsed = 0;
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
@@ -1574,7 +1697,8 @@
                     history: [],
                     hasUnknownMass: false,
                     knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
-                    knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
+                    knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance),
+                    position: 'home'
                 };
                 saveState();
                 setTimeout(() => {
@@ -1621,6 +1745,25 @@
             massBar.className = 'mass-bar ' + statusClass;
             document.getElementById('status-badge').className = 'status-badge status-' + statusClass;
             document.getElementById('status-badge').textContent = status;
+
+            // Update position badge
+            const positionBadge = document.getElementById('position-badge');
+            const positionIndicator = document.getElementById('position-indicator');
+            if (state.position === 'away') {
+                positionBadge.textContent = 'AWAY';
+                positionBadge.style.background = 'rgba(196, 100, 68, 0.3)';
+                positionBadge.style.borderColor = '#c46444';
+                positionBadge.style.color = '#faa';
+                if (positionIndicator) positionIndicator.textContent = '(You are AWAY - need to jump back!)';
+                if (positionIndicator) positionIndicator.style.color = '#faa';
+            } else {
+                positionBadge.textContent = 'HOME';
+                positionBadge.style.background = 'rgba(74, 138, 74, 0.3)';
+                positionBadge.style.borderColor = '#4a8a4a';
+                positionBadge.style.color = '#8f8';
+                if (positionIndicator) positionIndicator.textContent = '(You are HOME)';
+                if (positionIndicator) positionIndicator.style.color = '#8cf';
+            }
 
             // Update displays
             document.getElementById('mass-remaining').textContent = Math.round(avgRemaining) + ' M';

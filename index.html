@@ -338,6 +338,20 @@
             box-shadow: 0 0 15px rgba(150, 100, 200, 0.5);
         }
 
+        .state-option {
+            opacity: 0.6;
+        }
+
+        .state-option.selected {
+            opacity: 1;
+            box-shadow: 0 0 15px rgba(100, 200, 150, 0.5);
+            transform: scale(1.02);
+        }
+
+        .state-option:hover {
+            opacity: 0.9;
+        }
+
         .btn-reset {
             background: linear-gradient(135deg, #3a3a3a, #5a5a5a);
             color: #ccc;
@@ -811,42 +825,56 @@
         <div class="recovery-section" style="border-color: #2a8a6a; background: rgba(40, 80, 60, 0.3);">
             <h3 style="color: #6fa;">1. Hole Setup</h3>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <!-- Left column: Known state -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Visual state selection -->
                 <div>
-                    <div style="color: #8cf; font-size: 0.9em; margin-bottom: 10px; border-bottom: 1px solid #3a6a5a; padding-bottom: 5px;">Known State</div>
-
-                    <button class="btn-recovery" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #2a6a4a, #3a8a6a);" onclick="setFreshHole()">
-                        Fresh Hole (1800-2200 M)
-                    </button>
-
-                    <div style="color: #888; font-size: 0.8em; margin-bottom: 5px;">Mass already passed through:</div>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="number" id="known-mass-input" placeholder="Mass used (M)"
-                               style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #4a8aaa;
-                                      background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace; font-size: 0.9em;">
-                        <button class="btn-cold" style="padding: 8px 12px;" onclick="applyKnownMass()">
-                            Apply
-                        </button>
-                    </div>
-                    <div style="color: #666; font-size: 0.7em; margin-top: 4px;">
-                        Note: Hole base is always 1800-2200 M (±10% variance)
+                    <div style="color: #8cf; font-size: 0.9em; margin-bottom: 10px;">Current visual state:</div>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="flex: 1; cursor: pointer;">
+                            <input type="radio" name="hole-state" value="normal" checked style="display: none;">
+                            <div class="state-option" id="state-normal" style="padding: 12px; border-radius: 8px; text-align: center;
+                                        background: linear-gradient(135deg, #2a6a4a, #3a8a6a); border: 2px solid #4a8a6a;
+                                        transition: all 0.2s;">
+                                <div style="font-weight: bold; color: #6fa;">Normal</div>
+                                <div style="font-size: 0.75em; color: #8cf; margin-top: 3px;">&gt;50% remaining</div>
+                            </div>
+                        </label>
+                        <label style="flex: 1; cursor: pointer;">
+                            <input type="radio" name="hole-state" value="reduced" style="display: none;">
+                            <div class="state-option" id="state-reduced" style="padding: 12px; border-radius: 8px; text-align: center;
+                                        background: linear-gradient(135deg, #4a4a2a, #6a6a3a); border: 2px solid #6a6a4a;
+                                        transition: all 0.2s;">
+                                <div style="font-weight: bold; color: #fc8;">Reduced</div>
+                                <div style="font-size: 0.75em; color: #ca8; margin-top: 3px;">10-50% remaining</div>
+                            </div>
+                        </label>
+                        <label style="flex: 1; cursor: pointer;">
+                            <input type="radio" name="hole-state" value="critical" style="display: none;">
+                            <div class="state-option" id="state-critical" style="padding: 12px; border-radius: 8px; text-align: center;
+                                        background: linear-gradient(135deg, #5a3a3a, #7a4a4a); border: 2px solid #7a5a5a;
+                                        transition: all 0.2s;">
+                                <div style="font-weight: bold; color: #f88;">Critical</div>
+                                <div style="font-size: 0.75em; color: #faa; margin-top: 3px;">&lt;10% remaining</div>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
-                <!-- Right column: Unknown mass recovery -->
+                <!-- Mass already used (optional) -->
                 <div>
-                    <div style="color: #fc8; font-size: 0.9em; margin-bottom: 10px; border-bottom: 1px solid #6a5a3a; padding-bottom: 5px;">Unknown Mass (by visual state)</div>
-
-                    <button class="btn-recovery" style="width: 100%; margin-bottom: 8px; background: linear-gradient(135deg, #5a6a2a, #7a8a3a);" onclick="setUnknownFresh()">
-                        Still Fresh (900-2200 M)
-                    </button>
-                    <button class="btn-recovery" style="width: 100%; margin-bottom: 8px; background: linear-gradient(135deg, #6a5a2a, #8a7a3a);" onclick="recoverFromShrink()">
-                        Shrunk (180-1100 M)
-                    </button>
-                    <button class="btn-recovery" style="width: 100%; background: linear-gradient(135deg, #6a3a3a, #8a4a4a);" onclick="recoverFromCrit()">
-                        Critical (0-220 M)
-                    </button>
+                    <div style="color: #888; font-size: 0.9em; margin-bottom: 8px;">Mass already passed through (optional):</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="setup-mass-input" placeholder="0" min="0"
+                               style="width: 120px; padding: 10px; border-radius: 6px; border: 1px solid #4a8aaa;
+                                      background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace; font-size: 1em;">
+                        <span style="color: #888;">M</span>
+                        <button class="btn-recovery" style="padding: 10px 20px; background: linear-gradient(135deg, #2a6a4a, #3a8a6a);" onclick="applyHoleSetup()">
+                            Apply Setup
+                        </button>
+                    </div>
+                    <div style="color: #666; font-size: 0.75em; margin-top: 6px;">
+                        C247 base mass: 2000M ±10% (1800-2200M)
+                    </div>
                 </div>
             </div>
         </div>
@@ -1083,6 +1111,7 @@
             loadState();
             createStarfield();
             createWormholeEffect();
+            initStateSelection();
             // Run analysis asynchronously to not block UI
             setTimeout(() => {
                 runStrategyAnalysis();
@@ -2253,72 +2282,88 @@
             }, 10);
         }
 
-        function setFreshHole() {
-            clearMctsTree();
-            state.massUsed = 0;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
-            state.hasUnknownMass = false;
-            state.history = [];  // Reset history (position will be home)
-            state.history.push({
-                type: 'setup-fresh',
-                label: 'New Fresh Hole',
-                mass: 0,
-                note: 'Fresh spawn (1800-2200 M)',
-                timestamp: new Date().toLocaleTimeString()
+        // Initialize state selection UI
+        function initStateSelection() {
+            const radios = document.querySelectorAll('input[name="hole-state"]');
+            radios.forEach(radio => {
+                radio.addEventListener('change', updateStateSelection);
             });
-            saveState();
-            setTimeout(() => {
-                runStrategyAnalysis();
-                updateDisplay();
-            }, 10);
+            updateStateSelection();  // Set initial state
         }
 
-        function setUnknownFresh() {
-            clearMctsTree();
-            state.massUsed = 0;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold;
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
-            state.hasUnknownMass = true;
-            state.history = [];  // Reset history (position will be home)
-            state.history.push({
-                type: 'setup-unknown-fresh',
-                label: 'Unknown Mass (Still Fresh)',
-                mass: 0,
-                note: 'Unknown but >50% (900-2200 M)',
-                timestamp: new Date().toLocaleTimeString()
-            });
-            saveState();
-            setTimeout(() => {
-                runStrategyAnalysis();
-                updateDisplay();
-            }, 10);
+        function updateStateSelection() {
+            const selected = document.querySelector('input[name="hole-state"]:checked')?.value || 'normal';
+            document.querySelectorAll('.state-option').forEach(opt => opt.classList.remove('selected'));
+            document.getElementById('state-' + selected)?.classList.add('selected');
         }
 
-        function applyKnownMass() {
-            const input = document.getElementById('known-mass-input');
-            const knownMass = parseFloat(input.value);
+        // Unified hole setup function
+        function applyHoleSetup() {
+            const visualState = document.querySelector('input[name="hole-state"]:checked')?.value || 'normal';
+            const massInput = document.getElementById('setup-mass-input');
+            const massUsed = parseFloat(massInput.value) || 0;
 
-            if (isNaN(knownMass) || knownMass < 0) {
-                alert('Please enter a valid mass value (in M)');
+            if (massUsed < 0) {
+                alert('Mass cannot be negative');
                 return;
             }
 
             clearMctsTree();
-            state.massUsed = knownMass;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
-            state.hasUnknownMass = false;
-            state.history = [];  // Reset history (position will be home)
+
+            // Calculate belief bounds based on visual state
+            const baseMin = CONFIG.baseMass * (1 - CONFIG.variance);  // 1800
+            const baseMax = CONFIG.baseMass * (1 + CONFIG.variance);  // 2200
+            const shrinkThreshold = CONFIG.shrinkThreshold;  // 0.5
+            const critThreshold = CONFIG.critThreshold;      // 0.1
+
+            let minStart, maxStart, label, note;
+
+            if (visualState === 'normal') {
+                // Normal: >50% remaining
+                // If massUsed > 0, we know total > 2 * massUsed (since still >50% remaining)
+                minStart = Math.max(baseMin, massUsed > 0 ? 2 * massUsed + 1 : baseMin);
+                maxStart = baseMax;
+                label = 'Setup: Normal';
+                note = `Normal state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+            } else if (visualState === 'reduced') {
+                // Reduced: 10-50% remaining
+                // remaining is 10-50% of total → total is in range [massUsed/0.9, 2*massUsed]
+                // But also constrained by base variance
+                const impliedMin = massUsed > 0 ? massUsed / 0.9 : baseMin * critThreshold;
+                const impliedMax = massUsed > 0 ? 2 * massUsed : baseMax * shrinkThreshold;
+                minStart = Math.max(baseMin * critThreshold, impliedMin);  // At least 180M (crit lower bound)
+                maxStart = Math.min(baseMax, impliedMax);  // At most 2200M
+                // Ensure valid range
+                if (minStart > maxStart) {
+                    minStart = baseMin * critThreshold;
+                    maxStart = baseMax * shrinkThreshold;
+                }
+                label = 'Setup: Reduced';
+                note = `Reduced state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+            } else {  // critical
+                // Critical: <10% remaining
+                // remaining is <10% of total → total ≤ massUsed / 0.9
+                const impliedMax = massUsed > 0 ? massUsed / 0.9 : baseMax * critThreshold;
+                minStart = 0;
+                maxStart = Math.min(baseMax * critThreshold, impliedMax);  // At most 220M
+                label = 'Setup: Critical';
+                note = `Critical state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+            }
+
+            state.massUsed = massUsed;
+            state.knownMinStart = minStart;
+            state.knownMaxStart = maxStart;
+            state.hasUnknownMass = massUsed === 0;
+            state.history = [];
             state.history.push({
-                type: 'setup-known-mass',
-                label: 'Mass Used Applied',
-                mass: knownMass,
-                note: knownMass + ' M already passed through hole',
+                type: 'setup-' + visualState,
+                label: label,
+                mass: massUsed,
+                note: note,
                 timestamp: new Date().toLocaleTimeString()
             });
 
-            input.value = '';
+            massInput.value = '';
             saveState();
             setTimeout(() => {
                 runStrategyAnalysis();
@@ -2329,18 +2374,95 @@
         function undoLast() {
             if (state.history.length > 0) {
                 const last = state.history.pop();
-                if (last.type.startsWith('recovery') || last.type.startsWith('setup') || last.type.startsWith('state-')) {
-                    alert('Setup/recovery/state-change actions cannot be undone. Use a new setup instead.');
+                if (last.type.startsWith('setup')) {
+                    // Setup actions cannot be undone - they reset everything
+                    alert('Setup actions cannot be undone. Use a new setup instead.');
                     state.history.push(last);
+                } else if (last.type.startsWith('state-')) {
+                    // State changes (shrunk/crit) CAN be undone
+                    // We need to restore the previous belief state
+                    // Since state changes reset massUsed to 0, we need to restore from history
+                    // For simplicity, just clear and rebuild from remaining history
+                    clearMctsTree();
+                    rebuildStateFromHistory();
                 } else {
+                    // Normal jump - just subtract mass
                     state.massUsed -= last.mass;
-                    clearMctsTree();  // Tree may no longer be valid
+                    clearMctsTree();
                 }
                 saveState();
                 setTimeout(() => {
                     runStrategyAnalysis();
                     updateDisplay();
                 }, 10);
+            }
+        }
+
+        // Rebuild state from history after undoing a state change
+        function rebuildStateFromHistory() {
+            // Find the last setup entry
+            let setupIndex = -1;
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                if (state.history[i].type.startsWith('setup')) {
+                    setupIndex = i;
+                    break;
+                }
+            }
+
+            if (setupIndex === -1) {
+                // No setup found, reset to fresh
+                state.massUsed = 0;
+                state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
+                state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                state.hasUnknownMass = false;
+            } else {
+                // Replay from setup
+                const setup = state.history[setupIndex];
+                // Determine initial state from setup type
+                if (setup.type === 'setup-normal') {
+                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
+                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                } else if (setup.type === 'setup-reduced') {
+                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
+                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
+                } else if (setup.type === 'setup-critical') {
+                    state.knownMinStart = 0;
+                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
+                } else {
+                    // Legacy setup types
+                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
+                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                }
+                state.massUsed = setup.mass || 0;
+                state.hasUnknownMass = setup.mass === 0;
+            }
+
+            // Replay all jumps and state changes after setup
+            for (let i = setupIndex + 1; i < state.history.length; i++) {
+                const entry = state.history[i];
+                if (entry.type.startsWith('jump-')) {
+                    state.massUsed += entry.mass;
+                } else if (entry.type === 'state-shrunk') {
+                    // Apply shrink narrowing
+                    const trackedMin = state.knownMinStart - state.massUsed;
+                    const trackedMax = state.knownMaxStart - state.massUsed;
+                    const shrinkMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
+                    const shrinkMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
+                    state.knownMinStart = Math.max(trackedMin, shrinkMin);
+                    state.knownMaxStart = Math.min(trackedMax, shrinkMax);
+                    state.massUsed = 0;
+                    state.hasUnknownMass = false;
+                } else if (entry.type === 'state-crit') {
+                    // Apply crit narrowing
+                    const trackedMin = state.knownMinStart - state.massUsed;
+                    const trackedMax = state.knownMaxStart - state.massUsed;
+                    const critMin = 0;
+                    const critMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
+                    state.knownMinStart = Math.max(trackedMin, critMin);
+                    state.knownMaxStart = Math.min(trackedMax, critMax);
+                    state.massUsed = 0;
+                    state.hasUnknownMass = false;
+                }
             }
         }
 

@@ -3444,21 +3444,25 @@ Sisters Core Scanner Probe x8</pre>
                 note = `Normal state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
             } else if (visualState === 'reduced') {
                 // Reduced: 10-50% remaining
-                // With minimum mass semantics, we can only constrain the lower bound
-                // Lower bound: total > massMin / 0.9 (since remaining > 10% means massUsed < 0.9 * total)
-                const impliedMin = massUsed > 0 ? massUsed / 0.9 : baseMin;
-                minStart = Math.max(baseMin, impliedMin);
-                // Upper bound: just base variance (can't constrain tightly from minimum mass alone)
-                maxStart = baseMax;
+                // Bounds represent REMAINING mass (10-50% of original total)
+                // If massUsed > 0: tighter bounds from the constraint that it just shrunk
+                const impliedMin = massUsed > 0 ? massUsed / 0.9 : baseMin * critThreshold;
+                const impliedMax = massUsed > 0 ? 2 * massUsed : baseMax * shrinkThreshold;
+                minStart = Math.max(baseMin * critThreshold, impliedMin);  // At least 180M
+                maxStart = Math.min(baseMax, impliedMax);  // At most 1100M when mass=0
+                // Ensure valid range
+                if (minStart > maxStart) {
+                    minStart = baseMin * critThreshold;
+                    maxStart = baseMax * shrinkThreshold;
+                }
                 label = 'Setup: Reduced';
-                note = `Reduced state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+                note = `Reduced state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
             } else {  // critical
                 // Critical: <10% remaining
-                // Lower bound: total > massUsed (hole hasn't collapsed)
-                minStart = massUsed > 0 ? massUsed + 1 : 0;
-                // Upper bound: critical means remaining < 10% of total
-                // With minimum mass semantics, use baseMax * critThreshold as upper bound
-                maxStart = baseMax * critThreshold;
+                // Bounds represent REMAINING mass (<10% of original total)
+                const impliedMax = massUsed > 0 ? massUsed / 0.9 : baseMax * critThreshold;
+                minStart = 0;
+                maxStart = Math.min(baseMax * critThreshold, impliedMax);  // At most 220M
                 label = 'Setup: Critical';
                 note = `Critical state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
             }

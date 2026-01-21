@@ -1,0 +1,2915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EEDVR Wormhole Rolling Calculator | J215101</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230a0a2a'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%234af' stroke-width='3' opacity='0.8'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%2384f' stroke-width='3' opacity='0.6'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='%23a4f' stroke-width='3' opacity='0.4'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23f4a' opacity='0.8'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230a0a2a'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%234af' stroke-width='3' opacity='0.8'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%2384f' stroke-width='3' opacity='0.6'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='%23a4f' stroke-width='3' opacity='0.4'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23f4a' opacity='0.8'/%3E%3C/svg%3E">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a2a 100%);
+            min-height: 100vh;
+            color: #e0e0ff;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .wormhole-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wormhole-ring {
+            position: absolute;
+            border: 2px solid;
+            border-radius: 50%;
+            animation: pulse 4s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(20, 20, 50, 0.8);
+            border: 1px solid #4a4a8a;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(100, 100, 200, 0.3);
+        }
+
+        h1 {
+            color: #8af;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(136, 170, 255, 0.5);
+        }
+
+        .system-info {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .system-info span {
+            color: #6cf;
+        }
+
+        .wh-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .spec-card {
+            background: rgba(30, 30, 60, 0.9);
+            border: 1px solid #3a3a6a;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .spec-card h3 {
+            color: #7af;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .spec-card .value {
+            color: #fff;
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+
+        .spec-card .unit {
+            color: #888;
+            font-size: 0.8em;
+        }
+
+        .mass-display {
+            background: rgba(20, 20, 50, 0.9);
+            border: 2px solid #4a4a8a;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .mass-bar-container {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            height: 50px;
+            margin: 20px 0;
+            overflow: visible;
+            position: relative;
+            border: 1px solid #3a3a6a;
+        }
+
+        .mass-bar {
+            height: 100%;
+            transition: width 0.5s ease, background 0.5s ease;
+            border-radius: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .mass-bar.fresh {
+            background: linear-gradient(90deg, #2d5a2d, #4a8a4a);
+            box-shadow: 0 0 20px rgba(74, 138, 74, 0.5);
+        }
+
+        .mass-bar.shrink {
+            background: linear-gradient(90deg, #8a6a2d, #c4a044);
+            box-shadow: 0 0 20px rgba(196, 160, 68, 0.5);
+        }
+
+        .mass-bar.crit {
+            background: linear-gradient(90deg, #8a2d2d, #c44444);
+            box-shadow: 0 0 20px rgba(196, 68, 68, 0.5);
+            animation: critPulse 1s infinite;
+        }
+
+        .variance-overlay {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.1) 2px,
+                rgba(255, 255, 255, 0.1) 4px
+            );
+            border-radius: 10px;
+            pointer-events: none;
+            border-left: 2px dashed rgba(255, 100, 100, 0.8);
+            border-right: 2px dashed rgba(100, 255, 100, 0.8);
+        }
+
+        .variance-label {
+            position: absolute;
+            top: -20px;
+            font-size: 0.7em;
+            white-space: nowrap;
+        }
+
+        .variance-label.min {
+            color: #f88;
+        }
+
+        .variance-label.max {
+            color: #8f8;
+        }
+
+        @keyframes critPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .mass-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .mass-remaining {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .variance-range {
+            font-size: 1em;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .variance-range .min { color: #f88; }
+        .variance-range .max { color: #8f8; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .status-fresh {
+            background: rgba(74, 138, 74, 0.3);
+            border: 2px solid #4a8a4a;
+            color: #8f8;
+        }
+
+        .status-shrink {
+            background: rgba(196, 160, 68, 0.3);
+            border: 2px solid #c4a044;
+            color: #fc8;
+        }
+
+        .status-crit {
+            background: rgba(196, 68, 68, 0.3);
+            border: 2px solid #c44444;
+            color: #f88;
+            animation: critPulse 1s infinite;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-section {
+            background: rgba(30, 30, 60, 0.9);
+            border: 1px solid #3a3a6a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .control-section h3 {
+            color: #8af;
+            margin-bottom: 15px;
+            font-size: 1em;
+            border-bottom: 1px solid #3a3a6a;
+            padding-bottom: 10px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cold {
+            background: linear-gradient(135deg, #2a4a6a, #3a6a9a);
+            color: #adf;
+            border: 1px solid #4a8aaa;
+        }
+
+        .btn-cold:hover {
+            background: linear-gradient(135deg, #3a5a7a, #4a7aaa);
+            box-shadow: 0 0 15px rgba(100, 150, 200, 0.5);
+        }
+
+        .btn-hot {
+            background: linear-gradient(135deg, #6a3a2a, #9a5a3a);
+            color: #fca;
+            border: 1px solid #aa6a4a;
+        }
+
+        .btn-hot:hover {
+            background: linear-gradient(135deg, #7a4a3a, #aa6a4a);
+            box-shadow: 0 0 15px rgba(200, 100, 80, 0.5);
+        }
+
+        .btn-recovery {
+            background: linear-gradient(135deg, #4a3a6a, #6a4a9a);
+            color: #daf;
+            border: 1px solid #8a6aaa;
+        }
+
+        .btn-recovery:hover {
+            background: linear-gradient(135deg, #5a4a7a, #7a5aaa);
+            box-shadow: 0 0 15px rgba(150, 100, 200, 0.5);
+        }
+
+        .state-option {
+            opacity: 0.6;
+        }
+
+        .state-option.selected {
+            opacity: 1;
+            box-shadow: 0 0 15px rgba(100, 200, 150, 0.5);
+            transform: scale(1.02);
+        }
+
+        .state-option:hover {
+            opacity: 0.9;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #3a3a3a, #5a5a5a);
+            color: #ccc;
+            border: 1px solid #6a6a6a;
+        }
+
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #4a4a4a, #6a6a6a);
+        }
+
+        .btn-undo {
+            background: linear-gradient(135deg, #5a4a2a, #7a6a3a);
+            color: #ed9;
+            border: 1px solid #8a7a4a;
+        }
+
+        .btn-undo:hover {
+            background: linear-gradient(135deg, #6a5a3a, #8a7a4a);
+        }
+
+        /* Recommended button highlight */
+        .jump-btn.recommended {
+            box-shadow: 0 0 15px #4a8a4a, 0 0 30px #4a8a4a;
+            border-color: #6aca6a !important;
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px #4a8a4a, 0 0 30px #4a8a4a; }
+            50% { box-shadow: 0 0 25px #6aca6a, 0 0 45px #4a8a4a; }
+        }
+
+        /* Combined Action Panel Layout */
+        .action-history-container {
+            display: grid;
+            grid-template-columns: auto auto 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .jump-buttons-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .jump-buttons-vertical .jump-btn {
+            padding: 12px 15px;
+            font-size: 0.95em;
+            white-space: nowrap;
+        }
+
+        .inline-history {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .inline-history .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.85em;
+        }
+
+        .inline-history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #3a5a6a;
+        }
+
+        .inline-history-header h4 {
+            color: #8af;
+            font-size: 0.95em;
+            margin: 0;
+        }
+
+        @media (max-width: 600px) {
+            .action-history-container {
+                grid-template-columns: 1fr;
+            }
+            .jump-buttons-vertical {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .jump-buttons-vertical .jump-btn {
+                flex: 1;
+                min-width: 80px;
+            }
+        }
+
+        /* Observation prompt */
+        #observation-prompt {
+            background: rgba(60, 40, 20, 0.95);
+            border: 2px solid #c4a044;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .observation-question {
+            color: #fc8;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .observation-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .observation-buttons button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid;
+            font-weight: bold;
+        }
+
+        /* Observation reminder after jump */
+        .observation-reminder {
+            animation: remind-pulse 2s ease-in-out 3;
+        }
+
+        @keyframes remind-pulse {
+            0%, 100% {
+                background: rgba(60, 40, 20, 0.3);
+                box-shadow: none;
+            }
+            50% {
+                background: rgba(100, 80, 40, 0.5);
+                box-shadow: 0 0 15px rgba(200, 160, 80, 0.5);
+            }
+        }
+
+        /* Observation Buttons */
+        .observation-buttons-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 90px;
+        }
+
+        .obs-btn {
+            padding: 12px 15px;
+            font-size: 0.95em;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .obs-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .btn-normal {
+            background: linear-gradient(135deg, #3a4a3a, #4a5a4a);
+            color: #8f8;
+            border: 2px solid #5a7a5a;
+        }
+
+        .btn-normal:not(:disabled):hover {
+            box-shadow: 0 0 15px rgba(80, 200, 80, 0.4);
+        }
+
+        .btn-shrunk {
+            background: linear-gradient(135deg, #5a4a2a, #7a6a3a);
+            color: #fc8;
+            border: 2px solid #9a8a4a;
+        }
+
+        .btn-shrunk:not(:disabled):hover {
+            box-shadow: 0 0 15px rgba(200, 160, 80, 0.4);
+        }
+
+        .btn-crit {
+            background: linear-gradient(135deg, #5a2a2a, #7a3a3a);
+            color: #f88;
+            border: 2px solid #9a4a4a;
+        }
+
+        .btn-crit:not(:disabled):hover {
+            box-shadow: 0 0 15px rgba(200, 80, 80, 0.4);
+        }
+
+        .obs-btn.required {
+            animation: obs-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes obs-pulse {
+            0%, 100% { box-shadow: 0 0 10px currentColor; }
+            50% { box-shadow: 0 0 25px currentColor; }
+        }
+
+        .obs-spacer {
+            flex: 1;
+            min-height: 8px;
+        }
+
+        .observation-buttons-vertical .btn-copy,
+        .observation-buttons-vertical .btn-undo,
+        .observation-buttons-vertical .btn-reset {
+            padding: 8px 12px;
+            font-size: 0.85em;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all 0.2s ease;
+        }
+
+        .observation-buttons-vertical .btn-copy {
+            background: linear-gradient(135deg, #2a4a5a, #3a5a6a);
+            color: #8cf;
+            border-color: #4a7a9a;
+        }
+
+        .observation-buttons-vertical .btn-copy:hover {
+            background: linear-gradient(135deg, #3a5a6a, #4a6a7a);
+        }
+
+        .observation-buttons-vertical .btn-undo {
+            background: linear-gradient(135deg, #5a4a2a, #6a5a3a);
+            color: #ed9;
+            border-color: #8a7a4a;
+        }
+
+        .observation-buttons-vertical .btn-undo:hover {
+            background: linear-gradient(135deg, #6a5a3a, #7a6a4a);
+        }
+
+        .observation-buttons-vertical .btn-reset {
+            background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
+            color: #ccc;
+            border-color: #6a6a6a;
+        }
+
+        .observation-buttons-vertical .btn-reset:hover {
+            background: linear-gradient(135deg, #4a4a4a, #5a5a5a);
+        }
+
+        /* Monte Carlo Section */
+        .monte-carlo {
+            background: rgba(20, 40, 60, 0.9);
+            border: 2px solid #2a6a8a;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .monte-carlo h3 {
+            color: #6cf;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .monte-carlo h3::before {
+            content: "🎲";
+        }
+
+        .simulation-info {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .sequence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .sequence-card {
+            background: rgba(30, 40, 60, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #3a5a7a;
+        }
+
+        .sequence-card.safe {
+            border-color: #4a8a4a;
+            background: rgba(30, 60, 40, 0.8);
+        }
+
+        .sequence-card.risky {
+            border-color: #8a6a2a;
+            background: rgba(60, 50, 30, 0.8);
+        }
+
+        .sequence-card.dangerous {
+            border-color: #8a3a3a;
+            background: rgba(60, 30, 30, 0.8);
+        }
+
+        .sequence-name {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .sequence-detail {
+            color: #aaa;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .probability-bar {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .probability-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .probability-fill.safe {
+            background: linear-gradient(90deg, #2d8a2d, #4aca4a);
+        }
+
+        .probability-fill.risky {
+            background: linear-gradient(90deg, #8a6a2d, #caa044);
+        }
+
+        .probability-fill.dangerous {
+            background: linear-gradient(90deg, #8a2d2d, #ca4444);
+        }
+
+        .probability-text {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .probability-text.safe { color: #8f8; }
+        .probability-text.risky { color: #fc8; }
+        .probability-text.dangerous { color: #f88; }
+
+        .foolproof-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2a6a2a, #4a9a4a);
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Horizontal MCTS Results Layout */
+        .mcts-results {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mcts-recommendation {
+            background: rgba(30, 60, 40, 0.9);
+            border: 2px solid #4a8a4a;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .mcts-recommendation.risky {
+            background: rgba(60, 50, 30, 0.9);
+            border-color: #8a6a2a;
+        }
+
+        .mcts-recommendation.dangerous {
+            background: rgba(60, 30, 30, 0.9);
+            border-color: #8a3a3a;
+        }
+
+        .mcts-rec-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .mcts-rec-stats {
+            color: #8f8;
+            font-size: 0.95em;
+        }
+
+        .mcts-details {
+            display: flex;
+            gap: 12px;
+        }
+
+        .mcts-distribution {
+            flex: 0 0 180px;
+            background: rgba(30, 40, 60, 0.8);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #3a5a7a;
+        }
+
+        .mcts-distribution-title {
+            color: #8af;
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .mcts-distribution-item {
+            color: #aaa;
+            font-size: 0.9em;
+            padding: 2px 0;
+        }
+
+        .mcts-distribution-footer {
+            color: #666;
+            font-size: 0.75em;
+            margin-top: 8px;
+            border-top: 1px solid #3a5a7a;
+            padding-top: 8px;
+        }
+
+        .mcts-comparison {
+            flex: 1;
+            background: rgba(30, 40, 60, 0.8);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #3a5a7a;
+            overflow-x: auto;
+        }
+
+        .mcts-comparison-title {
+            color: #8af;
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .mcts-comparison table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .mcts-comparison th {
+            color: #888;
+            font-weight: normal;
+            text-align: left;
+            padding: 4px 8px;
+            border-bottom: 1px solid #4a5a7a;
+        }
+
+        .mcts-comparison td {
+            padding: 6px 8px;
+            color: #ccc;
+            border-bottom: 1px solid rgba(60, 80, 100, 0.3);
+        }
+
+        .mcts-comparison tr:first-child td {
+            color: #8f8;
+            font-weight: bold;
+        }
+
+        .history {
+            background: rgba(20, 20, 50, 0.9);
+            border: 1px solid #3a3a6a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .history h3 {
+            color: #8af;
+            margin-bottom: 15px;
+            font-size: 1em;
+            border-bottom: 1px solid #3a3a6a;
+            padding-bottom: 10px;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+
+        .history-item {
+            padding: 8px;
+            border-bottom: 1px solid rgba(60, 60, 100, 0.5);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-item .action {
+            color: #aaa;
+        }
+
+        .history-item .mass-change {
+            font-weight: bold;
+        }
+
+        .history-item .mass-change.negative {
+            color: #f88;
+        }
+
+        .history-item .mass-change.recovery {
+            color: #8f8;
+        }
+
+        .recovery-section {
+            background: rgba(80, 40, 80, 0.3);
+            border: 2px solid #8a4a8a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .recovery-section h3 {
+            color: #faf;
+            margin-bottom: 10px;
+        }
+
+        .recovery-section p {
+            color: #caa;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .prediction {
+            background: rgba(30, 30, 60, 0.9);
+            border: 1px solid #3a3a6a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .prediction h3 {
+            color: #8af;
+            margin-bottom: 15px;
+            font-size: 1em;
+            border-bottom: 1px solid #3a3a6a;
+            padding-bottom: 10px;
+        }
+
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .prediction-item {
+            background: rgba(40, 40, 70, 0.5);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .prediction-item .label {
+            color: #888;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .prediction-item .value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .warning { color: #f88; }
+        .safe { color: #8f8; }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        footer a {
+            color: #88f;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            .mass-remaining {
+                font-size: 1.8em;
+            }
+
+            .sequence-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .mcts-details {
+                flex-direction: column;
+            }
+
+            .mcts-distribution {
+                flex: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="wormhole-bg" id="wormhole-bg"></div>
+
+    <div class="container">
+        <header>
+            <h1>EEDVR Wormhole Rolling Calculator</h1>
+            <div class="system-info">
+                Home System: <span>J215101</span> | Static: <span>C247 (C3 Static)</span>
+            </div>
+        </header>
+
+        <!-- 1. SETUP: First thing user does -->
+        <div class="recovery-section" style="border-color: #2a8a6a; background: rgba(40, 80, 60, 0.3);">
+            <h3 style="color: #6fa;">1. Hole Setup</h3>
+
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Visual state selection -->
+                <div>
+                    <div style="color: #8cf; font-size: 0.9em; margin-bottom: 10px;">Current visual state:</div>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="flex: 1; cursor: pointer;">
+                            <input type="radio" name="hole-state" value="normal" checked style="display: none;">
+                            <div class="state-option" id="state-normal" style="padding: 12px; border-radius: 8px; text-align: center;
+                                        background: linear-gradient(135deg, #2a6a4a, #3a8a6a); border: 2px solid #4a8a6a;
+                                        transition: all 0.2s;">
+                                <div style="font-weight: bold; color: #6fa;">Normal</div>
+                                <div style="font-size: 0.75em; color: #8cf; margin-top: 3px;">&gt;50% remaining</div>
+                            </div>
+                        </label>
+                        <label style="flex: 1; cursor: pointer;">
+                            <input type="radio" name="hole-state" value="reduced" style="display: none;">
+                            <div class="state-option" id="state-reduced" style="padding: 12px; border-radius: 8px; text-align: center;
+                                        background: linear-gradient(135deg, #4a4a2a, #6a6a3a); border: 2px solid #6a6a4a;
+                                        transition: all 0.2s;">
+                                <div style="font-weight: bold; color: #fc8;">Reduced</div>
+                                <div style="font-size: 0.75em; color: #ca8; margin-top: 3px;">10-50% remaining</div>
+                            </div>
+                        </label>
+                        <label style="flex: 1; cursor: pointer;">
+                            <input type="radio" name="hole-state" value="critical" style="display: none;">
+                            <div class="state-option" id="state-critical" style="padding: 12px; border-radius: 8px; text-align: center;
+                                        background: linear-gradient(135deg, #5a3a3a, #7a4a4a); border: 2px solid #7a5a5a;
+                                        transition: all 0.2s;">
+                                <div style="font-weight: bold; color: #f88;">Critical</div>
+                                <div style="font-size: 0.75em; color: #faa; margin-top: 3px;">&lt;10% remaining</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Mass already used (optional) -->
+                <div>
+                    <div style="color: #888; font-size: 0.9em; margin-bottom: 8px;">Mass already passed through (optional):</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="setup-mass-input" placeholder="0" min="0"
+                               style="width: 120px; padding: 10px; border-radius: 6px; border: 1px solid #4a8aaa;
+                                      background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace; font-size: 1em;">
+                        <span style="color: #888;">M</span>
+                        <button class="btn-recovery" style="padding: 10px 20px; background: linear-gradient(135deg, #2a6a4a, #3a8a6a);" onclick="applyHoleSetup()">
+                            Apply Setup
+                        </button>
+                    </div>
+                    <div style="color: #666; font-size: 0.75em; margin-top: 6px;">
+                        C247 base mass: 2000M ±10% (1800-2200M)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CURRENT STATE: Shows mass after setup -->
+        <div class="mass-display">
+            <h3 style="color: #8af; margin-bottom: 15px;">2. Current Mass Estimate</h3>
+            <div class="mass-bar-container">
+                <div class="mass-bar fresh" id="mass-bar" style="width: 100%"></div>
+                <div class="variance-overlay" id="variance-overlay">
+                    <span class="variance-label min" id="var-min-label"></span>
+                    <span class="variance-label max" id="var-max-label" style="right: 0;"></span>
+                </div>
+            </div>
+            <div class="mass-labels">
+                <span>0%</span>
+                <span>10% CRIT</span>
+                <span>50% SHRINK</span>
+                <span>100%</span>
+            </div>
+            <div class="mass-remaining" id="mass-remaining">2,000 M</div>
+            <div class="variance-range" id="variance-range">
+                Possible range: <span class="min" id="range-min">1800</span> - <span class="max" id="range-max">2200</span> M
+            </div>
+            <div style="display: flex; gap: 15px; justify-content: center; align-items: center; margin-top: 10px;">
+                <div class="status-badge status-fresh" id="status-badge">FRESH</div>
+                <div class="status-badge" id="position-badge" style="background: rgba(74, 138, 74, 0.3); border: 2px solid #4a8a4a; color: #8f8;">HOME</div>
+            </div>
+        </div>
+
+        <!-- 3. JUMP ACTIONS + HISTORY (combined panel) -->
+        <div id="action-panel" class="control-section" style="margin-bottom: 20px; border-color: #4a8a6a; background: rgba(30, 60, 50, 0.4);">
+            <h3 style="color: #8cf; display: flex; justify-content: space-between; align-items: center;">
+                <span>Record Jump</span>
+                <span id="direction-label" style="font-size: 0.9em; color: #8f8;">→ Jumping OUT</span>
+            </h3>
+            <div class="action-history-container">
+                <div class="jump-buttons-vertical">
+                    <button class="btn-hot jump-btn" data-jump="BS_HOT" onclick="recordSingleJump('BS_HOT')">
+                        BS Hot → <span style="opacity: 0.7;">300M</span>
+                    </button>
+                    <button class="btn-cold jump-btn" data-jump="BS_COLD" onclick="recordSingleJump('BS_COLD')">
+                        BS Cold → <span style="opacity: 0.7;">200M</span>
+                    </button>
+                    <button class="btn-hot jump-btn" data-jump="HIC_HOT" onclick="recordSingleJump('HIC_HOT')" style="background: linear-gradient(135deg, #5a4a3a, #7a6a4a);">
+                        HIC Hot → <span style="opacity: 0.7;">134M</span>
+                    </button>
+                    <button class="btn-cold jump-btn" data-jump="HIC_COLD" onclick="recordSingleJump('HIC_COLD')" style="background: linear-gradient(135deg, #2a5a5a, #3a7a7a);">
+                        HIC Cold → <span style="opacity: 0.7;">30M</span>
+                    </button>
+                    <button class="btn-recovery jump-btn" data-jump="HIC_ENT" onclick="recordSingleJump('HIC_ENT')" style="background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
+                        HIC Ent → <span style="opacity: 0.7;">1.5M</span>
+                    </button>
+                </div>
+                <div class="observation-buttons-vertical">
+                    <button id="btn-normal" class="btn-normal obs-btn" onclick="recordNormalObservation()" disabled>
+                        NORMAL
+                    </button>
+                    <button id="btn-shrunk" class="btn-shrunk obs-btn" onclick="holeJustShrunk()" disabled>
+                        SHRUNK
+                    </button>
+                    <button id="btn-crit" class="btn-crit obs-btn" onclick="holeJustCrit()" disabled>
+                        CRIT
+                    </button>
+                    <div class="obs-spacer"></div>
+                    <button class="btn-copy" onclick="copyEventLog()">Copy</button>
+                    <button class="btn-undo" onclick="undoLast()">Undo</button>
+                    <button class="btn-reset" onclick="resetCalculator()">Reset</button>
+                </div>
+                <div class="inline-history">
+                    <div class="inline-history-header">
+                        <h4>Event Log</h4>
+                    </div>
+                    <div class="history-list" id="history-list">
+                        <div class="history-item">
+                            <span class="action">No jumps recorded</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. ANALYSIS: MCTS Strategy recommendation -->
+        <div class="monte-carlo">
+            <h3>5. MCTS Strategy Analysis</h3>
+            <div class="iteration-slider-container" style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                <label style="font-size: 0.85em; color: #aaa;">Iterations:</label>
+                <input type="range" id="iteration-slider" min="10000" max="1000000" step="10000" value="200000"
+                       style="flex: 1; max-width: 200px; accent-color: #6af;">
+                <span id="iteration-value" style="font-size: 0.85em; color: #8af; min-width: 50px;">200k</span>
+            </div>
+            <div id="sim-status" style="color: #8af; margin-bottom: 10px;"></div>
+            <div class="sequence-grid" id="sequence-grid">
+                <!-- Populated by JS -->
+            </div>
+            <div class="simulation-info" style="margin-top: 15px;">
+                <span style="color: #6f6;">GUARANTEED SAFE</span> = survives worst-case mass.
+                <span style="color: #8af;">Success %</span> = probability of closing hole without rollout.
+            </div>
+        </div>
+
+        <!-- 6. REFERENCE: WH specs -->
+        <div class="wh-specs">
+            <div class="spec-card">
+                <h3>Wormhole Type</h3>
+                <div class="value">C247</div>
+                <div class="unit">Leads to C3</div>
+            </div>
+            <div class="spec-card">
+                <h3>Total Mass</h3>
+                <div class="value">2,000</div>
+                <div class="unit">M (±10%: 1800-2200)</div>
+            </div>
+            <div class="spec-card">
+                <h3>Battleship (Higgs)</h3>
+                <div class="value">200 / 300</div>
+                <div class="unit">M Cold / Hot</div>
+            </div>
+            <div class="spec-card">
+                <h3>HIC (Devoter)</h3>
+                <div class="value">30 / 134 / 1.5</div>
+                <div class="unit">M Cold / Hot / Ent</div>
+            </div>
+        </div>
+
+        <footer>
+            EEDVR Wormhole Calculator | J215101 C247 Static<br>
+            <a href="https://wiki.eveuniversity.org/Wormhole_attributes" target="_blank">EVE University Wormhole Guide</a>
+        </footer>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            whType: 'C247',
+            baseMass: 2000,
+            variance: 0.10,
+            maxJumpMass: 375,
+            // Battleship (Higgs Megathron)
+            bsCold: 200,
+            bsHot: 300,
+            // HIC (Devoter with Higgs)
+            hicCold: 30,
+            hicHot: 134,
+            hicEnt: 1.5,
+            // Thresholds
+            shrinkThreshold: 0.50,
+            critThreshold: 0.10,
+            // MC settings
+            simulations: 200000,  // Default - configurable via slider
+            chunkSize: 25000  // Iterations per chunk for async execution
+        };
+
+        // Async helper - yields to event loop for UI responsiveness
+        function yieldToMain() {
+            return new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        // State (position is derived from history, not stored)
+        let state = {
+            massUsed: 0,
+            history: [],
+            hasUnknownMass: false,
+            knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
+            knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance),
+            awaitingObservation: false
+        };
+
+        // Action types for MC simulation
+        // Single jump actions (the atomic unit)
+        const SINGLE_JUMPS = {
+            'BS_HOT': { mass: CONFIG.bsHot, label: 'BS Hot', ship: 'BS' },
+            'BS_COLD': { mass: CONFIG.bsCold, label: 'BS Cold', ship: 'BS' },
+            'HIC_HOT': { mass: CONFIG.hicHot, label: 'HIC Hot', ship: 'HIC' },
+            'HIC_COLD': { mass: CONFIG.hicCold, label: 'HIC Cold', ship: 'HIC' },
+            'HIC_ENT': { mass: CONFIG.hicEnt, label: 'HIC Ent', ship: 'HIC' }
+        };
+
+        // Round trip combinations (for convenience display, built from single jumps)
+        const ACTIONS = {
+            'BS_HOT': { out: CONFIG.bsHot, back: CONFIG.bsHot, label: 'BS H/H', isHic: false },
+            'BS_COLD': { out: CONFIG.bsCold, back: CONFIG.bsCold, label: 'BS C/C', isHic: false },
+            'BS_COLD_HOT': { out: CONFIG.bsCold, back: CONFIG.bsHot, label: 'BS C/H', isHic: false },
+            'HIC_HOT': { out: CONFIG.hicHot, back: CONFIG.hicHot, label: 'HIC H/H', isHic: true },
+            'HIC_COLD': { out: CONFIG.hicCold, back: CONFIG.hicCold, label: 'HIC C/C', isHic: true },
+            'HIC_COLD_HOT': { out: CONFIG.hicCold, back: CONFIG.hicHot, label: 'HIC C/H', isHic: true },
+            'HIC_ENT': { out: CONFIG.hicEnt, back: CONFIG.hicEnt, label: 'HIC E/E', isHic: true },
+            'HIC_ENT_HOT': { out: CONFIG.hicEnt, back: CONFIG.hicHot, label: 'HIC E/H', isHic: true }
+        };
+
+        let recommendedStrategy = null;
+        let currentMctsRoot = null;  // Store MCTS tree for incremental updates
+        let lastCompletedAction = null;  // Track last completed round-trip action
+        let lastObservation = null;  // Track last observation (fresh/shrink/crit)
+
+        // Derive position from jump history (odd = away, even = home)
+        function getPosition() {
+            const jumpCount = state.history.filter(h => h.type.startsWith('jump-')).length;
+            return jumpCount % 2 === 0 ? 'home' : 'away';
+        }
+
+        // Get the ship type used for the last outbound jump (when away)
+        function getShipUsedOut() {
+            if (getPosition() === 'home') return null;
+            const jumps = state.history.filter(h => h.type.startsWith('jump-'));
+            const lastJump = jumps[jumps.length - 1];
+            return lastJump?.ship || null;
+        }
+
+        // Get the last completed round-trip action key (for tree descent)
+        function getLastCompletedActionKey() {
+            const jumps = state.history.filter(h => h.type.startsWith('jump-'));
+            if (jumps.length < 2) return null;
+
+            // Get the last two jumps (should be out then back)
+            const lastTwo = jumps.slice(-2);
+            const outJump = lastTwo[0];
+            const backJump = lastTwo[1];
+
+            if (!outJump.type.includes('-out-') || !backJump.type.includes('-back-')) {
+                return null;
+            }
+
+            const outMass = outJump.mass;
+            const backMass = backJump.mass;
+
+            // Find matching action
+            for (const [key, act] of Object.entries(ACTIONS)) {
+                if (act.out === outMass && act.back === backMass) {
+                    return key;
+                }
+            }
+            return null;
+        }
+
+        // Clear the MCTS tree (called on reset/recovery)
+        function clearMctsTree() {
+            currentMctsRoot = null;
+            lastCompletedAction = null;
+            lastObservation = null;
+        }
+
+
+        function init() {
+            loadState();
+            createStarfield();
+            createWormholeEffect();
+            initStateSelection();
+            initIterationSlider();
+            // Run analysis asynchronously to not block UI
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 100);
+        }
+
+        function initIterationSlider() {
+            const slider = document.getElementById('iteration-slider');
+            const valueDisplay = document.getElementById('iteration-value');
+            if (!slider || !valueDisplay) return;
+
+            slider.addEventListener('input', () => {
+                const value = parseInt(slider.value);
+                CONFIG.simulations = value;
+                valueDisplay.textContent = value >= 1000000 ? '1M' : Math.round(value / 1000) + 'k';
+            });
+
+            slider.addEventListener('change', () => {
+                // Re-run analysis with new iteration count
+                runStrategyAnalysis();
+            });
+        }
+
+        function createStarfield() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        function createWormholeEffect() {
+            const container = document.getElementById('wormhole-bg');
+            const colors = ['#4af', '#84f', '#a4f', '#f4a', '#fa4'];
+            for (let i = 0; i < 8; i++) {
+                const ring = document.createElement('div');
+                ring.className = 'wormhole-ring';
+                const size = 100 + i * 80;
+                ring.style.width = size + 'px';
+                ring.style.height = size + 'px';
+                ring.style.left = (400 - size/2) + 'px';
+                ring.style.top = (400 - size/2) + 'px';
+                ring.style.borderColor = colors[i % colors.length];
+                ring.style.animationDelay = (i * 0.5) + 's';
+                container.appendChild(ring);
+            }
+        }
+
+        // MCTS Thresholds (remaining mass thresholds for visual state)
+        const SHRINK_THRESHOLD = CONFIG.baseMass * CONFIG.shrinkThreshold;  // 1000 M
+        const CRIT_THRESHOLD = CONFIG.baseMass * CONFIG.critThreshold;       // 200 M
+
+        // ============================================================
+        // MCTS Implementation - Proper tree search with backpropagation
+        // ============================================================
+
+        // POMCTS: Partially Observable Monte Carlo Tree Search
+        // Nodes branch on (action, observation) pairs to properly handle belief updates
+
+        class POMCTSNode {
+            constructor(totalBelief, massUsed, parent = null, incomingAction = null, incomingActionKey = null, incomingObservation = null, depth = 0) {
+                this.totalBelief = { min: totalBelief.min, max: totalBelief.max };  // Belief about TOTAL wormhole mass
+                this.massUsed = massUsed;  // Cumulative mass used to reach this node
+                this.parent = parent;
+                this.incomingAction = incomingAction;
+                this.incomingActionKey = incomingActionKey;
+                this.incomingObservation = incomingObservation;  // 'fresh', 'shrink', 'crit', or null for root
+
+                // Children indexed by action key, then observation
+                // this.children[actionKey][observation] = POMCTSNode
+                this.children = {};
+
+                this.visits = 0;
+                this.wins = 0;
+                this.depth = depth;  // Number of round trips
+                this.terminalTrips = {};
+            }
+
+            // Compute remaining mass belief from total belief
+            getRemainingBelief() {
+                return {
+                    min: Math.max(0, this.totalBelief.min - this.massUsed),
+                    max: Math.max(0, this.totalBelief.max - this.massUsed)
+                };
+            }
+
+            isTerminal() {
+                const remaining = this.getRemainingBelief();
+                return remaining.max <= 0;
+            }
+
+            getValidActions() {
+                const remaining = this.getRemainingBelief();
+                // Filter out actions that can't survive outbound
+                // Also filter out actions that would take too many trips (inefficient)
+                const maxReasonableTrips = 8;
+                const minMassPerTrip = remaining.max / maxReasonableTrips;
+
+                // Check if any efficient action is guaranteed safe
+                const hasEfficientSafeAction = Object.values(ACTIONS).some(act => {
+                    const tripMass = act.out + act.back;
+                    const isEfficient = tripMass >= minMassPerTrip;
+                    const isSafe = act.out < remaining.min;
+                    return isEfficient && isSafe && remaining.max > act.out;
+                });
+
+                return Object.entries(ACTIONS).filter(([key, act]) => {
+                    if (remaining.max <= act.out) return false;  // Can't survive outbound
+
+                    const tripMass = act.out + act.back;
+                    const isEfficient = tripMass >= minMassPerTrip;
+                    const isSafe = act.out < remaining.min;
+
+                    // Allow efficient actions
+                    if (isEfficient) return true;
+
+                    // Allow inefficient safe actions only if no efficient action is safe
+                    if (isSafe && !hasEfficientSafeAction) return true;
+
+                    return false;
+                });
+            }
+
+            // Get or create child for (action, observation) pair
+            getChild(actionKey, observation) {
+                if (this.children[actionKey] && this.children[actionKey][observation]) {
+                    return this.children[actionKey][observation];
+                }
+                return null;
+            }
+
+            setChild(actionKey, observation, child) {
+                if (!this.children[actionKey]) {
+                    this.children[actionKey] = {};
+                }
+                this.children[actionKey][observation] = child;
+            }
+
+            hasChild(actionKey, observation) {
+                return this.children[actionKey] && this.children[actionKey][observation];
+            }
+
+            // Aggregate stats for an action across all observation branches
+            getActionStats(actionKey) {
+                const branches = this.children[actionKey];
+                if (!branches) return { visits: 0, wins: 0 };
+
+                let totalVisits = 0;
+                let totalWins = 0;
+                for (const obs in branches) {
+                    totalVisits += branches[obs].visits;
+                    totalWins += branches[obs].wins;
+                }
+                return { visits: totalVisits, wins: totalWins };
+            }
+
+            // UCB1 for an action (aggregated across observation branches)
+            ucb1ForAction(actionKey, C = 1.414) {
+                const stats = this.getActionStats(actionKey);
+                if (stats.visits === 0) return Infinity;
+                const exploitation = stats.wins / stats.visits;
+                const exploration = C * Math.sqrt(Math.log(this.visits) / stats.visits);
+                return exploitation + exploration;
+            }
+
+            // Get all action keys that have any children
+            getExploredActions() {
+                return Object.keys(this.children);
+            }
+        }
+
+        // Compute observation given true mass and mass used
+        function computeObservation(trueMass, massUsed) {
+            const remaining = trueMass - massUsed;
+            const remainingPct = remaining / trueMass;
+
+            if (remaining <= 0) return 'collapsed';
+            if (remainingPct <= CONFIG.critThreshold) return 'crit';
+            if (remainingPct <= CONFIG.shrinkThreshold) return 'shrink';
+            return 'fresh';
+        }
+
+        // Update total mass belief based on observation
+        function updateTotalBelief(currentTotalBelief, massUsed, observation) {
+            let newMin = currentTotalBelief.min;
+            let newMax = currentTotalBelief.max;
+
+            if (observation === 'fresh') {
+                // Remaining > 50% of total → total > 2 * massUsed
+                newMin = Math.max(newMin, 2 * massUsed + 1);
+            } else if (observation === 'shrink') {
+                // 10% < remaining ≤ 50% → massUsed/0.9 < total ≤ 2*massUsed
+                newMin = Math.max(newMin, massUsed / 0.9 + 1);
+                newMax = Math.min(newMax, 2 * massUsed);
+            } else if (observation === 'crit') {
+                // Remaining ≤ 10% → total ≤ massUsed/0.9
+                newMax = Math.min(newMax, massUsed / 0.9);
+            }
+            // 'collapsed' means we're done - no belief update needed
+
+            return { min: newMin, max: newMax };
+        }
+
+        // Run a single MCTS iteration (extracted for reuse)
+        function runSingleIteration(root, startMin, startMax, initialMassUsed) {
+            const trueMass = startMin + Math.random() * (startMax - startMin);
+            let currentMassUsed = initialMassUsed;
+            let remaining = trueMass - currentMassUsed;
+
+            const path = [root];
+            let node = root;
+            let rolledOut = false;
+
+            // 1. SELECTION + EXPANSION
+            while (!node.isTerminal() && !rolledOut) {
+                const validActions = node.getValidActions();
+                if (validActions.length === 0) break;
+
+                let selectedActionKey = null;
+                let selectedAction = null;
+                let needsExpansion = false;
+
+                for (const [key, act] of validActions) {
+                    if (remaining <= act.out) continue;
+                    const newMassUsed = currentMassUsed + act.out + act.back;
+                    const observation = computeObservation(trueMass, newMassUsed);
+
+                    if (!node.hasChild(key, observation)) {
+                        selectedActionKey = key;
+                        selectedAction = act;
+                        needsExpansion = true;
+                        break;
+                    }
+                }
+
+                if (!needsExpansion) {
+                    let bestUCB = -Infinity;
+                    for (const [key, act] of validActions) {
+                        if (remaining <= act.out) continue;
+                        const ucb = node.ucb1ForAction(key);
+                        if (ucb > bestUCB) {
+                            bestUCB = ucb;
+                            selectedActionKey = key;
+                            selectedAction = act;
+                        }
+                    }
+                }
+
+                if (!selectedAction) {
+                    rolledOut = true;
+                    break;
+                }
+
+                if (remaining <= selectedAction.out) {
+                    rolledOut = true;
+                    break;
+                }
+
+                const newMassUsed = currentMassUsed + selectedAction.out + selectedAction.back;
+                remaining = trueMass - newMassUsed;
+                const observation = computeObservation(trueMass, newMassUsed);
+
+                let child = node.getChild(selectedActionKey, observation);
+                if (!child) {
+                    const newTotalBelief = updateTotalBelief(node.totalBelief, newMassUsed, observation);
+                    child = new POMCTSNode(
+                        newTotalBelief,
+                        newMassUsed,
+                        node,
+                        selectedAction,
+                        selectedActionKey,
+                        observation,
+                        node.depth + 1
+                    );
+                    node.setChild(selectedActionKey, observation, child);
+                }
+
+                currentMassUsed = newMassUsed;
+                node = child;
+                path.push(node);
+
+                if (needsExpansion) break;
+            }
+
+            // 2. SIMULATION
+            let trips = node.depth;
+            let simMassUsed = currentMassUsed;
+
+            if (!rolledOut && remaining > 0) {
+                while (remaining > 0 && trips < 20) {
+                    const validActions = Object.entries(ACTIONS).filter(([k, a]) => remaining > a.out);
+                    if (validActions.length === 0) {
+                        rolledOut = true;
+                        break;
+                    }
+                    validActions.sort((a, b) => (b[1].out + b[1].back) - (a[1].out + a[1].back));
+                    const [key, act] = validActions[0];
+                    trips++;
+                    simMassUsed += act.out + act.back;
+                    remaining = trueMass - simMassUsed;
+                }
+            }
+
+            // 3. BACKPROPAGATION
+            const success = !rolledOut && remaining <= 0;
+            for (const n of path) {
+                n.visits++;
+                if (success) {
+                    n.wins++;
+                    n.terminalTrips[trips] = (n.terminalTrips[trips] || 0) + 1;
+                }
+            }
+        }
+
+        // Main POMCTS algorithm - async chunked for UI responsiveness
+        async function runPOMCTS(startMin, startMax, initialMassUsed, numIterations = CONFIG.simulations, onProgress = null) {
+            const rootTotalBelief = { min: startMin, max: startMax };
+            const root = new POMCTSNode(rootTotalBelief, initialMassUsed);
+            const chunkSize = CONFIG.chunkSize;
+
+            for (let i = 0; i < numIterations; i++) {
+                runSingleIteration(root, startMin, startMax, initialMassUsed);
+
+                // Yield to event loop every chunkSize iterations
+                if (i > 0 && i % chunkSize === 0) {
+                    if (onProgress) onProgress(i, numIterations);
+                    await yieldToMain();
+                }
+            }
+
+            return root;
+        }
+
+        // Alias for backward compatibility
+        async function runMCTS(rootBelief, startMin, startMax, massUsed, numIterations = CONFIG.simulations, onProgress = null) {
+            return runPOMCTS(startMin, startMax, massUsed, numIterations, onProgress);
+        }
+
+        // Extract best action from POMCTS tree (most visited action, aggregated across observations)
+        function getMCTSBestAction(root) {
+            const actionKeys = Object.keys(root.children);
+            if (actionKeys.length === 0) return null;
+
+            let bestKey = null;
+            let bestStats = { visits: 0, wins: 0 };
+            let bestAction = null;
+
+            for (const key of actionKeys) {
+                const stats = root.getActionStats(key);
+                if (stats.visits > bestStats.visits) {
+                    bestStats = stats;
+                    bestKey = key;
+                    // Get action from any observation branch
+                    const observations = root.children[key];
+                    const firstObs = Object.keys(observations)[0];
+                    bestAction = observations[firstObs].incomingAction;
+                }
+            }
+
+            if (!bestAction) return null;
+
+            const remainingBelief = root.getRemainingBelief();
+            return {
+                key: bestKey,
+                action: bestAction,
+                visits: bestStats.visits,
+                wins: bestStats.wins,
+                successRate: bestStats.visits > 0 ? bestStats.wins / bestStats.visits : 0,
+                guaranteedSafe: remainingBelief.min > bestAction.out
+            };
+        }
+
+        // Extract all action results from POMCTS tree (aggregated across observations)
+        function getMCTSActionResults(root) {
+            const results = [];
+            const remainingBelief = root.getRemainingBelief();
+
+            for (const actionKey of Object.keys(root.children)) {
+                const observations = root.children[actionKey];
+
+                // Aggregate stats across all observation branches
+                let totalVisits = 0;
+                let totalWins = 0;
+                let totalTrips = 0;
+                let totalSuccesses = 0;
+                let action = null;
+
+                for (const obs of Object.keys(observations)) {
+                    const child = observations[obs];
+                    totalVisits += child.visits;
+                    totalWins += child.wins;
+                    action = child.incomingAction;
+
+                    // Aggregate terminal trips
+                    for (const [trips, count] of Object.entries(child.terminalTrips)) {
+                        totalTrips += parseInt(trips) * count;
+                        totalSuccesses += count;
+                    }
+                }
+
+                const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
+                const rolloutRate = totalVisits > 0 ? (totalVisits - totalWins) / totalVisits : 0;
+
+                // Calculate probability of safe outbound jump
+                // If action.out > remaining.min, there's rollout risk
+                const beliefRange = remainingBelief.max - remainingBelief.min;
+                let pSafeOutbound = 1.0;
+                if (beliefRange > 0 && action.out > remainingBelief.min) {
+                    // P(remaining >= action.out) = (max - action.out) / (max - min)
+                    const safeRange = Math.max(0, remainingBelief.max - action.out);
+                    pSafeOutbound = safeRange / beliefRange;
+                }
+
+                // Observed success rate is conditional on safe outbound
+                // True success rate = P(safe outbound) * P(success | safe outbound)
+                const observedSuccessRate = totalVisits > 0 ? totalWins / totalVisits : 0;
+                const adjustedSuccessRate = pSafeOutbound * observedSuccessRate;
+
+                results.push({
+                    key: actionKey,
+                    act: action,
+                    visits: totalVisits,
+                    wins: totalWins,
+                    successes: totalWins,
+                    total: totalVisits,
+                    successRate: adjustedSuccessRate,
+                    rolloutRate,
+                    avgSteps,
+                    mass: action.out + action.back,
+                    guaranteedSafe: remainingBelief.min > action.out
+                });
+            }
+            // Sort by success rate (higher = better), then visits as tiebreaker
+            results.sort((a, b) => {
+                const successDiff = b.successRate - a.successRate;
+                if (Math.abs(successDiff) > 0.01) return successDiff;
+                return b.visits - a.visits;
+            });
+            return results;
+        }
+
+        // Extract trip distribution from POMCTS tree root
+        function getMCTSTripDistribution(root) {
+            const totalWins = root.wins;
+            if (totalWins === 0) return [];
+
+            const distribution = [];
+            for (const [trips, count] of Object.entries(root.terminalTrips)) {
+                const pct = count / totalWins;
+                if (pct >= 0.01) {  // Only show >=1%
+                    distribution.push({ trips: parseInt(trips), pct });
+                }
+            }
+            return distribution.sort((a, b) => a.trips - b.trips);
+        }
+
+        // Extract recommended sequence by following most-visited path
+        function getMCTSSequence(root) {
+            const sequence = [];
+            let node = root;
+
+            while (Object.keys(node.children).length > 0) {
+                // Find best action (most visited)
+                let bestKey = null;
+                let bestVisits = 0;
+
+                for (const actionKey of Object.keys(node.children)) {
+                    const stats = node.getActionStats(actionKey);
+                    if (stats.visits > bestVisits) {
+                        bestVisits = stats.visits;
+                        bestKey = actionKey;
+                    }
+                }
+
+                if (!bestKey || bestVisits === 0) break;
+                sequence.push(bestKey);
+
+                // Follow the most-visited observation branch for this action
+                const observations = node.children[bestKey];
+                let bestChild = null;
+                let bestChildVisits = 0;
+                for (const obs of Object.keys(observations)) {
+                    if (observations[obs].visits > bestChildVisits) {
+                        bestChildVisits = observations[obs].visits;
+                        bestChild = observations[obs];
+                    }
+                }
+
+                if (!bestChild) break;
+                node = bestChild;
+            }
+
+            return sequence;
+        }
+
+
+
+        // Main MCTS analysis function - async for UI responsiveness
+        async function runStrategyAnalysis() {
+            const statusEl = document.getElementById('sim-status');
+            statusEl.textContent = 'Running MCTS analysis...';
+
+            let startMin = state.knownMinStart;
+            let startMax = state.knownMaxStart;
+            const massUsed = state.massUsed;
+
+            // Narrow bounds based on required observation (streamline MCTS search space)
+            const requiredObs = getRequiredObservation();
+            if (requiredObs === 'crit') {
+                // Remaining ≤ 10% → total ≤ massUsed/0.9
+                startMax = Math.min(startMax, massUsed / 0.9);
+            } else if (requiredObs === 'shrink') {
+                // 10% < remaining ≤ 50% → massUsed/0.9 < total ≤ 2*massUsed
+                startMin = Math.max(startMin, massUsed / 0.9 + 1);
+                startMax = Math.min(startMax, 2 * massUsed);
+            }
+            const minRemaining = startMin - massUsed;
+            const maxRemaining = startMax - massUsed;
+
+            const belief = { min: minRemaining, max: maxRemaining };
+            const position = getPosition();
+            const shipUsedOut = getShipUsedOut();
+
+            // Progress callback to update UI
+            const updateProgress = (current, total) => {
+                const pct = Math.round((current / total) * 100);
+                statusEl.textContent = `Running MCTS... ${pct}% (${current.toLocaleString()}/${total.toLocaleString()})`;
+            };
+
+            // If we're AWAY, we need to recommend RETURN options only
+            if (position === 'away') {
+                const returnResults = evaluateReturnOptions(belief, startMin, startMax, massUsed, shipUsedOut);
+                recommendedStrategy = {
+                    sequence: [],
+                    actionResults: returnResults,
+                    nextAction: returnResults.length > 0 ? returnResults[0] : null,
+                    minRemaining,
+                    maxRemaining,
+                    belief,
+                    isReturn: true,
+                    shipUsedOut: shipUsedOut
+                };
+                statusEl.textContent = `You are AWAY with ${shipUsedOut}. Showing return options.`;
+                displayStrategyAnalysis();
+                return;
+            }
+
+            // Normal case: we're HOME, try to reuse existing tree
+            let mctsRoot = null;
+            let reusedTree = false;
+            const additionalIterations = Math.floor(CONFIG.simulations / 10);  // 10% additional iterations
+
+            // Try to descend existing tree if we have a completed action + observation
+            if (currentMctsRoot && lastCompletedAction && lastObservation) {
+                const childNode = currentMctsRoot.getChild(lastCompletedAction, lastObservation);
+                if (childNode) {
+                    // Descend to child and run additional iterations
+                    mctsRoot = childNode;
+                    mctsRoot.parent = null;  // Detach from parent
+                    reusedTree = true;
+
+                    // Run additional iterations on the subtree
+                    statusEl.textContent = `Running ${additionalIterations.toLocaleString()} additional iterations...`;
+                    await runAdditionalIterations(mctsRoot, startMin, startMax, massUsed, additionalIterations, updateProgress);
+                }
+            }
+
+            // If we couldn't reuse, build fresh tree
+            if (!mctsRoot) {
+                mctsRoot = await runMCTS(belief, startMin, startMax, massUsed, CONFIG.simulations, updateProgress);
+            }
+
+            // Store for future reuse
+            currentMctsRoot = mctsRoot;
+            lastCompletedAction = null;  // Reset until next round trip
+            lastObservation = null;
+
+            // Extract results from tree
+            const actionResults = getMCTSActionResults(mctsRoot);
+
+            // Build recommended sequence from tree (follows most-visited path)
+            const sequence = getMCTSSequence(mctsRoot);
+
+            // Trip distribution comes free from tree statistics
+            const tripDistribution = getMCTSTripDistribution(mctsRoot);
+
+            // Get the best next action
+            const nextAction = actionResults.length > 0 ? actionResults[0] : null;
+
+            recommendedStrategy = {
+                sequence,
+                tripDistribution,
+                actionResults,
+                nextAction,
+                minRemaining,
+                maxRemaining,
+                belief,
+                isReturn: false,
+                mctsIterations: mctsRoot.visits
+            };
+
+            const reuseNote = reusedTree ? ' (reused tree)' : '';
+            statusEl.textContent = `MCTS: ${mctsRoot.visits.toLocaleString()} iterations across ${actionResults.length} actions${reuseNote}`;
+
+            displayStrategyAnalysis();
+        }
+
+        // Run additional MCTS iterations on an existing subtree - async chunked
+        async function runAdditionalIterations(root, startMin, startMax, initialMassUsed, numIterations, onProgress = null) {
+            const chunkSize = CONFIG.chunkSize;
+
+            for (let i = 0; i < numIterations; i++) {
+                runSingleIteration(root, startMin, startMax, initialMassUsed);
+
+                if (i > 0 && i % chunkSize === 0) {
+                    if (onProgress) onProgress(i, numIterations);
+                    await yieldToMain();
+                }
+            }
+        }
+
+        // Evaluate return options when we're away
+        function evaluateReturnOptions(belief, startMin, startMax, massUsed, shipUsedOut) {
+            const results = [];
+
+            // Only consider return modes for the ship we went out with
+            const returnModes = shipUsedOut === 'BS'
+                ? [{ key: 'BS_HOT', mass: CONFIG.bsHot, label: 'BS Hot' },
+                   { key: 'BS_COLD', mass: CONFIG.bsCold, label: 'BS Cold' }]
+                : [{ key: 'HIC_HOT', mass: CONFIG.hicHot, label: 'HIC Hot' },
+                   { key: 'HIC_COLD', mass: CONFIG.hicCold, label: 'HIC Cold' },
+                   { key: 'HIC_ENT', mass: CONFIG.hicEnt, label: 'HIC Ent' }];
+
+            const numSims = Math.floor(CONFIG.simulations / returnModes.length);
+
+            for (const mode of returnModes) {
+                let successes = 0;  // Survived return (collapse on return = success!)
+                let collapses = 0;  // Hole collapsed
+
+                for (let i = 0; i < numSims; i++) {
+                    const originalMass = startMin + Math.random() * (startMax - startMin);
+                    const trueRemaining = originalMass - massUsed;
+
+                    // Return jump
+                    const afterReturn = trueRemaining - mode.mass;
+
+                    if (afterReturn <= 0) {
+                        // Collapsed on return - SUCCESS (we made it home as it closed)
+                        successes++;
+                        collapses++;
+                    } else {
+                        // Didn't collapse - we're home safe, hole still open
+                        successes++;
+                    }
+                }
+
+                results.push({
+                    key: mode.key,
+                    act: { out: 0, back: mode.mass, label: mode.label },
+                    mass: mode.mass,
+                    successRate: successes / numSims,
+                    collapseRate: collapses / numSims,
+                    rolloutRate: 0,  // Can't rollout on return - collapse = success
+                    successes,
+                    total: numSims,
+                    avgSteps: 1,
+                    guaranteedSafe: true,  // Return is always "safe" - collapse means success
+                    isReturn: true
+                });
+            }
+
+            // Sort by: prefer higher mass (close the hole faster), then by collapse rate
+            results.sort((a, b) => {
+                // If both might close the hole, prefer the one more likely to close it
+                if (a.collapseRate > 0.1 && b.collapseRate > 0.1) {
+                    return b.collapseRate - a.collapseRate;
+                }
+                // Otherwise prefer higher mass
+                return b.mass - a.mass;
+            });
+
+            return results;
+        }
+
+        // Display the strategy analysis
+        function displayStrategyAnalysis() {
+            const grid = document.getElementById('sequence-grid');
+            grid.innerHTML = '';
+
+            if (!recommendedStrategy) {
+                highlightRecommendedButton(null);
+                return;
+            }
+
+            const { sequence, actionResults, nextAction, minRemaining, maxRemaining, isReturn, shipUsedOut, mctsIterations, tripDistribution } = recommendedStrategy;
+
+            // Create container for new horizontal layout
+            const container = document.createElement('div');
+            container.className = 'mcts-results';
+
+            // Special handling for RETURN recommendations
+            if (isReturn && nextAction) {
+                highlightRecommendedButton(nextAction.key);
+
+                const collapsePct = (nextAction.collapseRate * 100).toFixed(1);
+                const recDiv = document.createElement('div');
+                recDiv.className = 'mcts-recommendation';
+                recDiv.style.borderColor = '#c46444';
+                recDiv.style.background = 'rgba(100, 60, 40, 0.9)';
+
+                let tableRows = '';
+                for (const result of actionResults) {
+                    const collPct = (result.collapseRate * 100).toFixed(1);
+                    const isTop = result.key === nextAction.key;
+                    tableRows += `<tr${isTop ? ' style="background: rgba(100, 80, 60, 0.3);"' : ''}>
+                        <td style="padding: 5px 8px; color: ${isTop ? '#fc8' : '#ccc'};">${result.act.label}</td>
+                        <td style="padding: 5px 8px; text-align: right;">${result.mass} M</td>
+                        <td style="padding: 5px 8px; text-align: right; color: #8f8;">${collPct}%</td>
+                    </tr>`;
+                }
+
+                recDiv.innerHTML = `
+                    <div class="mcts-rec-title" style="color: #faa;">
+                        AWAY WITH ${shipUsedOut} → Return: <span style="color: #fff;">${nextAction.act.label}</span>
+                        <span class="foolproof-badge" style="background: #4a8a4a;">SAFE HOME</span>
+                    </div>
+                    <div class="mcts-rec-stats" style="color: #aaa; margin-top: 8px;">
+                        <table style="width: 100%; font-size: 0.85em;">
+                            <tr style="color: #777;"><th style="text-align: left; padding: 3px 8px;">Return</th><th style="text-align: right; padding: 3px 8px;">Mass</th><th style="text-align: right; padding: 3px 8px;">Closes</th></tr>
+                            ${tableRows}
+                        </table>
+                    </div>
+                `;
+                container.appendChild(recDiv);
+                grid.appendChild(container);
+                return;
+            }
+
+            // Highlight recommended button
+            if (nextAction) {
+                highlightRecommendedButton(nextAction.key);
+            } else {
+                highlightRecommendedButton(null);
+            }
+
+            // Details row (distribution + comparison side by side)
+            if ((tripDistribution && tripDistribution.length > 0) || actionResults.length > 0) {
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'mcts-details';
+
+                // Left: Trip distribution
+                if (tripDistribution && tripDistribution.length > 0) {
+                    const distDiv = document.createElement('div');
+                    distDiv.className = 'mcts-distribution';
+
+                    const distItems = tripDistribution
+                        .map(d => `<div class="mcts-distribution-item">${d.trips} trips: <strong>${Math.round(d.pct * 100)}%</strong></div>`)
+                        .join('');
+
+                    distDiv.innerHTML = `
+                        <div class="mcts-distribution-title">Trip Distribution</div>
+                        ${distItems}
+                        <div class="mcts-distribution-footer">${mctsIterations.toLocaleString()} iterations</div>
+                    `;
+                    detailsDiv.appendChild(distDiv);
+                }
+
+                // Right: Action comparison table
+                if (actionResults.length > 0) {
+                    const compDiv = document.createElement('div');
+                    compDiv.className = 'mcts-comparison';
+
+                    let tableRows = '';
+                    for (let i = 0; i < actionResults.length; i++) {
+                        const result = actionResults[i];
+                        const act = result.act;
+                        const mass = act.out + act.back;
+                        const successPct = (result.successRate * 100).toFixed(1);
+                        const statusColor = result.guaranteedSafe ? '#8f8' :
+                                           (result.successRate >= 0.99 ? '#aef' :
+                                           (result.successRate >= 0.95 ? '#fc8' : '#f88'));
+
+                        tableRows += `<tr>
+                            <td>${act.label}</td>
+                            <td style="text-align: right;">${mass} M</td>
+                            <td style="text-align: right;">${result.avgSteps.toFixed(1)}</td>
+                            <td style="text-align: right; color: ${statusColor}; font-weight: bold;">${successPct}%${result.guaranteedSafe ? ' ✓' : ''}</td>
+                        </tr>`;
+                    }
+
+                    compDiv.innerHTML = `
+                        <div class="mcts-comparison-title">Action Comparison</div>
+                        <table>
+                            <tr><th>Action</th><th style="text-align: right;">Mass</th><th style="text-align: right;">Trips</th><th style="text-align: right;">Success</th></tr>
+                            ${tableRows}
+                        </table>
+                    `;
+                    detailsDiv.appendChild(compDiv);
+                }
+
+                container.appendChild(detailsDiv);
+            }
+
+            grid.appendChild(container);
+        }
+
+        // Unified single jump recording - direction determined by history
+        function recordSingleJump(jumpType) {
+            const position = getPosition();
+            const jump = SINGLE_JUMPS[jumpType];
+
+            if (position === 'home') {
+                // If we have a completed action but no observation, assume 'fresh'
+                if (lastCompletedAction && !lastObservation) {
+                    lastObservation = 'fresh';
+                }
+
+                // Outbound jump
+                state.massUsed += jump.mass;
+                state.history.push({
+                    type: 'jump-out-' + jumpType,
+                    label: jump.label + ' →',
+                    mass: jump.mass,
+                    ship: jump.ship,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+            } else {
+                // Return jump - enforce same ship
+                const shipUsedOut = getShipUsedOut();
+                if (shipUsedOut && jump.ship !== shipUsedOut) {
+                    alert(`You went out with ${shipUsedOut}, you must return with ${shipUsedOut}!`);
+                    return;
+                }
+                state.massUsed += jump.mass;
+                state.history.push({
+                    type: 'jump-back-' + jumpType,
+                    label: '← ' + jump.label,
+                    mass: jump.mass,
+                    ship: jump.ship,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+
+                // Track completed round-trip action for tree reuse
+                lastCompletedAction = getLastCompletedActionKey();
+            }
+
+            // After any jump, await observation before next jump
+            state.awaitingObservation = true;
+
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        // Check if observation is REQUIRED (mass bounds make it impossible NOT to have crossed threshold)
+        function getRequiredObservation() {
+            const massUsed = state.massUsed;
+            const maxTotal = state.knownMaxStart;
+
+            // If massUsed >= 90% of maxTotal, hole MUST be crit
+            if (massUsed >= maxTotal * (1 - CONFIG.critThreshold)) {
+                return 'crit';
+            }
+            // If massUsed >= 50% of maxTotal, hole MUST have shrunk
+            if (massUsed >= maxTotal * CONFIG.shrinkThreshold) {
+                return 'shrink';
+            }
+            return null;
+        }
+
+        // Check if a threshold crossing is POSSIBLE (for reminder glow)
+        function shouldShowObservationReminder() {
+            const massUsed = state.massUsed;
+            const minTotal = state.knownMinStart;
+            const maxTotal = state.knownMaxStart;
+
+            // Shrink happens when >50% mass used (remaining < 50%)
+            // Check if massUsed could have crossed 50% threshold for any mass in [minTotal, maxTotal]
+            const shrinkThresholdMin = minTotal * CONFIG.shrinkThreshold;  // 50% of min
+            const shrinkThresholdMax = maxTotal * CONFIG.shrinkThreshold;  // 50% of max
+            const shrinkPossible = massUsed >= shrinkThresholdMin && massUsed <= shrinkThresholdMax;
+
+            // Crit happens when >90% mass used (remaining < 10%)
+            const critThresholdMin = minTotal * (1 - CONFIG.critThreshold);  // 90% of min
+            const critThresholdMax = maxTotal * (1 - CONFIG.critThreshold);  // 90% of max
+            const critPossible = massUsed >= critThresholdMin && massUsed <= critThresholdMax;
+
+            return shrinkPossible || critPossible;
+        }
+
+        // Check if jumps are blocked due to required observation
+        function areJumpsBlocked() {
+            return getRequiredObservation() !== null && getPosition() === 'home';
+        }
+
+        // Highlight the recommended action button
+        function highlightRecommendedButton(actionKey) {
+            // Clear previous highlights
+            document.querySelectorAll('.jump-btn.recommended').forEach(btn => {
+                btn.classList.remove('recommended');
+            });
+
+            if (!actionKey) return;
+
+            // Map MCTS action keys to outbound jump types
+            // MCTS keys are like 'BS_HOT' (round trip), button data-jump is same
+            // For round trips like BS_HOT_COLD, we want the outbound (first part)
+            let jumpKey = actionKey;
+            if (actionKey.includes('_COLD_')) {
+                // e.g., BS_COLD_HOT -> outbound is BS_COLD
+                jumpKey = actionKey.split('_').slice(0, 2).join('_');
+            }
+
+            // Find and highlight the matching button
+            const btn = document.querySelector(`.jump-btn[data-jump="${jumpKey}"]`);
+            if (btn) {
+                btn.classList.add('recommended');
+            }
+        }
+
+        function recoverFromShrink() {
+            clearMctsTree();
+            state.massUsed = 0;
+            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
+            state.hasUnknownMass = true;
+            state.history = [];  // Reset history (position will be home)
+            state.history.push({
+                type: 'recovery-shrink',
+                label: 'Recovered: Hole Shrunk',
+                mass: 0,
+                note: 'Reset to shrink state (180-1100 M)',
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        function recoverFromCrit() {
+            clearMctsTree();
+            state.massUsed = 0;
+            state.knownMinStart = 0;
+            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
+            state.hasUnknownMass = true;
+            state.history = [];  // Reset history (position will be home)
+            state.history.push({
+                type: 'recovery-crit',
+                label: 'Recovered: Hole Crit',
+                mass: 0,
+                note: 'Reset to crit state (0-220 M)',
+                timestamp: new Date().toLocaleTimeString()
+            });
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        // State change observed while tracking - combine tracking data with state info
+        function recordNormalObservation() {
+            // Record observation for tree reuse (no state change = fresh)
+            lastObservation = 'fresh';
+
+            // Fresh means remaining is still >50% of original
+            // This can help narrow the max if we've used significant mass
+            const minTotal = state.massUsed / CONFIG.shrinkThreshold;  // massUsed / 0.5 = 2x massUsed
+            if (minTotal > state.knownMinStart) {
+                state.knownMinStart = Math.ceil(minTotal);
+            }
+
+            state.history.push({
+                type: 'state-normal',
+                label: 'No Change',
+                mass: 0,
+                note: `Still fresh (>${Math.round(state.knownMinStart - state.massUsed)} M)`,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            state.awaitingObservation = false;
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        // Helper: get mass of the last jump from history
+        function getLastJumpMass() {
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                if (state.history[i].type.startsWith('jump-')) {
+                    return state.history[i].mass;
+                }
+            }
+            return 0;
+        }
+
+        // Helper: check if hole was fresh before the last jump
+        // (no shrink/crit observation, or most recent observation was "normal")
+        function wasHoleFreshBeforeLastJump() {
+            // Walk backwards through history, skip jumps until we find an observation
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                const event = state.history[i];
+                if (event.type === 'state-normal') {
+                    return true;  // Explicitly confirmed fresh
+                }
+                if (event.type === 'state-shrunk' || event.type === 'state-crit') {
+                    return false;  // Was already shrunk/crit
+                }
+                // Skip jumps and setup events, keep looking
+            }
+            // No state observation found = hole was fresh (default state)
+            return true;
+        }
+
+        // Helper: check if hole was shrunk (not fresh, not crit) before the last jump
+        function wasHoleShrunkBeforeLastJump() {
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                const event = state.history[i];
+                if (event.type === 'state-shrunk') {
+                    return true;  // Was shrunk
+                }
+                if (event.type === 'state-normal' || event.type === 'state-crit') {
+                    return false;  // Was fresh or already crit
+                }
+            }
+            return false;  // No shrunk observation = wasn't shrunk
+        }
+
+        function holeJustShrunk() {
+            // Record observation for tree reuse
+            lastObservation = 'shrink';
+
+            // Calculate current tracked range
+            const trackedMin = state.knownMinStart - state.massUsed;
+            const trackedMax = state.knownMaxStart - state.massUsed;
+
+            // Shrink means remaining is 10%-50% of original (with variance)
+            const shrinkMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;  // 180 M
+            const shrinkMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold; // 1100 M
+
+            // Intersect the ranges
+            let newMin = Math.max(trackedMin, shrinkMin);
+            let newMax = Math.min(trackedMax, shrinkMax);
+            let note;
+
+            // Handle invalid intersection (tracking was wrong)
+            if (newMin > newMax) {
+                // Even when inconsistent, we can use constraints from recent jumps
+                // If hole was fresh before and we jumped X, remaining > 0.5*minOriginal - X
+                const lastJumpMass = getLastJumpMass();
+                const wasFresh = wasHoleFreshBeforeLastJump();
+
+                if (wasFresh && lastJumpMass > 0) {
+                    const minOriginal = CONFIG.baseMass * (1 - CONFIG.variance);
+                    const minFromFreshConstraint = 0.5 * minOriginal - lastJumpMass;
+                    newMin = Math.max(shrinkMin, minFromFreshConstraint);
+                } else {
+                    newMin = shrinkMin;
+                }
+                newMax = shrinkMax;
+                note = `Tracking inconsistent, reset to ${Math.round(newMin)}-${Math.round(newMax)} M`;
+                clearMctsTree();  // Tree no longer valid
+            } else {
+                note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
+            }
+
+            // Reset massUsed and set new narrower starting range
+            // NOTE: Do NOT reset position/shipUsedOut - observation can happen while away
+            state.massUsed = 0;
+            state.knownMinStart = newMin;
+            state.knownMaxStart = newMax;
+            state.hasUnknownMass = false;
+
+            state.history.push({
+                type: 'state-shrunk',
+                label: 'Hole Shrunk (Combined)',
+                mass: 0,
+                note: note,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            state.awaitingObservation = false;
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        function holeJustCrit() {
+            // Record observation for tree reuse
+            lastObservation = 'crit';
+
+            // Calculate current tracked range
+            const trackedMin = state.knownMinStart - state.massUsed;
+            const trackedMax = state.knownMaxStart - state.massUsed;
+
+            // Crit means remaining is 0%-10% of original (with variance)
+            const critMin = 0;
+            const critMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold; // 220 M
+
+            // Intersect the ranges
+            let newMin = Math.max(trackedMin, critMin);
+            let newMax = Math.min(trackedMax, critMax);
+            let note;
+
+            // Handle invalid intersection (tracking was wrong)
+            if (newMin > newMax) {
+                // Even when inconsistent, we can use constraints from recent jumps
+                // If hole was shrunk before (>10% remaining) and we jumped X, remaining > 0.1*minOriginal - X
+                const lastJumpMass = getLastJumpMass();
+                const wasShrunkBefore = wasHoleShrunkBeforeLastJump();
+
+                if (wasShrunkBefore && lastJumpMass > 0) {
+                    const minOriginal = CONFIG.baseMass * (1 - CONFIG.variance);
+                    const minFromShrunkConstraint = CONFIG.critThreshold * minOriginal - lastJumpMass;
+                    newMin = Math.max(critMin, minFromShrunkConstraint);
+                } else {
+                    newMin = critMin;
+                }
+                newMax = critMax;
+                note = `Tracking inconsistent, reset to ${Math.round(newMin)}-${Math.round(newMax)} M`;
+                clearMctsTree();  // Tree no longer valid
+            } else {
+                note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
+            }
+
+            state.massUsed = 0;
+            state.knownMinStart = newMin;
+            state.knownMaxStart = newMax;
+            state.hasUnknownMass = false;
+
+            state.history.push({
+                type: 'state-crit',
+                label: 'Hole Crit (Combined)',
+                mass: 0,
+                note: note,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            state.awaitingObservation = false;
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        // Update observation button states based on awaitingObservation state
+        function updateObservationButtons() {
+            const normalBtn = document.getElementById('btn-normal');
+            const shrunkBtn = document.getElementById('btn-shrunk');
+            const critBtn = document.getElementById('btn-crit');
+            if (!normalBtn || !shrunkBtn || !critBtn) return;
+
+            const required = getRequiredObservation();
+
+            // Start with buttons disabled
+            normalBtn.disabled = true;
+            shrunkBtn.disabled = true;
+            critBtn.disabled = true;
+            normalBtn.classList.remove('required');
+            shrunkBtn.classList.remove('required');
+            critBtn.classList.remove('required');
+
+            // Only enable if awaiting observation after a jump
+            if (!state.awaitingObservation) {
+                return;
+            }
+
+            if (required === 'crit') {
+                // Only crit is valid - must have crossed shrink already
+                critBtn.disabled = false;
+                critBtn.classList.add('required');
+            } else if (required === 'shrink') {
+                // Must have shrunk, crit also possible (but not normal)
+                shrunkBtn.disabled = false;
+                critBtn.disabled = false;
+                shrunkBtn.classList.add('required');
+                critBtn.classList.add('required');
+            } else {
+                // No requirement - enable all options
+                normalBtn.disabled = false;
+                shrunkBtn.disabled = false;
+                critBtn.disabled = false;
+            }
+        }
+
+        // Initialize state selection UI
+        function initStateSelection() {
+            const radios = document.querySelectorAll('input[name="hole-state"]');
+            radios.forEach(radio => {
+                radio.addEventListener('change', updateStateSelection);
+            });
+            updateStateSelection();  // Set initial state
+        }
+
+        function updateStateSelection() {
+            const selected = document.querySelector('input[name="hole-state"]:checked')?.value || 'normal';
+            document.querySelectorAll('.state-option').forEach(opt => opt.classList.remove('selected'));
+            document.getElementById('state-' + selected)?.classList.add('selected');
+        }
+
+        // Unified hole setup function
+        function applyHoleSetup() {
+            const visualState = document.querySelector('input[name="hole-state"]:checked')?.value || 'normal';
+            const massInput = document.getElementById('setup-mass-input');
+            const massUsed = parseFloat(massInput.value) || 0;
+
+            if (massUsed < 0) {
+                alert('Mass cannot be negative');
+                return;
+            }
+
+            clearMctsTree();
+
+            // Calculate belief bounds based on visual state
+            const baseMin = CONFIG.baseMass * (1 - CONFIG.variance);  // 1800
+            const baseMax = CONFIG.baseMass * (1 + CONFIG.variance);  // 2200
+            const shrinkThreshold = CONFIG.shrinkThreshold;  // 0.5
+            const critThreshold = CONFIG.critThreshold;      // 0.1
+
+            let minStart, maxStart, label, note;
+
+            if (visualState === 'normal') {
+                // Normal: >50% remaining
+                // If massUsed > 0, we know total > 2 * massUsed (since still >50% remaining)
+                minStart = Math.max(baseMin, massUsed > 0 ? 2 * massUsed + 1 : baseMin);
+                maxStart = baseMax;
+                label = 'Setup: Normal';
+                note = `Normal state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+            } else if (visualState === 'reduced') {
+                // Reduced: 10-50% remaining
+                // remaining is 10-50% of total → total is in range [massUsed/0.9, 2*massUsed]
+                // But also constrained by base variance
+                const impliedMin = massUsed > 0 ? massUsed / 0.9 : baseMin * critThreshold;
+                const impliedMax = massUsed > 0 ? 2 * massUsed : baseMax * shrinkThreshold;
+                minStart = Math.max(baseMin * critThreshold, impliedMin);  // At least 180M (crit lower bound)
+                maxStart = Math.min(baseMax, impliedMax);  // At most 2200M
+                // Ensure valid range
+                if (minStart > maxStart) {
+                    minStart = baseMin * critThreshold;
+                    maxStart = baseMax * shrinkThreshold;
+                }
+                label = 'Setup: Reduced';
+                note = `Reduced state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+            } else {  // critical
+                // Critical: <10% remaining
+                // remaining is <10% of total → total ≤ massUsed / 0.9
+                const impliedMax = massUsed > 0 ? massUsed / 0.9 : baseMax * critThreshold;
+                minStart = 0;
+                maxStart = Math.min(baseMax * critThreshold, impliedMax);  // At most 220M
+                label = 'Setup: Critical';
+                note = `Critical state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+            }
+
+            state.massUsed = massUsed;
+            state.knownMinStart = minStart;
+            state.knownMaxStart = maxStart;
+            state.hasUnknownMass = massUsed === 0;
+            state.history = [];
+            state.history.push({
+                type: 'setup-' + visualState,
+                label: label,
+                mass: massUsed,
+                note: note,
+                timestamp: new Date().toLocaleTimeString()
+            });
+
+            massInput.value = '';
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        function copyEventLog() {
+            const minRemaining = Math.max(0, state.knownMinStart - state.massUsed);
+            const maxRemaining = Math.max(0, state.knownMaxStart - state.massUsed);
+
+            let markdown = `## Wormhole Roll Log\n\n`;
+            markdown += `**Mass Estimate:** ${Math.round(minRemaining)}-${Math.round(maxRemaining)} M remaining\n\n`;
+
+            if (state.history.length === 0) {
+                markdown += `*No events recorded*\n`;
+            } else {
+                markdown += `### Event Log\n\n`;
+                state.history.forEach((item, i) => {
+                    if (item.type.startsWith('jump-')) {
+                        markdown += `${i + 1}. **${item.label}** (-${item.mass} M)\n`;
+                    } else if (item.type.startsWith('state-')) {
+                        markdown += `${i + 1}. *${item.label}* — ${item.note}\n`;
+                    } else if (item.type.startsWith('setup')) {
+                        markdown += `${i + 1}. Setup: ${item.note}\n`;
+                    }
+                });
+            }
+
+            navigator.clipboard.writeText(markdown).then(() => {
+                // Brief visual feedback
+                const btn = document.querySelector('.observation-buttons-vertical .btn-copy');
+                if (btn) {
+                    const original = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = original, 1500);
+                }
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        function undoLast() {
+            if (state.history.length > 0) {
+                const last = state.history.pop();
+                if (last.type.startsWith('setup')) {
+                    // Setup actions cannot be undone - they reset everything
+                    alert('Setup actions cannot be undone. Use a new setup instead.');
+                    state.history.push(last);
+                } else if (last.type.startsWith('state-')) {
+                    // State changes (shrunk/crit/normal) CAN be undone
+                    // We need to restore the previous belief state
+                    // Since state changes reset massUsed to 0, we need to restore from history
+                    // For simplicity, just clear and rebuild from remaining history
+                    clearMctsTree();
+                    rebuildStateFromHistory();
+                    // After undoing an observation, we're back to awaiting observation
+                    state.awaitingObservation = true;
+                } else {
+                    // Normal jump - just subtract mass
+                    state.massUsed -= last.mass;
+                    clearMctsTree();
+                    // After undoing a jump, we're no longer awaiting observation
+                    state.awaitingObservation = false;
+                }
+                saveState();
+                setTimeout(() => {
+                    runStrategyAnalysis();
+                    updateDisplay();
+                }, 10);
+            }
+        }
+
+        // Rebuild state from history after undoing a state change
+        function rebuildStateFromHistory() {
+            // Find the last setup entry
+            let setupIndex = -1;
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                if (state.history[i].type.startsWith('setup')) {
+                    setupIndex = i;
+                    break;
+                }
+            }
+
+            if (setupIndex === -1) {
+                // No setup found, reset to fresh
+                state.massUsed = 0;
+                state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
+                state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                state.hasUnknownMass = false;
+            } else {
+                // Replay from setup
+                const setup = state.history[setupIndex];
+                // Determine initial state from setup type
+                if (setup.type === 'setup-normal') {
+                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
+                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                } else if (setup.type === 'setup-reduced') {
+                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
+                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
+                } else if (setup.type === 'setup-critical') {
+                    state.knownMinStart = 0;
+                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
+                } else {
+                    // Legacy setup types
+                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
+                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                }
+                state.massUsed = setup.mass || 0;
+                state.hasUnknownMass = setup.mass === 0;
+            }
+
+            // Replay all jumps and state changes after setup
+            for (let i = setupIndex + 1; i < state.history.length; i++) {
+                const entry = state.history[i];
+                if (entry.type.startsWith('jump-')) {
+                    state.massUsed += entry.mass;
+                } else if (entry.type === 'state-shrunk') {
+                    // Apply shrink narrowing
+                    const trackedMin = state.knownMinStart - state.massUsed;
+                    const trackedMax = state.knownMaxStart - state.massUsed;
+                    const shrinkMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
+                    const shrinkMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
+                    state.knownMinStart = Math.max(trackedMin, shrinkMin);
+                    state.knownMaxStart = Math.min(trackedMax, shrinkMax);
+                    state.massUsed = 0;
+                    state.hasUnknownMass = false;
+                } else if (entry.type === 'state-crit') {
+                    // Apply crit narrowing
+                    const trackedMin = state.knownMinStart - state.massUsed;
+                    const trackedMax = state.knownMaxStart - state.massUsed;
+                    const critMin = 0;
+                    const critMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
+                    state.knownMinStart = Math.max(trackedMin, critMin);
+                    state.knownMaxStart = Math.min(trackedMax, critMax);
+                    state.massUsed = 0;
+                    state.hasUnknownMass = false;
+                }
+            }
+        }
+
+        function resetCalculator() {
+            if (confirm('Reset all tracking? This cannot be undone.')) {
+                clearMctsTree();
+                state = {
+                    massUsed: 0,
+                    history: [],
+                    hasUnknownMass: false,
+                    knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
+                    knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance),
+                    awaitingObservation: false
+                };
+                saveState();
+                setTimeout(() => {
+                    runStrategyAnalysis();
+                    updateDisplay();
+                }, 10);
+            }
+        }
+
+        // Update jump button labels based on position
+        function updateJumpButtons(position, shipUsedOut) {
+            const requiredObs = getRequiredObservation();
+            // Block jumps if awaiting observation OR if observation is required
+            const jumpsBlocked = state.awaitingObservation || (requiredObs !== null && position === 'home');
+
+            const buttons = document.querySelectorAll('.jump-btn');
+            buttons.forEach(btn => {
+                const jumpType = btn.dataset.jump;
+                const jump = SINGLE_JUMPS[jumpType];
+                if (!jump) return;
+
+                const isWrongShip = position === 'away' && shipUsedOut && jump.ship !== shipUsedOut;
+
+                // Update label
+                if (position === 'home') {
+                    btn.innerHTML = `${jump.label} →<br><span style="font-size: 0.8em; opacity: 0.8;">${jump.mass} M</span>`;
+                } else {
+                    btn.innerHTML = `← ${jump.label}<br><span style="font-size: 0.8em; opacity: 0.8;">${jump.mass} M</span>`;
+                }
+
+                // Update styling based on position, ship constraint, and observation requirement
+                if (isWrongShip || jumpsBlocked) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.3';
+                    btn.style.cursor = 'not-allowed';
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            });
+
+            // Update direction label
+            const dirLabel = document.getElementById('direction-label');
+            if (dirLabel) {
+                if (state.awaitingObservation) {
+                    if (requiredObs === 'crit') {
+                        dirLabel.innerHTML = `<span style="color: #f88;">⚠ Record observation (must be CRIT)</span>`;
+                    } else if (requiredObs === 'shrink') {
+                        dirLabel.innerHTML = `<span style="color: #fc8;">⚠ Record observation (SHRUNK or CRIT)</span>`;
+                    } else {
+                        dirLabel.innerHTML = `<span style="color: #8af;">← Record observation</span>`;
+                    }
+                    dirLabel.style.color = '#8af';
+                } else if (position === 'away') {
+                    dirLabel.textContent = `← Jumping BACK (${shipUsedOut})`;
+                    dirLabel.style.color = '#faa';
+                } else {
+                    dirLabel.textContent = '→ Jumping OUT';
+                    dirLabel.style.color = '#8f8';
+                }
+            }
+
+            // Update the action panel border color
+            const actionPanel = document.getElementById('action-panel');
+            if (actionPanel) {
+                if (position === 'away') {
+                    actionPanel.style.borderColor = '#c46444';
+                    actionPanel.style.background = 'rgba(80, 40, 30, 0.4)';
+                } else {
+                    actionPanel.style.borderColor = '#4a8a6a';
+                    actionPanel.style.background = 'rgba(30, 60, 50, 0.4)';
+                }
+            }
+        }
+
+        function updateDisplay() {
+            const minRemaining = Math.max(0, state.knownMinStart - state.massUsed);
+            const maxRemaining = Math.max(0, state.knownMaxStart - state.massUsed);
+            const avgRemaining = (minRemaining + maxRemaining) / 2;
+
+            // Update mass bar
+            const massBar = document.getElementById('mass-bar');
+            const avgPercent = (avgRemaining / CONFIG.baseMass) * 100;
+            massBar.style.width = avgPercent + '%';
+
+            // Update variance overlay
+            const overlay = document.getElementById('variance-overlay');
+            const minPercent = (minRemaining / (CONFIG.baseMass * 1.1)) * 100;
+            const maxPercent = (maxRemaining / (CONFIG.baseMass * 1.1)) * 100;
+            overlay.style.left = minPercent + '%';
+            overlay.style.width = (maxPercent - minPercent) + '%';
+
+            // Variance labels
+            document.getElementById('var-min-label').textContent = Math.round(minRemaining) + ' M';
+            document.getElementById('var-max-label').textContent = Math.round(maxRemaining) + ' M';
+
+            // Determine status based on average
+            let status, statusClass;
+            if (avgRemaining <= CONFIG.baseMass * CONFIG.critThreshold) {
+                status = 'CRITICAL';
+                statusClass = 'crit';
+            } else if (avgRemaining <= CONFIG.baseMass * CONFIG.shrinkThreshold) {
+                status = 'SHRUNK';
+                statusClass = 'shrink';
+            } else {
+                status = 'FRESH';
+                statusClass = 'fresh';
+            }
+
+            massBar.className = 'mass-bar ' + statusClass;
+            document.getElementById('status-badge').className = 'status-badge status-' + statusClass;
+            document.getElementById('status-badge').textContent = status;
+
+            // Update position badge and jump buttons
+            const position = getPosition();
+            const shipUsedOut = getShipUsedOut();
+            const positionBadge = document.getElementById('position-badge');
+
+            if (position === 'away') {
+                positionBadge.textContent = 'AWAY';
+                positionBadge.style.background = 'rgba(196, 100, 68, 0.3)';
+                positionBadge.style.borderColor = '#c46444';
+                positionBadge.style.color = '#faa';
+            } else {
+                positionBadge.textContent = 'HOME';
+                positionBadge.style.background = 'rgba(74, 138, 74, 0.3)';
+                positionBadge.style.borderColor = '#4a8a4a';
+                positionBadge.style.color = '#8f8';
+            }
+
+            // Update jump button labels and states
+            updateJumpButtons(position, shipUsedOut);
+
+            // Update displays
+            document.getElementById('mass-remaining').textContent = Math.round(avgRemaining) + ' M';
+            document.getElementById('range-min').textContent = Math.round(minRemaining);
+            document.getElementById('range-max').textContent = Math.round(maxRemaining);
+
+            updateHistory();
+            updateObservationButtons();
+        }
+
+        function updateHistory() {
+            const container = document.getElementById('history-list');
+
+            if (state.history.length === 0) {
+                container.innerHTML = '<div class="history-item"><span class="action">No jumps recorded</span></div>';
+                return;
+            }
+
+            container.innerHTML = state.history.slice().reverse().map(item => {
+                const massClass = item.type.startsWith('recovery') ? 'recovery' : 'negative';
+                const massDisplay = item.type.startsWith('recovery')
+                    ? item.note
+                    : ('-' + item.mass + ' M');
+
+                return `
+                    <div class="history-item">
+                        <span class="action">${item.timestamp} - ${item.label}</span>
+                        <span class="mass-change ${massClass}">${massDisplay}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function saveState() {
+            localStorage.setItem('eedvr-wh-calc-v2', JSON.stringify(state));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('eedvr-wh-calc-v2');
+            if (saved) {
+                try {
+                    const loaded = JSON.parse(saved);
+                    state = {
+                        ...state,
+                        ...loaded
+                    };
+                } catch (e) {
+                    console.error('Failed to load saved state');
+                }
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

@@ -151,16 +151,26 @@ describe('Edge Cases', () => {
     expect(results[0].key).toMatch(/^BS_/);
   });
 
-  it('should allow HIC E in endgame when HIC C has rollout risk', () => {
-    // Scenario: 16-86M remaining (from user report)
-    // HIC Cold (30M out) could roll out if true mass is 16-29M
-    // HIC Ent (1.5M out) is always safe
-    // We want HIC E to be available as an option
-    const root = runPOMCTS(2000, 2000, 2000 - 86, 50000);  // 86M max remaining
+  it('should recommend safe actions over risky ones when rollout risk exists', () => {
+    // Scenario: remaining 16-86M
+    // HIC Cold (30M out) has rollout risk when remaining.min < 30
+    // HIC E/H (1.5M out, 134M back) is safe AND efficient
+    // Safe actions should have higher success rate than risky ones
+
+    const root = runPOMCTS(16, 86, 0, 100000);
     const results = getMCTSActionResults(root);
 
-    // HIC E should be in the results
-    const hicEnt = results.find(r => r.key === 'HIC_ENT' || r.key === 'HIC_ENT_HOT');
-    expect(hicEnt).toBeDefined();
+    // Find HIC E/H (safe) and HIC C variants (risky)
+    const hicEntHot = results.find(r => r.key === 'HIC_ENT_HOT');
+    const hicCold = results.find(r => r.key === 'HIC_COLD' || r.key === 'HIC_COLD_HOT');
+
+    // HIC E/H should be available (it's efficient and safe)
+    expect(hicEntHot).toBeDefined();
+
+    // If HIC C is available, HIC E/H should have higher success rate
+    // (because HIC C has rollout risk with min remaining = 16M < 30M)
+    if (hicCold) {
+      expect(hicEntHot!.successRate).toBeGreaterThanOrEqual(hicCold.successRate);
+    }
   });
 });

@@ -17,7 +17,7 @@ export const CONFIG = {
   critThreshold: 0.10,    // Hole crits at 10% remaining
 
   // POMCTS settings
-  simulations: 200000,    // Number of MCTS iterations (increased for accuracy)
+  simulations: 1000000,   // Number of MCTS iterations (1M for accuracy)
   maxDepth: 20,           // Maximum simulation depth (trips)
   maxReasonableTrips: 8,  // Filter out actions needing more trips than this
   ucbConstant: 1.414,     // UCB1 exploration constant (sqrt(2))

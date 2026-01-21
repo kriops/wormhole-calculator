@@ -173,4 +173,18 @@ describe('Edge Cases', () => {
       expect(hicEntHot!.successRate).toBeGreaterThanOrEqual(hicCold.successRate);
     }
   });
+
+  it('should show rollout risk for HIC HOT when remaining.min < 134', () => {
+    // Scenario: remaining 100-200M
+    // HIC HOT = 134M out, so if true remaining is 100-133M, user gets rolled
+    // Success rate should NOT be 100% - roughly 66% of range is safe (134-200 / 100-200)
+    const root = runPOMCTS(100, 200, 0, 100000);
+    const results = getMCTSActionResults(root);
+
+    const hicHot = results.find(r => r.key === 'HIC_HOT');
+    expect(hicHot).toBeDefined();
+    // Success rate should be around 66% (100 safe out of 100 range), definitely not 100%
+    expect(hicHot!.successRate).toBeLessThan(0.95);
+    expect(hicHot!.successRate).toBeGreaterThan(0.5);
+  });
 });

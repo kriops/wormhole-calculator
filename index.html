@@ -992,7 +992,7 @@
             shrinkThreshold: 0.50,
             critThreshold: 0.10,
             // MC settings
-            simulations: 200000
+            simulations: 1000000
         };
 
         // State (position is derived from history, not stored)
@@ -1241,7 +1241,7 @@
         }
 
         // Main POMCTS algorithm - branches on (action, observation) pairs
-        function runPOMCTS(startMin, startMax, initialMassUsed, numIterations = 60000) {
+        function runPOMCTS(startMin, startMax, initialMassUsed, numIterations = CONFIG.simulations) {
             const rootTotalBelief = { min: startMin, max: startMax };
             const root = new POMCTSNode(rootTotalBelief, initialMassUsed);
 
@@ -1385,7 +1385,7 @@
         }
 
         // Alias for backward compatibility
-        function runMCTS(rootBelief, startMin, startMax, massUsed, numIterations = 60000) {
+        function runMCTS(rootBelief, startMin, startMax, massUsed, numIterations = CONFIG.simulations) {
             return runPOMCTS(startMin, startMax, massUsed, numIterations);
         }
 
@@ -1454,6 +1454,21 @@
                 const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
                 const rolloutRate = totalVisits > 0 ? (totalVisits - totalWins) / totalVisits : 0;
 
+                // Calculate probability of safe outbound jump
+                // If action.out > remaining.min, there's rollout risk
+                const beliefRange = remainingBelief.max - remainingBelief.min;
+                let pSafeOutbound = 1.0;
+                if (beliefRange > 0 && action.out > remainingBelief.min) {
+                    // P(remaining >= action.out) = (max - action.out) / (max - min)
+                    const safeRange = Math.max(0, remainingBelief.max - action.out);
+                    pSafeOutbound = safeRange / beliefRange;
+                }
+
+                // Observed success rate is conditional on safe outbound
+                // True success rate = P(safe outbound) * P(success | safe outbound)
+                const observedSuccessRate = totalVisits > 0 ? totalWins / totalVisits : 0;
+                const adjustedSuccessRate = pSafeOutbound * observedSuccessRate;
+
                 results.push({
                     key: actionKey,
                     act: action,
@@ -1461,7 +1476,7 @@
                     wins: totalWins,
                     successes: totalWins,
                     total: totalVisits,
-                    successRate: totalVisits > 0 ? totalWins / totalVisits : 0,
+                    successRate: adjustedSuccessRate,
                     rolloutRate,
                     avgSteps,
                     mass: action.out + action.back,

@@ -39,6 +39,21 @@ export function getMCTSActionResults(root: POMCTSNode): ActionResult[] {
     const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
     const rolloutRate = totalVisits > 0 ? (totalVisits - totalWins) / totalVisits : 0;
 
+    // Calculate probability of safe outbound jump
+    // If action.out > remaining.min, there's rollout risk
+    const beliefRange = remainingBelief.max - remainingBelief.min;
+    let pSafeOutbound = 1.0;
+    if (beliefRange > 0 && action.out > remainingBelief.min) {
+      // P(remaining >= action.out) = (max - action.out) / (max - min)
+      const safeRange = Math.max(0, remainingBelief.max - action.out);
+      pSafeOutbound = safeRange / beliefRange;
+    }
+
+    // Observed success rate is conditional on safe outbound
+    // True success rate = P(safe outbound) * P(success | safe outbound)
+    const observedSuccessRate = totalVisits > 0 ? totalWins / totalVisits : 0;
+    const adjustedSuccessRate = pSafeOutbound * observedSuccessRate;
+
     results.push({
       key: actionKey,
       act: action,
@@ -46,7 +61,7 @@ export function getMCTSActionResults(root: POMCTSNode): ActionResult[] {
       wins: totalWins,
       successes: totalWins,
       total: totalVisits,
-      successRate: totalVisits > 0 ? totalWins / totalVisits : 0,
+      successRate: adjustedSuccessRate,
       rolloutRate,
       avgSteps,
       mass: action.out + action.back,

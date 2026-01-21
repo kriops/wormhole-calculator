@@ -1350,32 +1350,41 @@
                 <!-- Visual State -->
                 <div class="setup-group">
                     <div class="setup-label">Visual State</div>
-                    <div style="display: flex; gap: 10px;">
-                        <label style="flex: 1; cursor: pointer;">
-                            <input type="radio" name="hole-state" value="normal" checked style="display: none;">
-                            <div class="state-option" id="state-normal" style="padding: 12px; border-radius: 8px; text-align: center;
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <label style="flex: 1; min-width: 90px; cursor: pointer;">
+                            <input type="radio" name="hole-state" value="fresh" checked style="display: none;">
+                            <div class="state-option" id="state-fresh" style="padding: 10px 8px; border-radius: 8px; text-align: center;
+                                        background: linear-gradient(135deg, #2a5a7a, #3a7a9a); border: 2px solid #4a9aba;
+                                        transition: all 0.2s;">
+                                <div style="font-weight: bold; color: #8df;">Fresh</div>
+                                <div style="font-size: 0.7em; color: #aef; margin-top: 3px;">No untracked</div>
+                            </div>
+                        </label>
+                        <label style="flex: 1; min-width: 90px; cursor: pointer;">
+                            <input type="radio" name="hole-state" value="normal" style="display: none;">
+                            <div class="state-option" id="state-normal" style="padding: 10px 8px; border-radius: 8px; text-align: center;
                                         background: linear-gradient(135deg, #2a6a4a, #3a8a6a); border: 2px solid #4a8a6a;
                                         transition: all 0.2s;">
                                 <div style="font-weight: bold; color: #6fa;">Normal</div>
-                                <div style="font-size: 0.75em; color: #8cf; margin-top: 3px;">&gt;50% remaining</div>
+                                <div style="font-size: 0.7em; color: #8cf; margin-top: 3px;">May have passes</div>
                             </div>
                         </label>
-                        <label style="flex: 1; cursor: pointer;">
+                        <label style="flex: 1; min-width: 90px; cursor: pointer;">
                             <input type="radio" name="hole-state" value="reduced" style="display: none;">
-                            <div class="state-option" id="state-reduced" style="padding: 12px; border-radius: 8px; text-align: center;
+                            <div class="state-option" id="state-reduced" style="padding: 10px 8px; border-radius: 8px; text-align: center;
                                         background: linear-gradient(135deg, #4a4a2a, #6a6a3a); border: 2px solid #6a6a4a;
                                         transition: all 0.2s;">
                                 <div style="font-weight: bold; color: #fc8;">Reduced</div>
-                                <div style="font-size: 0.75em; color: #ca8; margin-top: 3px;">10-50% remaining</div>
+                                <div style="font-size: 0.7em; color: #ca8; margin-top: 3px;">10-50% left</div>
                             </div>
                         </label>
-                        <label style="flex: 1; cursor: pointer;">
+                        <label style="flex: 1; min-width: 90px; cursor: pointer;">
                             <input type="radio" name="hole-state" value="critical" style="display: none;">
-                            <div class="state-option" id="state-critical" style="padding: 12px; border-radius: 8px; text-align: center;
+                            <div class="state-option" id="state-critical" style="padding: 10px 8px; border-radius: 8px; text-align: center;
                                         background: linear-gradient(135deg, #5a3a3a, #7a4a4a); border: 2px solid #7a5a5a;
                                         transition: all 0.2s;">
                                 <div style="font-weight: bold; color: #f88;">Critical</div>
-                                <div style="font-size: 0.75em; color: #faa; margin-top: 3px;">&lt;10% remaining</div>
+                                <div style="font-size: 0.7em; color: #faa; margin-top: 3px;">&lt;10% left</div>
                             </div>
                         </label>
                     </div>
@@ -3409,14 +3418,14 @@ Sisters Core Scanner Probe x8</pre>
         }
 
         function updateStateSelection() {
-            const selected = document.querySelector('input[name="hole-state"]:checked')?.value || 'normal';
+            const selected = document.querySelector('input[name="hole-state"]:checked')?.value || 'fresh';
             document.querySelectorAll('.state-option').forEach(opt => opt.classList.remove('selected'));
             document.getElementById('state-' + selected)?.classList.add('selected');
         }
 
         // Unified hole setup function
         function applyHoleSetup() {
-            const visualState = document.querySelector('input[name="hole-state"]:checked')?.value || 'normal';
+            const visualState = document.querySelector('input[name="hole-state"]:checked')?.value || 'fresh';
             const massInput = document.getElementById('setup-mass-input');
             const massUsed = parseFloat(massInput.value) || 0;
 
@@ -3435,13 +3444,21 @@ Sisters Core Scanner Probe x8</pre>
 
             let minStart, maxStart, label, note;
 
-            if (visualState === 'normal') {
-                // Normal: >50% remaining
-                // With minimum mass semantics: if ≥massUsed passed and still fresh, total > 2 * massUsed
+            if (visualState === 'fresh') {
+                // Fresh: Confirmed new hole, no untracked passes
+                // If mass tracked, total > 2 * massUsed (still fresh means >50% remaining)
                 minStart = Math.max(baseMin, massUsed > 0 ? 2 * massUsed + 1 : baseMin);
                 maxStart = baseMax;
+                label = 'Setup: Fresh';
+                note = `Fresh hole${massUsed > 0 ? ', ≥' + massUsed + 'M passed' : ''} → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+            } else if (visualState === 'normal') {
+                // Normal: Looks >50% but may have untracked passes
+                // Could be just above 50% of minimum total (900M for C247)
+                const normalMin = baseMin * shrinkThreshold;  // 900M (50% of min total)
+                minStart = normalMin;
+                maxStart = baseMax;  // 2200M
                 label = 'Setup: Normal';
-                note = `Normal state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+                note = `Normal state (may have passes) → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
             } else if (visualState === 'reduced') {
                 // Reduced: 10-50% remaining
                 // Tracked mass is TOTAL since hole was fresh, not since it became reduced

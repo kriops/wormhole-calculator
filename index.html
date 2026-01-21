@@ -915,111 +915,240 @@
         // MCTS Implementation - Proper tree search with backpropagation
         // ============================================================
 
-        class MCTSNode {
-            constructor(belief, parent = null, action = null, actionKey = null, depth = 0) {
-                this.belief = { min: belief.min, max: belief.max };
+        // POMCTS: Partially Observable Monte Carlo Tree Search
+        // Nodes branch on (action, observation) pairs to properly handle belief updates
+
+        class POMCTSNode {
+            constructor(totalBelief, massUsed, parent = null, incomingAction = null, incomingActionKey = null, incomingObservation = null, depth = 0) {
+                this.totalBelief = { min: totalBelief.min, max: totalBelief.max };  // Belief about TOTAL wormhole mass
+                this.massUsed = massUsed;  // Cumulative mass used to reach this node
                 this.parent = parent;
-                this.action = action;      // The action object that led here
-                this.actionKey = actionKey; // The key (e.g., 'BS_HOT')
-                this.children = new Map(); // actionKey -> MCTSNode
+                this.incomingAction = incomingAction;
+                this.incomingActionKey = incomingActionKey;
+                this.incomingObservation = incomingObservation;  // 'fresh', 'shrink', 'crit', or null for root
+
+                // Children indexed by action key, then observation
+                // this.children[actionKey][observation] = POMCTSNode
+                this.children = {};
+
                 this.visits = 0;
-                this.wins = 0;             // Successful completions (no rollout)
-                this.depth = depth;        // Number of round trips taken to reach this node
-                this.terminalTrips = {};   // { tripCount: count } for distribution
+                this.wins = 0;
+                this.depth = depth;  // Number of round trips
+                this.terminalTrips = {};
+            }
+
+            // Compute remaining mass belief from total belief
+            getRemainingBelief() {
+                return {
+                    min: Math.max(0, this.totalBelief.min - this.massUsed),
+                    max: Math.max(0, this.totalBelief.max - this.massUsed)
+                };
             }
 
             isTerminal() {
-                return this.belief.max <= 0;
+                const remaining = this.getRemainingBelief();
+                return remaining.max <= 0;
             }
 
             getValidActions() {
+                const remaining = this.getRemainingBelief();
                 return Object.entries(ACTIONS).filter(([key, act]) =>
-                    this.belief.max > act.out  // Must be possible to survive outbound
+                    remaining.max > act.out
                 );
             }
 
-            ucb1(C = 1.414) {
-                if (this.visits === 0) return Infinity;
-                const parentVisits = this.parent ? this.parent.visits : this.visits;
-                return (this.wins / this.visits) + C * Math.sqrt(Math.log(parentVisits) / this.visits);
+            // Get or create child for (action, observation) pair
+            getChild(actionKey, observation) {
+                if (this.children[actionKey] && this.children[actionKey][observation]) {
+                    return this.children[actionKey][observation];
+                }
+                return null;
+            }
+
+            setChild(actionKey, observation, child) {
+                if (!this.children[actionKey]) {
+                    this.children[actionKey] = {};
+                }
+                this.children[actionKey][observation] = child;
+            }
+
+            hasChild(actionKey, observation) {
+                return this.children[actionKey] && this.children[actionKey][observation];
+            }
+
+            // Aggregate stats for an action across all observation branches
+            getActionStats(actionKey) {
+                const branches = this.children[actionKey];
+                if (!branches) return { visits: 0, wins: 0 };
+
+                let totalVisits = 0;
+                let totalWins = 0;
+                for (const obs in branches) {
+                    totalVisits += branches[obs].visits;
+                    totalWins += branches[obs].wins;
+                }
+                return { visits: totalVisits, wins: totalWins };
+            }
+
+            // UCB1 for an action (aggregated across observation branches)
+            ucb1ForAction(actionKey, C = 1.414) {
+                const stats = this.getActionStats(actionKey);
+                if (stats.visits === 0) return Infinity;
+                const exploitation = stats.wins / stats.visits;
+                const exploration = C * Math.sqrt(Math.log(this.visits) / stats.visits);
+                return exploitation + exploration;
+            }
+
+            // Get all action keys that have any children
+            getExploredActions() {
+                return Object.keys(this.children);
             }
         }
 
-        // Main MCTS algorithm
-        function runMCTS(rootBelief, startMin, startMax, massUsed, numIterations = 60000) {
-            const root = new MCTSNode(rootBelief);
+        // Compute observation given true mass and mass used
+        function computeObservation(trueMass, massUsed) {
+            const remaining = trueMass - massUsed;
+            const remainingPct = remaining / trueMass;
+
+            if (remaining <= 0) return 'collapsed';
+            if (remainingPct <= CONFIG.critThreshold) return 'crit';
+            if (remainingPct <= CONFIG.shrinkThreshold) return 'shrink';
+            return 'fresh';
+        }
+
+        // Update total mass belief based on observation
+        function updateTotalBelief(currentTotalBelief, massUsed, observation) {
+            let newMin = currentTotalBelief.min;
+            let newMax = currentTotalBelief.max;
+
+            if (observation === 'fresh') {
+                // Remaining > 50% of total → total > 2 * massUsed
+                newMin = Math.max(newMin, 2 * massUsed + 1);
+            } else if (observation === 'shrink') {
+                // 10% < remaining ≤ 50% → massUsed/0.9 < total ≤ 2*massUsed
+                newMin = Math.max(newMin, massUsed / 0.9 + 1);
+                newMax = Math.min(newMax, 2 * massUsed);
+            } else if (observation === 'crit') {
+                // Remaining ≤ 10% → total ≤ massUsed/0.9
+                newMax = Math.min(newMax, massUsed / 0.9);
+            }
+            // 'collapsed' means we're done - no belief update needed
+
+            return { min: newMin, max: newMax };
+        }
+
+        // Main POMCTS algorithm - branches on (action, observation) pairs
+        function runPOMCTS(startMin, startMax, initialMassUsed, numIterations = 60000) {
+            const rootTotalBelief = { min: startMin, max: startMax };
+            const root = new POMCTSNode(rootTotalBelief, initialMassUsed);
 
             for (let i = 0; i < numIterations; i++) {
-                // Sample true mass for this iteration (step 0 of rollout)
+                // Sample true mass for this iteration
                 const trueMass = startMin + Math.random() * (startMax - startMin);
-                let remaining = trueMass - massUsed;
+                let currentMassUsed = initialMassUsed;
+                let remaining = trueMass - currentMassUsed;
 
-                // 1. SELECTION: traverse tree using UCB1 until we hit a leaf
+                // Track path for backpropagation
+                const path = [root];
                 let node = root;
                 let rolledOut = false;
 
-                while (node.children.size > 0 && !node.isTerminal()) {
-                    // Pick child with highest UCB1
-                    let bestChild = null;
-                    let bestUCB = -Infinity;
-                    for (const child of node.children.values()) {
-                        const ucb = child.ucb1();
-                        if (ucb > bestUCB) {
-                            bestUCB = ucb;
-                            bestChild = child;
+                // 1. SELECTION + EXPANSION: traverse/expand tree
+                while (!node.isTerminal() && !rolledOut) {
+                    const validActions = node.getValidActions();
+                    if (validActions.length === 0) break;
+
+                    // Find an unexplored (action, observation) pair, or select via UCB1
+                    let selectedActionKey = null;
+                    let selectedAction = null;
+                    let needsExpansion = false;
+
+                    // First, check if any valid action has unexplored observation branch for this trueMass
+                    for (const [key, act] of validActions) {
+                        // Check for rollout before computing observation
+                        if (remaining <= act.out) continue;
+
+                        const newMassUsed = currentMassUsed + act.out + act.back;
+                        const observation = computeObservation(trueMass, newMassUsed);
+
+                        if (!node.hasChild(key, observation)) {
+                            // This (action, observation) pair is unexplored - expand here
+                            selectedActionKey = key;
+                            selectedAction = act;
+                            needsExpansion = true;
+                            break;
                         }
                     }
-                    node = bestChild;
 
-                    // Apply the action to remaining mass
-                    const act = node.action;
-                    // Check for rollout on outbound
-                    if (remaining <= act.out) {
+                    if (!needsExpansion) {
+                        // All reachable (action, observation) pairs explored - use UCB1 to select action
+                        let bestUCB = -Infinity;
+                        for (const [key, act] of validActions) {
+                            if (remaining <= act.out) continue;  // Skip if would roll out
+
+                            const ucb = node.ucb1ForAction(key);
+                            if (ucb > bestUCB) {
+                                bestUCB = ucb;
+                                selectedActionKey = key;
+                                selectedAction = act;
+                            }
+                        }
+                    }
+
+                    if (!selectedAction) {
+                        // No valid action found (all would roll out)
                         rolledOut = true;
                         break;
                     }
-                    remaining -= act.out + act.back;
-                }
 
-                // 2. EXPANSION: if not terminal and not expanded, add children
-                if (!rolledOut && !node.isTerminal() && node.children.size === 0) {
-                    for (const [key, act] of node.getValidActions()) {
-                        const newBelief = {
-                            min: Math.max(0, node.belief.min - act.out - act.back),
-                            max: Math.max(0, node.belief.max - act.out - act.back)
-                        };
-                        const child = new MCTSNode(newBelief, node, act, key, node.depth + 1);
-                        node.children.set(key, child);
+                    // Check for rollout on outbound
+                    if (remaining <= selectedAction.out) {
+                        rolledOut = true;
+                        break;
                     }
 
-                    // Select one child to simulate from (pick randomly for exploration)
-                    if (node.children.size > 0) {
-                        const childArray = Array.from(node.children.values());
-                        const selectedChild = childArray[Math.floor(Math.random() * childArray.length)];
-                        node = selectedChild;
+                    // Apply action
+                    const newMassUsed = currentMassUsed + selectedAction.out + selectedAction.back;
+                    remaining = trueMass - newMassUsed;
+                    const observation = computeObservation(trueMass, newMassUsed);
 
-                        // Apply selected action
-                        const act = node.action;
-                        if (remaining <= act.out) {
-                            rolledOut = true;
-                        } else {
-                            remaining -= act.out + act.back;
-                        }
+                    // Get or create child node
+                    let child = node.getChild(selectedActionKey, observation);
+                    if (!child) {
+                        // Create new child with updated belief
+                        const newTotalBelief = updateTotalBelief(node.totalBelief, newMassUsed, observation);
+                        child = new POMCTSNode(
+                            newTotalBelief,
+                            newMassUsed,
+                            node,
+                            selectedAction,
+                            selectedActionKey,
+                            observation,
+                            node.depth + 1
+                        );
+                        node.setChild(selectedActionKey, observation, child);
                     }
+
+                    currentMassUsed = newMassUsed;
+                    node = child;
+                    path.push(node);
+
+                    // If we just expanded, break to go to simulation
+                    if (needsExpansion) break;
                 }
 
-                // 3. SIMULATION: random rollout to terminal
-                let simBelief = { min: node.belief.min, max: node.belief.max };
+                // 2. SIMULATION: random rollout to terminal
                 let trips = node.depth;
+                let simTotalBelief = { ...node.totalBelief };
+                let simMassUsed = currentMassUsed;
 
-                if (!rolledOut) {
+                if (!rolledOut && remaining > 0) {
                     while (remaining > 0 && trips < 20) {
-                        // Get valid actions - must survive outbound with actual remaining mass
+                        // Get valid actions based on actual remaining mass
                         const validActions = Object.entries(ACTIONS).filter(([k, a]) =>
                             remaining > a.out
                         );
                         if (validActions.length === 0) {
-                            // No valid actions but mass remains - we're stuck (shouldn't happen with HIC Ent)
                             rolledOut = true;
                             break;
                         }
@@ -1029,85 +1158,111 @@
                         const [key, act] = validActions[0];
 
                         trips++;
-                        remaining -= act.out + act.back;
+                        simMassUsed += act.out + act.back;
+                        remaining = trueMass - simMassUsed;
 
-                        // Update simulation belief
-                        simBelief.min = Math.max(0, simBelief.min - act.out - act.back);
-                        simBelief.max = Math.max(0, simBelief.max - act.out - act.back);
+                        // Compute observation and update belief (for accurate simulation)
+                        const observation = computeObservation(trueMass, simMassUsed);
+                        simTotalBelief = updateTotalBelief(simTotalBelief, simMassUsed, observation);
                     }
                 }
 
-                // 4. BACKPROPAGATION: update stats up the tree
+                // 3. BACKPROPAGATION: update stats along path
                 const success = !rolledOut && remaining <= 0;
-                let backNode = node;
-                while (backNode !== null) {
-                    backNode.visits++;
+                for (const n of path) {
+                    n.visits++;
                     if (success) {
-                        backNode.wins++;
-                        // Track terminal trip count at each node
-                        backNode.terminalTrips[trips] = (backNode.terminalTrips[trips] || 0) + 1;
+                        n.wins++;
+                        n.terminalTrips[trips] = (n.terminalTrips[trips] || 0) + 1;
                     }
-                    backNode = backNode.parent;
                 }
             }
 
             return root;
         }
 
-        // Extract best action from MCTS tree (most visited child)
+        // Alias for backward compatibility
+        function runMCTS(rootBelief, startMin, startMax, massUsed, numIterations = 60000) {
+            return runPOMCTS(startMin, startMax, massUsed, numIterations);
+        }
+
+        // Extract best action from POMCTS tree (most visited action, aggregated across observations)
         function getMCTSBestAction(root) {
-            if (root.children.size === 0) return null;
+            const actionKeys = Object.keys(root.children);
+            if (actionKeys.length === 0) return null;
 
             let bestKey = null;
-            let bestChild = null;
-            let bestVisits = 0;
+            let bestStats = { visits: 0, wins: 0 };
+            let bestAction = null;
 
-            for (const [key, child] of root.children) {
-                if (child.visits > bestVisits) {
-                    bestVisits = child.visits;
+            for (const key of actionKeys) {
+                const stats = root.getActionStats(key);
+                if (stats.visits > bestStats.visits) {
+                    bestStats = stats;
                     bestKey = key;
-                    bestChild = child;
+                    // Get action from any observation branch
+                    const observations = root.children[key];
+                    const firstObs = Object.keys(observations)[0];
+                    bestAction = observations[firstObs].incomingAction;
                 }
             }
 
+            if (!bestAction) return null;
+
+            const remainingBelief = root.getRemainingBelief();
             return {
                 key: bestKey,
-                action: bestChild.action,
-                visits: bestChild.visits,
-                wins: bestChild.wins,
-                successRate: bestChild.visits > 0 ? bestChild.wins / bestChild.visits : 0,
-                guaranteedSafe: root.belief.min > bestChild.action.out
+                action: bestAction,
+                visits: bestStats.visits,
+                wins: bestStats.wins,
+                successRate: bestStats.visits > 0 ? bestStats.wins / bestStats.visits : 0,
+                guaranteedSafe: remainingBelief.min > bestAction.out
             };
         }
 
-        // Extract all action results from MCTS tree
+        // Extract all action results from POMCTS tree (aggregated across observations)
         function getMCTSActionResults(root) {
             const results = [];
-            for (const [key, child] of root.children) {
-                // Calculate average trips from child's terminalTrips
+            const remainingBelief = root.getRemainingBelief();
+
+            for (const actionKey of Object.keys(root.children)) {
+                const observations = root.children[actionKey];
+
+                // Aggregate stats across all observation branches
+                let totalVisits = 0;
+                let totalWins = 0;
                 let totalTrips = 0;
                 let totalSuccesses = 0;
-                for (const [trips, count] of Object.entries(child.terminalTrips)) {
-                    totalTrips += parseInt(trips) * count;
-                    totalSuccesses += count;
-                }
-                const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
+                let action = null;
 
-                // Rollout rate is failures / total visits
-                const rolloutRate = child.visits > 0 ? (child.visits - child.wins) / child.visits : 0;
+                for (const obs of Object.keys(observations)) {
+                    const child = observations[obs];
+                    totalVisits += child.visits;
+                    totalWins += child.wins;
+                    action = child.incomingAction;
+
+                    // Aggregate terminal trips
+                    for (const [trips, count] of Object.entries(child.terminalTrips)) {
+                        totalTrips += parseInt(trips) * count;
+                        totalSuccesses += count;
+                    }
+                }
+
+                const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
+                const rolloutRate = totalVisits > 0 ? (totalVisits - totalWins) / totalVisits : 0;
 
                 results.push({
-                    key,
-                    act: child.action,
-                    visits: child.visits,
-                    wins: child.wins,
-                    successes: child.wins,  // Alias for display
-                    total: child.visits,    // Alias for display
-                    successRate: child.visits > 0 ? child.wins / child.visits : 0,
+                    key: actionKey,
+                    act: action,
+                    visits: totalVisits,
+                    wins: totalWins,
+                    successes: totalWins,
+                    total: totalVisits,
+                    successRate: totalVisits > 0 ? totalWins / totalVisits : 0,
                     rolloutRate,
                     avgSteps,
-                    mass: child.action.out + child.action.back,
-                    guaranteedSafe: root.belief.min > child.action.out
+                    mass: action.out + action.back,
+                    guaranteedSafe: remainingBelief.min > action.out
                 });
             }
             // Sort by visits (most explored = best)
@@ -1115,7 +1270,7 @@
             return results;
         }
 
-        // Extract trip distribution from MCTS tree root
+        // Extract trip distribution from POMCTS tree root
         function getMCTSTripDistribution(root) {
             const totalWins = root.wins;
             if (totalWins === 0) return [];
@@ -1135,56 +1290,39 @@
             const sequence = [];
             let node = root;
 
-            while (node.children.size > 0) {
-                let bestChild = null;
+            while (Object.keys(node.children).length > 0) {
+                // Find best action (most visited)
                 let bestKey = null;
                 let bestVisits = 0;
 
-                for (const [key, child] of node.children) {
-                    if (child.visits > bestVisits) {
-                        bestVisits = child.visits;
-                        bestKey = key;
-                        bestChild = child;
+                for (const actionKey of Object.keys(node.children)) {
+                    const stats = node.getActionStats(actionKey);
+                    if (stats.visits > bestVisits) {
+                        bestVisits = stats.visits;
+                        bestKey = actionKey;
                     }
                 }
 
-                if (!bestChild || bestVisits === 0) break;
+                if (!bestKey || bestVisits === 0) break;
                 sequence.push(bestKey);
+
+                // Follow the most-visited observation branch for this action
+                const observations = node.children[bestKey];
+                let bestChild = null;
+                let bestChildVisits = 0;
+                for (const obs of Object.keys(observations)) {
+                    if (observations[obs].visits > bestChildVisits) {
+                        bestChildVisits = observations[obs].visits;
+                        bestChild = observations[obs];
+                    }
+                }
+
+                if (!bestChild) break;
                 node = bestChild;
             }
 
             return sequence;
         }
-
-        // Update belief based on observation (shrink/crit)
-        // originalMass is the true total mass of the hole, trueRemaining is current remaining
-        function updateBeliefWithObservation(belief, originalMass, trueRemaining, prevRemaining) {
-            const newBelief = { min: belief.min, max: belief.max };
-
-            // Calculate thresholds based on actual original mass
-            const shrinkThresh = originalMass * CONFIG.shrinkThreshold;
-            const critThresh = originalMass * CONFIG.critThreshold;
-
-            // Check if we crossed shrink threshold (from above to below)
-            if (prevRemaining > shrinkThresh && trueRemaining <= shrinkThresh && trueRemaining > critThresh) {
-                // Observed shrink: remaining is now 10-50% of original
-                // This means original was such that trueRemaining is in [10%, 50%] of it
-                // We can narrow our belief about remaining
-                newBelief.min = Math.max(newBelief.min, critThresh * 0.9);
-                newBelief.max = Math.min(newBelief.max, shrinkThresh * 1.1);
-            }
-
-            // Check if we crossed crit threshold
-            if (prevRemaining > critThresh && trueRemaining <= critThresh) {
-                // Observed crit: remaining is now 0-10% of original
-                newBelief.min = Math.max(newBelief.min, 0);
-                newBelief.max = Math.min(newBelief.max, critThresh * 1.1);
-            }
-
-            return newBelief;
-        }
-
-
 
 
 

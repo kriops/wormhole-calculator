@@ -1131,12 +1131,18 @@
             getValidActions() {
                 const remaining = this.getRemainingBelief();
                 // Filter out actions that can't survive outbound
-                // Also filter out actions that would take >15 trips (inefficient)
+                // Also filter out actions that would take too many trips (inefficient)
                 const maxReasonableTrips = 8;
                 const minMassPerTrip = remaining.max / maxReasonableTrips;
+                const isEndgame = remaining.max < 500;  // Near end of hole
 
                 return Object.entries(ACTIONS).filter(([key, act]) => {
                     if (remaining.max <= act.out) return false;  // Can't survive outbound
+
+                    // In endgame, allow guaranteed-safe actions regardless of efficiency
+                    if (isEndgame && act.out < remaining.min) return true;
+
+                    // Filter inefficient actions
                     const tripMass = act.out + act.back;
                     if (tripMass < minMassPerTrip) return false;  // Would take too many trips
                     return true;

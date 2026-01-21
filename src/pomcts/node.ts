@@ -68,13 +68,20 @@ export class POMCTSNode {
   /**
    * Get valid actions from this state.
    * Filters out actions that can't survive outbound or would take too many trips.
+   * In endgame (low mass), allows guaranteed-safe actions regardless of efficiency.
    */
   getValidActions(): Array<[string, Action]> {
     const remaining = this.getRemainingBelief();
     const minMassPerTrip = remaining.max / CONFIG.maxReasonableTrips;
+    const isEndgame = remaining.max < 500;  // Near end of hole
 
     return Object.entries(ACTIONS).filter(([_key, act]) => {
       if (remaining.max <= act.out) return false;  // Can't survive outbound
+
+      // In endgame, allow guaranteed-safe actions regardless of efficiency
+      if (isEndgame && act.out < remaining.min) return true;
+
+      // Filter inefficient actions
       const tripMass = act.out + act.back;
       if (tripMass < minMassPerTrip) return false;  // Would take too many trips
       return true;

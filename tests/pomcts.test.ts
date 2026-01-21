@@ -150,4 +150,17 @@ describe('Edge Cases', () => {
     // With 1000M remaining, should recommend BS
     expect(results[0].key).toMatch(/^BS_/);
   });
+
+  it('should allow HIC E in endgame when HIC C has rollout risk', () => {
+    // Scenario: 16-86M remaining (from user report)
+    // HIC Cold (30M out) could roll out if true mass is 16-29M
+    // HIC Ent (1.5M out) is always safe
+    // We want HIC E to be available as an option
+    const root = runPOMCTS(2000, 2000, 2000 - 86, 50000);  // 86M max remaining
+    const results = getMCTSActionResults(root);
+
+    // HIC E should be in the results
+    const hicEnt = results.find(r => r.key === 'HIC_ENT' || r.key === 'HIC_ENT_HOT');
+    expect(hicEnt).toBeDefined();
+  });
 });

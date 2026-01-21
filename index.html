@@ -1027,6 +1027,9 @@
         };
 
         let recommendedStrategy = null;
+        let currentMctsRoot = null;  // Store MCTS tree for incremental updates
+        let lastCompletedAction = null;  // Track last completed round-trip action
+        let lastObservation = null;  // Track last observation (fresh/shrink/crit)
 
         // Derive position from jump history (odd = away, even = home)
         function getPosition() {
@@ -1040,6 +1043,39 @@
             const jumps = state.history.filter(h => h.type.startsWith('jump-'));
             const lastJump = jumps[jumps.length - 1];
             return lastJump?.ship || null;
+        }
+
+        // Get the last completed round-trip action key (for tree descent)
+        function getLastCompletedActionKey() {
+            const jumps = state.history.filter(h => h.type.startsWith('jump-'));
+            if (jumps.length < 2) return null;
+
+            // Get the last two jumps (should be out then back)
+            const lastTwo = jumps.slice(-2);
+            const outJump = lastTwo[0];
+            const backJump = lastTwo[1];
+
+            if (!outJump.type.includes('-out-') || !backJump.type.includes('-back-')) {
+                return null;
+            }
+
+            const outMass = outJump.mass;
+            const backMass = backJump.mass;
+
+            // Find matching action
+            for (const [key, act] of Object.entries(ACTIONS)) {
+                if (act.out === outMass && act.back === backMass) {
+                    return key;
+                }
+            }
+            return null;
+        }
+
+        // Clear the MCTS tree (called on reset/recovery)
+        function clearMctsTree() {
+            currentMctsRoot = null;
+            lastCompletedAction = null;
+            lastObservation = null;
         }
 
 
@@ -1581,8 +1617,35 @@
                 return;
             }
 
-            // Normal case: we're HOME, run proper MCTS
-            const mctsRoot = runMCTS(belief, startMin, startMax, massUsed);
+            // Normal case: we're HOME, try to reuse existing tree
+            let mctsRoot = null;
+            let reusedTree = false;
+            const additionalIterations = Math.floor(CONFIG.simulations / 4);  // 250k additional iterations
+
+            // Try to descend existing tree if we have a completed action + observation
+            if (currentMctsRoot && lastCompletedAction && lastObservation) {
+                const childNode = currentMctsRoot.getChild(lastCompletedAction, lastObservation);
+                if (childNode) {
+                    // Descend to child and run additional iterations
+                    mctsRoot = childNode;
+                    mctsRoot.parent = null;  // Detach from parent
+                    reusedTree = true;
+
+                    // Run additional iterations on the subtree
+                    statusEl.textContent = `Running ${additionalIterations.toLocaleString()} additional iterations...`;
+                    runAdditionalIterations(mctsRoot, startMin, startMax, massUsed, additionalIterations);
+                }
+            }
+
+            // If we couldn't reuse, build fresh tree
+            if (!mctsRoot) {
+                mctsRoot = runMCTS(belief, startMin, startMax, massUsed);
+            }
+
+            // Store for future reuse
+            currentMctsRoot = mctsRoot;
+            lastCompletedAction = null;  // Reset until next round trip
+            lastObservation = null;
 
             // Extract results from tree
             const actionResults = getMCTSActionResults(mctsRoot);
@@ -1608,9 +1671,124 @@
                 mctsIterations: mctsRoot.visits
             };
 
-            statusEl.textContent = `MCTS: ${mctsRoot.visits.toLocaleString()} iterations across ${actionResults.length} actions`;
+            const reuseNote = reusedTree ? ' (reused tree)' : '';
+            statusEl.textContent = `MCTS: ${mctsRoot.visits.toLocaleString()} iterations across ${actionResults.length} actions${reuseNote}`;
 
             displayStrategyAnalysis();
+        }
+
+        // Run additional MCTS iterations on an existing subtree
+        function runAdditionalIterations(root, startMin, startMax, initialMassUsed, numIterations) {
+            for (let i = 0; i < numIterations; i++) {
+                // Sample true mass for this iteration
+                const trueMass = startMin + Math.random() * (startMax - startMin);
+                let currentMassUsed = initialMassUsed;
+                let remaining = trueMass - currentMassUsed;
+
+                // Track path for backpropagation
+                const path = [root];
+                let node = root;
+                let rolledOut = false;
+
+                // Selection + Expansion
+                while (!node.isTerminal() && !rolledOut) {
+                    const validActions = node.getValidActions();
+                    if (validActions.length === 0) break;
+
+                    let selectedActionKey = null;
+                    let selectedAction = null;
+                    let needsExpansion = false;
+
+                    for (const [key, act] of validActions) {
+                        if (remaining <= act.out) continue;
+                        const newMassUsed = currentMassUsed + act.out + act.back;
+                        const observation = computeObservation(trueMass, newMassUsed);
+                        if (!node.hasChild(key, observation)) {
+                            selectedActionKey = key;
+                            selectedAction = act;
+                            needsExpansion = true;
+                            break;
+                        }
+                    }
+
+                    if (!needsExpansion) {
+                        let bestUCB = -Infinity;
+                        for (const [key, act] of validActions) {
+                            if (remaining <= act.out) continue;
+                            const ucb = node.ucb1ForAction(key);
+                            if (ucb > bestUCB) {
+                                bestUCB = ucb;
+                                selectedActionKey = key;
+                                selectedAction = act;
+                            }
+                        }
+                    }
+
+                    if (!selectedAction) {
+                        rolledOut = true;
+                        break;
+                    }
+
+                    if (remaining <= selectedAction.out) {
+                        rolledOut = true;
+                        break;
+                    }
+
+                    const newMassUsed = currentMassUsed + selectedAction.out + selectedAction.back;
+                    remaining = trueMass - newMassUsed;
+                    const observation = computeObservation(trueMass, newMassUsed);
+
+                    let child = node.getChild(selectedActionKey, observation);
+                    if (!child) {
+                        const newTotalBelief = updateTotalBelief(node.totalBelief, newMassUsed, observation);
+                        child = new POMCTSNode(
+                            newTotalBelief,
+                            newMassUsed,
+                            node,
+                            ACTIONS[selectedActionKey],
+                            selectedActionKey,
+                            observation,
+                            node.depth + 1
+                        );
+                        node.setChild(selectedActionKey, observation, child);
+                    }
+
+                    currentMassUsed = newMassUsed;
+                    node = child;
+                    path.push(node);
+
+                    if (needsExpansion) break;
+                }
+
+                // Simulation
+                let trips = node.depth;
+                let simMassUsed = currentMassUsed;
+
+                if (!rolledOut && remaining > 0) {
+                    while (remaining > 0 && trips < 20) {
+                        const validActions = Object.entries(ACTIONS).filter(([k, a]) => remaining > a.out);
+                        if (validActions.length === 0) {
+                            rolledOut = true;
+                            break;
+                        }
+                        validActions.sort((a, b) => (b[1].out + b[1].back) - (a[1].out + a[1].back));
+                        const [key, act] = validActions[0];
+                        trips++;
+                        simMassUsed += act.out + act.back;
+                        remaining = trueMass - simMassUsed;
+                    }
+                }
+
+                // Backpropagation
+                const success = !rolledOut && remaining <= 0;
+                for (const n of path) {
+                    n.visits++;
+                    if (success) {
+                        n.wins++;
+                        n.terminalTrips[trips] = (n.terminalTrips[trips] || 0) + 1;
+                    }
+                }
+            }
         }
 
         // Evaluate return options when we're away
@@ -1837,6 +2015,11 @@
             const jump = SINGLE_JUMPS[jumpType];
 
             if (position === 'home') {
+                // If we have a completed action but no observation, assume 'fresh'
+                if (lastCompletedAction && !lastObservation) {
+                    lastObservation = 'fresh';
+                }
+
                 // Outbound jump
                 state.massUsed += jump.mass;
                 state.history.push({
@@ -1861,6 +2044,9 @@
                     ship: jump.ship,
                     timestamp: new Date().toLocaleTimeString()
                 });
+
+                // Track completed round-trip action for tree reuse
+                lastCompletedAction = getLastCompletedActionKey();
             }
 
             saveState();
@@ -1931,6 +2117,7 @@
         }
 
         function recoverFromShrink() {
+            clearMctsTree();
             state.massUsed = 0;
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
@@ -1951,6 +2138,7 @@
         }
 
         function recoverFromCrit() {
+            clearMctsTree();
             state.massUsed = 0;
             state.knownMinStart = 0;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
@@ -1972,6 +2160,9 @@
 
         // State change observed while tracking - combine tracking data with state info
         function holeJustShrunk() {
+            // Record observation for tree reuse
+            lastObservation = 'shrink';
+
             // Calculate current tracked range
             const trackedMin = state.knownMinStart - state.massUsed;
             const trackedMax = state.knownMaxStart - state.massUsed;
@@ -1990,6 +2181,7 @@
                 newMin = shrinkMin;
                 newMax = shrinkMax;
                 note = `Tracking inconsistent, reset to ${Math.round(shrinkMin)}-${Math.round(shrinkMax)} M`;
+                clearMctsTree();  // Tree no longer valid
             } else {
                 note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
             }
@@ -2016,6 +2208,9 @@
         }
 
         function holeJustCrit() {
+            // Record observation for tree reuse
+            lastObservation = 'crit';
+
             // Calculate current tracked range
             const trackedMin = state.knownMinStart - state.massUsed;
             const trackedMax = state.knownMaxStart - state.massUsed;
@@ -2034,6 +2229,7 @@
                 newMin = critMin;
                 newMax = critMax;
                 note = `Tracking inconsistent, reset to ${Math.round(critMin)}-${Math.round(critMax)} M`;
+                clearMctsTree();  // Tree no longer valid
             } else {
                 note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
             }
@@ -2058,6 +2254,7 @@
         }
 
         function setFreshHole() {
+            clearMctsTree();
             state.massUsed = 0;
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
@@ -2078,6 +2275,7 @@
         }
 
         function setUnknownFresh() {
+            clearMctsTree();
             state.massUsed = 0;
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
@@ -2106,6 +2304,7 @@
                 return;
             }
 
+            clearMctsTree();
             state.massUsed = knownMass;
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
@@ -2135,6 +2334,7 @@
                     state.history.push(last);
                 } else {
                     state.massUsed -= last.mass;
+                    clearMctsTree();  // Tree may no longer be valid
                 }
                 saveState();
                 setTimeout(() => {
@@ -2146,6 +2346,7 @@
 
         function resetCalculator() {
             if (confirm('Reset all tracking? This cannot be undone.')) {
+                clearMctsTree();
                 state = {
                     massUsed: 0,
                     history: [],

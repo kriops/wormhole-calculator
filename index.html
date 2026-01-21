@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EEDVR Wormhole Rolling Calculator | J215101</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230a0a2a'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%234af' stroke-width='3' opacity='0.8'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%2384f' stroke-width='3' opacity='0.6'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='%23a4f' stroke-width='3' opacity='0.4'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23f4a' opacity='0.8'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230a0a2a'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%234af' stroke-width='3' opacity='0.8'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%2384f' stroke-width='3' opacity='0.6'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='%23a4f' stroke-width='3' opacity='0.4'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23f4a' opacity='0.8'/%3E%3C/svg%3E">
     <style>
         * {
             margin: 0;
@@ -697,95 +699,38 @@
             </div>
         </div>
 
-        <!-- 3. RECORD: Actions and Observations side by side -->
-        <div class="controls" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
-            <div class="control-section">
-                <h3>3a. Battleship</h3>
-                <div class="btn-group">
-                    <button class="btn-hot" onclick="recordJump('bs-hot-hot')">
-                        HOT/HOT (-600 M)
-                    </button>
-                    <button class="btn-cold" onclick="recordJump('bs-cold-hot')">
-                        COLD/HOT (-500 M)
-                    </button>
-                    <button class="btn-cold" onclick="recordJump('bs-cold-cold')">
-                        COLD/COLD (-400 M)
-                    </button>
-                </div>
+        <!-- 3. JUMP ACTIONS (unified, adapts to position) -->
+        <div id="action-panel" class="control-section" style="margin-bottom: 20px; border-color: #4a8a6a; background: rgba(30, 60, 50, 0.4);">
+            <h3 style="color: #8cf; display: flex; justify-content: space-between; align-items: center;">
+                <span>Record Jump</span>
+                <span id="direction-label" style="font-size: 0.9em; color: #8f8;">→ Jumping OUT</span>
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
+                <button class="btn-hot jump-btn" data-jump="BS_HOT" onclick="recordSingleJump('BS_HOT')" style="padding: 15px 10px; font-size: 1em;">
+                    BS Hot →<br><span style="font-size: 0.8em; opacity: 0.8;">300 M</span>
+                </button>
+                <button class="btn-cold jump-btn" data-jump="BS_COLD" onclick="recordSingleJump('BS_COLD')" style="padding: 15px 10px; font-size: 1em;">
+                    BS Cold →<br><span style="font-size: 0.8em; opacity: 0.8;">200 M</span>
+                </button>
+                <button class="btn-hot jump-btn" data-jump="HIC_HOT" onclick="recordSingleJump('HIC_HOT')" style="padding: 15px 10px; font-size: 1em; background: linear-gradient(135deg, #5a4a3a, #7a6a4a);">
+                    HIC Hot →<br><span style="font-size: 0.8em; opacity: 0.8;">134 M</span>
+                </button>
+                <button class="btn-cold jump-btn" data-jump="HIC_COLD" onclick="recordSingleJump('HIC_COLD')" style="padding: 15px 10px; font-size: 1em; background: linear-gradient(135deg, #2a5a5a, #3a7a7a);">
+                    HIC Cold →<br><span style="font-size: 0.8em; opacity: 0.8;">30 M</span>
+                </button>
+                <button class="btn-recovery jump-btn" data-jump="HIC_ENT" onclick="recordSingleJump('HIC_ENT')" style="padding: 15px 10px; font-size: 1em; background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
+                    HIC Ent →<br><span style="font-size: 0.8em; opacity: 0.8;">1.5 M</span>
+                </button>
             </div>
-            <div class="control-section">
-                <h3>3b. HIC (Devoter)</h3>
-                <div class="btn-group">
-                    <button class="btn-hot" onclick="recordJump('hic-hot-hot')" style="background: linear-gradient(135deg, #5a4a3a, #7a6a4a);">
-                        HOT/HOT (-268 M)
-                    </button>
-                    <button class="btn-cold" onclick="recordJump('hic-cold-hot')" style="background: linear-gradient(135deg, #3a5a5a, #4a7a6a);">
-                        COLD/HOT (-164 M)
-                    </button>
-                    <button class="btn-cold" onclick="recordJump('hic-cold-cold')" style="background: linear-gradient(135deg, #2a5a5a, #3a7a7a);">
-                        COLD/COLD (-60 M)
-                    </button>
-                    <button class="btn-recovery" onclick="recordJump('hic-ent-hot')" style="background: linear-gradient(135deg, #5a3a5a, #7a4a6a);">
-                        ENT/HOT (-135.5 M)
-                    </button>
-                    <button class="btn-recovery" onclick="recordJump('hic-ent-ent')" style="background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
-                        ENT/ENT (-3 M)
-                    </button>
-                </div>
-            </div>
-            <div class="control-section">
-                <h3>3c. One-Way</h3>
-                <div class="btn-group">
-                    <button class="btn-hot" onclick="recordJump('bs-hot-one')">
-                        BS Hot (-300 M)
-                    </button>
-                    <button class="btn-cold" onclick="recordJump('bs-cold-one')">
-                        BS Cold (-200 M)
-                    </button>
-                    <button class="btn-recovery" onclick="recordJump('hic-ent-one')" style="background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
-                        HIC Ent (-1.5 M)
-                    </button>
-                </div>
-            </div>
-            <div class="control-section" style="border-color: #8a6a2a; background: rgba(80, 60, 30, 0.4);">
-                <h3 style="color: #fc8;">3d. Observed</h3>
-                <div class="btn-group">
-                    <button class="btn-recovery" onclick="holeJustShrunk()" style="background: linear-gradient(135deg, #7a6a2a, #9a8a3a); border-color: #ba9a4a; font-size: 1em; padding: 12px;">
+            <div style="border-top: 1px solid #4a6a5a; padding-top: 12px;">
+                <div style="color: #fc8; font-size: 0.9em; margin-bottom: 8px;">Observed State Change</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn-recovery" onclick="holeJustShrunk()" style="background: linear-gradient(135deg, #7a6a2a, #9a8a3a); border-color: #ba9a4a; padding: 12px; font-size: 1em;">
                         SHRUNK
                     </button>
-                    <button class="btn-recovery" onclick="holeJustCrit()" style="background: linear-gradient(135deg, #7a3a3a, #9a4a4a); border-color: #ba5a5a; font-size: 1em; padding: 12px;">
+                    <button class="btn-recovery" onclick="holeJustCrit()" style="background: linear-gradient(135deg, #7a3a3a, #9a4a4a); border-color: #ba5a5a; padding: 12px; font-size: 1em;">
                         CRIT
                     </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Single Jump Tracking (for mid-roundtrip observations) -->
-        <div class="control-section" style="margin-bottom: 20px; border-color: #5a7a8a; background: rgba(40, 60, 80, 0.4);">
-            <h3 style="color: #8cf;">Single Jump Tracking <span id="position-indicator" style="font-size: 0.8em;">(You are HOME)</span></h3>
-            <p style="color: #aaa; font-size: 0.8em; margin-bottom: 10px;">
-                Use when you need to record a jump and observation separately (e.g., you jumped out, saw shrink, deciding how to return).
-            </p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div id="outbound-buttons">
-                    <div style="color: #8af; font-size: 0.85em; margin-bottom: 8px;">Jump OUT (home → away)</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                        <button class="btn-hot" onclick="recordJumpOut('BS_HOT')" style="padding: 8px; font-size: 0.85em;">BS Hot</button>
-                        <button class="btn-cold" onclick="recordJumpOut('BS_COLD')" style="padding: 8px; font-size: 0.85em;">BS Cold</button>
-                        <button class="btn-hot" onclick="recordJumpOut('HIC_HOT')" style="padding: 8px; font-size: 0.85em;">HIC Hot</button>
-                        <button class="btn-cold" onclick="recordJumpOut('HIC_COLD')" style="padding: 8px; font-size: 0.85em;">HIC Cold</button>
-                        <button class="btn-recovery" onclick="recordJumpOut('HIC_ENT')" style="padding: 8px; font-size: 0.85em; grid-column: 1 / -1;">HIC Ent</button>
-                    </div>
-                </div>
-                <div id="return-buttons">
-                    <div style="color: #fa8; font-size: 0.85em; margin-bottom: 8px;">Jump BACK (away → home)</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                        <button class="btn-hot" onclick="recordJumpBack('BS_HOT')" style="padding: 8px; font-size: 0.85em;">BS Hot</button>
-                        <button class="btn-cold" onclick="recordJumpBack('BS_COLD')" style="padding: 8px; font-size: 0.85em;">BS Cold</button>
-                        <button class="btn-hot" onclick="recordJumpBack('HIC_HOT')" style="padding: 8px; font-size: 0.85em;">HIC Hot</button>
-                        <button class="btn-cold" onclick="recordJumpBack('HIC_COLD')" style="padding: 8px; font-size: 0.85em;">HIC Cold</button>
-                        <button class="btn-recovery" onclick="recordJumpBack('HIC_ENT')" style="padding: 8px; font-size: 0.85em; grid-column: 1 / -1;">HIC Ent</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -805,30 +750,7 @@
             </div>
         </div>
 
-        <!-- 5. PREDICTIONS: Conservative estimates -->
-        <div class="prediction">
-            <h3>5. Conservative Predictions (Worst-Case)</h3>
-            <div class="prediction-grid">
-                <div class="prediction-item">
-                    <div class="label">Safe Hot/Hot Passes</div>
-                    <div class="value" id="passes-safe">-</div>
-                </div>
-                <div class="prediction-item">
-                    <div class="label">Min Mass After Next Hot/Hot</div>
-                    <div class="value" id="mass-after-next">-</div>
-                </div>
-                <div class="prediction-item">
-                    <div class="label">Next Hot/Hot Safe?</div>
-                    <div class="value" id="next-safe">-</div>
-                </div>
-                <div class="prediction-item">
-                    <div class="label">Rollout Risk Next Pass</div>
-                    <div class="value" id="rollout-risk">-</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 6. REFERENCE: WH specs -->
+        <!-- 5. REFERENCE: WH specs -->
         <div class="wh-specs">
             <div class="spec-card">
                 <h3>Wormhole Type</h3>
@@ -852,7 +774,7 @@
             </div>
         </div>
 
-        <!-- 7. HISTORY: Log of actions -->
+        <!-- 6. HISTORY: Log of actions -->
         <div class="history">
             <h3>Jump History</h3>
             <div style="margin-bottom: 10px;">
@@ -893,32 +815,13 @@
             simulations: 60000
         };
 
-        // State
+        // State (position is derived from history, not stored)
         let state = {
             massUsed: 0,
             history: [],
             hasUnknownMass: false,
             knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
-            knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance),
-            position: 'home',  // 'home' or 'away'
-            shipUsedOut: null  // Which ship we jumped out with (must return with same)
-        };
-
-        // Jump definitions for manual tracking
-        const JUMPS = {
-            // Battleship jumps
-            'bs-cold-cold': { mass: CONFIG.bsCold * 2, label: 'BS Cold/Cold' },
-            'bs-hot-hot': { mass: CONFIG.bsHot * 2, label: 'BS Hot/Hot' },
-            'bs-cold-hot': { mass: CONFIG.bsCold + CONFIG.bsHot, label: 'BS Cold/Hot' },
-            'bs-cold-one': { mass: CONFIG.bsCold, label: 'BS Cold One-Way' },
-            'bs-hot-one': { mass: CONFIG.bsHot, label: 'BS Hot One-Way' },
-            // HIC jumps
-            'hic-cold-cold': { mass: CONFIG.hicCold * 2, label: 'HIC Cold/Cold' },
-            'hic-hot-hot': { mass: CONFIG.hicHot * 2, label: 'HIC Hot/Hot' },
-            'hic-cold-hot': { mass: CONFIG.hicCold + CONFIG.hicHot, label: 'HIC Cold/Hot' },
-            'hic-ent-ent': { mass: CONFIG.hicEnt * 2, label: 'HIC Ent/Ent' },
-            'hic-ent-hot': { mass: CONFIG.hicEnt + CONFIG.hicHot, label: 'HIC Ent/Hot' },
-            'hic-ent-one': { mass: CONFIG.hicEnt, label: 'HIC Ent One-Way' }
+            knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
         };
 
         // Action types for MC simulation
@@ -944,6 +847,20 @@
         };
 
         let recommendedStrategy = null;
+
+        // Derive position from jump history (odd = away, even = home)
+        function getPosition() {
+            const jumpCount = state.history.filter(h => h.type.startsWith('jump-')).length;
+            return jumpCount % 2 === 0 ? 'home' : 'away';
+        }
+
+        // Get the ship type used for the last outbound jump (when away)
+        function getShipUsedOut() {
+            if (getPosition() === 'home') return null;
+            const jumps = state.history.filter(h => h.type.startsWith('jump-'));
+            const lastJump = jumps[jumps.length - 1];
+            return lastJump?.ship || null;
+        }
 
         function init() {
             loadState();
@@ -1271,10 +1188,12 @@
             const maxRemaining = startMax - massUsed;
 
             const belief = { min: minRemaining, max: maxRemaining };
+            const position = getPosition();
+            const shipUsedOut = getShipUsedOut();
 
             // If we're AWAY, we need to recommend RETURN options only
-            if (state.position === 'away') {
-                const returnResults = evaluateReturnOptions(belief, startMin, startMax, massUsed, state.shipUsedOut);
+            if (position === 'away') {
+                const returnResults = evaluateReturnOptions(belief, startMin, startMax, massUsed, shipUsedOut);
                 recommendedStrategy = {
                     sequence: [],
                     actionResults: returnResults,
@@ -1283,9 +1202,9 @@
                     maxRemaining,
                     belief,
                     isReturn: true,
-                    shipUsedOut: state.shipUsedOut
+                    shipUsedOut: shipUsedOut
                 };
-                statusEl.textContent = `You are AWAY with ${state.shipUsedOut}. Showing return options.`;
+                statusEl.textContent = `You are AWAY with ${shipUsedOut}. Showing return options.`;
                 displayStrategyAnalysis();
                 return;
             }
@@ -1566,68 +1485,38 @@
             }
         }
 
-        function recordJump(type) {
-            const jump = JUMPS[type];
-            state.massUsed += jump.mass;
-            state.history.push({
-                type: type,
-                label: jump.label,
-                mass: jump.mass,
-                timestamp: new Date().toLocaleTimeString()
-            });
-            saveState();
-            setTimeout(() => {
-                runStrategyAnalysis();
-                updateDisplay();
-            }, 10);
-        }
-
-        // Record a single outbound jump (home -> away)
-        function recordJumpOut(jumpType) {
-            if (state.position !== 'home') {
-                alert('You are already away! Record a return jump or observation first.');
-                return;
-            }
+        // Unified single jump recording - direction determined by history
+        function recordSingleJump(jumpType) {
+            const position = getPosition();
             const jump = SINGLE_JUMPS[jumpType];
-            state.massUsed += jump.mass;
-            state.position = 'away';
-            state.shipUsedOut = jump.ship;  // Track which ship (BS or HIC)
-            state.history.push({
-                type: 'jump-out-' + jumpType,
-                label: jump.label + ' OUT',
-                mass: jump.mass,
-                ship: jump.ship,
-                timestamp: new Date().toLocaleTimeString()
-            });
-            saveState();
-            setTimeout(() => {
-                runStrategyAnalysis();
-                updateDisplay();
-            }, 10);
-        }
 
-        // Record a single return jump (away -> home)
-        function recordJumpBack(jumpType) {
-            if (state.position !== 'away') {
-                alert('You are already home! Record an outbound jump first.');
-                return;
+            if (position === 'home') {
+                // Outbound jump
+                state.massUsed += jump.mass;
+                state.history.push({
+                    type: 'jump-out-' + jumpType,
+                    label: jump.label + ' →',
+                    mass: jump.mass,
+                    ship: jump.ship,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+            } else {
+                // Return jump - enforce same ship
+                const shipUsedOut = getShipUsedOut();
+                if (shipUsedOut && jump.ship !== shipUsedOut) {
+                    alert(`You went out with ${shipUsedOut}, you must return with ${shipUsedOut}!`);
+                    return;
+                }
+                state.massUsed += jump.mass;
+                state.history.push({
+                    type: 'jump-back-' + jumpType,
+                    label: '← ' + jump.label,
+                    mass: jump.mass,
+                    ship: jump.ship,
+                    timestamp: new Date().toLocaleTimeString()
+                });
             }
-            const jump = SINGLE_JUMPS[jumpType];
-            // Enforce same ship constraint
-            if (state.shipUsedOut && jump.ship !== state.shipUsedOut) {
-                alert(`You went out with ${state.shipUsedOut}, you must return with ${state.shipUsedOut}!`);
-                return;
-            }
-            state.massUsed += jump.mass;
-            state.position = 'home';
-            state.shipUsedOut = null;  // Reset for next trip
-            state.history.push({
-                type: 'jump-back-' + jumpType,
-                label: jump.label + ' BACK',
-                mass: jump.mass,
-                ship: jump.ship,
-                timestamp: new Date().toLocaleTimeString()
-            });
+
             saveState();
             setTimeout(() => {
                 runStrategyAnalysis();
@@ -1640,8 +1529,7 @@
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
             state.hasUnknownMass = true;
-            state.position = 'home';
-            state.shipUsedOut = null;
+            state.history = [];  // Reset history (position will be home)
             state.history.push({
                 type: 'recovery-shrink',
                 label: 'Recovered: Hole Shrunk',
@@ -1661,8 +1549,7 @@
             state.knownMinStart = 0;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
             state.hasUnknownMass = true;
-            state.position = 'home';
-            state.shipUsedOut = null;
+            state.history = [];  // Reset history (position will be home)
             state.history.push({
                 type: 'recovery-crit',
                 label: 'Recovered: Hole Crit',
@@ -1769,9 +1656,7 @@
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = false;
-            state.position = 'home';
-            state.shipUsedOut = null;
-            state.history = [];
+            state.history = [];  // Reset history (position will be home)
             state.history.push({
                 type: 'setup-fresh',
                 label: 'New Fresh Hole',
@@ -1791,9 +1676,7 @@
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = true;
-            state.position = 'home';
-            state.shipUsedOut = null;
-            state.history = [];
+            state.history = [];  // Reset history (position will be home)
             state.history.push({
                 type: 'setup-unknown-fresh',
                 label: 'Unknown Mass (Still Fresh)',
@@ -1821,9 +1704,7 @@
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = false;
-            state.position = 'home';
-            state.shipUsedOut = null;
-            state.history = [];
+            state.history = [];  // Reset history (position will be home)
             state.history.push({
                 type: 'setup-known-mass',
                 label: 'Mass Used Applied',
@@ -1843,8 +1724,8 @@
         function undoLast() {
             if (state.history.length > 0) {
                 const last = state.history.pop();
-                if (last.type.startsWith('recovery') || last.type.startsWith('setup')) {
-                    alert('Setup/recovery actions cannot be undone. Use a new setup instead.');
+                if (last.type.startsWith('recovery') || last.type.startsWith('setup') || last.type.startsWith('state-')) {
+                    alert('Setup/recovery/state-change actions cannot be undone. Use a new setup instead.');
                     state.history.push(last);
                 } else {
                     state.massUsed -= last.mass;
@@ -1864,15 +1745,67 @@
                     history: [],
                     hasUnknownMass: false,
                     knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
-                    knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance),
-                    position: 'home',
-                    shipUsedOut: null
+                    knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
                 };
                 saveState();
                 setTimeout(() => {
                     runStrategyAnalysis();
                     updateDisplay();
                 }, 10);
+            }
+        }
+
+        // Update jump button labels based on position
+        function updateJumpButtons(position, shipUsedOut) {
+            const buttons = document.querySelectorAll('.jump-btn');
+            buttons.forEach(btn => {
+                const jumpType = btn.dataset.jump;
+                const jump = SINGLE_JUMPS[jumpType];
+                if (!jump) return;
+
+                const isWrongShip = position === 'away' && shipUsedOut && jump.ship !== shipUsedOut;
+
+                // Update label
+                if (position === 'home') {
+                    btn.innerHTML = `${jump.label} →<br><span style="font-size: 0.8em; opacity: 0.8;">${jump.mass} M</span>`;
+                } else {
+                    btn.innerHTML = `← ${jump.label}<br><span style="font-size: 0.8em; opacity: 0.8;">${jump.mass} M</span>`;
+                }
+
+                // Update styling based on position and ship constraint
+                if (isWrongShip) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.3';
+                    btn.style.cursor = 'not-allowed';
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            });
+
+            // Update direction label
+            const dirLabel = document.getElementById('direction-label');
+            if (dirLabel) {
+                if (position === 'away') {
+                    dirLabel.textContent = `← Jumping BACK (${shipUsedOut})`;
+                    dirLabel.style.color = '#faa';
+                } else {
+                    dirLabel.textContent = '→ Jumping OUT';
+                    dirLabel.style.color = '#8f8';
+                }
+            }
+
+            // Update the action panel border color
+            const actionPanel = document.getElementById('action-panel');
+            if (actionPanel) {
+                if (position === 'away') {
+                    actionPanel.style.borderColor = '#c46444';
+                    actionPanel.style.background = 'rgba(80, 40, 30, 0.4)';
+                } else {
+                    actionPanel.style.borderColor = '#4a8a6a';
+                    actionPanel.style.background = 'rgba(30, 60, 50, 0.4)';
+                }
             }
         }
 
@@ -1914,71 +1847,32 @@
             document.getElementById('status-badge').className = 'status-badge status-' + statusClass;
             document.getElementById('status-badge').textContent = status;
 
-            // Update position badge
+            // Update position badge and jump buttons
+            const position = getPosition();
+            const shipUsedOut = getShipUsedOut();
             const positionBadge = document.getElementById('position-badge');
-            const positionIndicator = document.getElementById('position-indicator');
-            if (state.position === 'away') {
+
+            if (position === 'away') {
                 positionBadge.textContent = 'AWAY';
                 positionBadge.style.background = 'rgba(196, 100, 68, 0.3)';
                 positionBadge.style.borderColor = '#c46444';
                 positionBadge.style.color = '#faa';
-                if (positionIndicator) positionIndicator.textContent = '(You are AWAY - need to jump back!)';
-                if (positionIndicator) positionIndicator.style.color = '#faa';
             } else {
                 positionBadge.textContent = 'HOME';
                 positionBadge.style.background = 'rgba(74, 138, 74, 0.3)';
                 positionBadge.style.borderColor = '#4a8a4a';
                 positionBadge.style.color = '#8f8';
-                if (positionIndicator) positionIndicator.textContent = '(You are HOME)';
-                if (positionIndicator) positionIndicator.style.color = '#8cf';
             }
+
+            // Update jump button labels and states
+            updateJumpButtons(position, shipUsedOut);
 
             // Update displays
             document.getElementById('mass-remaining').textContent = Math.round(avgRemaining) + ' M';
             document.getElementById('range-min').textContent = Math.round(minRemaining);
             document.getElementById('range-max').textContent = Math.round(maxRemaining);
 
-            // Update predictions (worst-case)
-            updatePredictions(minRemaining, maxRemaining);
             updateHistory();
-        }
-
-        function updatePredictions(minRemaining, maxRemaining) {
-            const bsHotHot = CONFIG.bsHot * 2;
-
-            // Safe BS hot/hot passes
-            let safePasses = 0;
-            let testMass = minRemaining;
-            while (testMass > bsHotHot) {
-                testMass -= bsHotHot;
-                safePasses++;
-            }
-
-            document.getElementById('passes-safe').textContent = safePasses + ' BS Hot/Hot';
-            document.getElementById('passes-safe').className = 'value ' + (safePasses > 0 ? 'safe' : 'warning');
-
-            // Mass after next hot/hot (worst case)
-            const minAfterNext = minRemaining - bsHotHot;
-            document.getElementById('mass-after-next').textContent = Math.round(minAfterNext) + ' M';
-            document.getElementById('mass-after-next').className = 'value ' + (minAfterNext > 0 ? 'safe' : 'warning');
-
-            // Next hot/hot safe?
-            const nextSafe = minAfterNext > 0;
-            document.getElementById('next-safe').textContent = nextSafe ? 'YES' : 'NO - USE HIC';
-            document.getElementById('next-safe').className = 'value ' + (nextSafe ? 'safe' : 'warning');
-
-            // Rollout risk for next BS hot pass
-            let rollouts = 0;
-            const sims = 10000;
-            for (let i = 0; i < sims; i++) {
-                const actualRemaining = minRemaining + Math.random() * (maxRemaining - minRemaining);
-                if (actualRemaining - CONFIG.bsHot <= 0) {
-                    rollouts++;
-                }
-            }
-            const riskPercent = ((rollouts / sims) * 100).toFixed(1);
-            document.getElementById('rollout-risk').textContent = riskPercent + '%';
-            document.getElementById('rollout-risk').className = 'value ' + (rollouts === 0 ? 'safe' : 'warning');
         }
 
         function updateHistory() {

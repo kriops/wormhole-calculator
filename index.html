@@ -1014,21 +1014,19 @@
 
                 if (!rolledOut) {
                     while (remaining > 0 && trips < 20) {
-                        // Get valid actions for current belief
+                        // Get valid actions - must survive outbound with actual remaining mass
                         const validActions = Object.entries(ACTIONS).filter(([k, a]) =>
-                            simBelief.max > a.out
+                            remaining > a.out
                         );
-                        if (validActions.length === 0) break;
-
-                        // Pick action using heuristic (prefer higher mass when safe)
-                        validActions.sort((a, b) => (b[1].out + b[1].back) - (a[1].out + a[1].back));
-                        const [key, act] = validActions[0];
-
-                        // Check for rollout on outbound
-                        if (remaining <= act.out) {
+                        if (validActions.length === 0) {
+                            // No valid actions but mass remains - we're stuck (shouldn't happen with HIC Ent)
                             rolledOut = true;
                             break;
                         }
+
+                        // Pick action using heuristic (prefer higher mass to close hole faster)
+                        validActions.sort((a, b) => (b[1].out + b[1].back) - (a[1].out + a[1].back));
+                        const [key, act] = validActions[0];
 
                         trips++;
                         remaining -= act.out + act.back;

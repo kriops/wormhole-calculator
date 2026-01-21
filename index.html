@@ -1130,9 +1130,17 @@
 
             getValidActions() {
                 const remaining = this.getRemainingBelief();
-                return Object.entries(ACTIONS).filter(([key, act]) =>
-                    remaining.max > act.out
-                );
+                // Filter out actions that can't survive outbound
+                // Also filter out actions that would take >15 trips (inefficient)
+                const maxReasonableTrips = 15;
+                const minMassPerTrip = remaining.max / maxReasonableTrips;
+
+                return Object.entries(ACTIONS).filter(([key, act]) => {
+                    if (remaining.max <= act.out) return false;  // Can't survive outbound
+                    const tripMass = act.out + act.back;
+                    if (tripMass < minMassPerTrip) return false;  // Would take too many trips
+                    return true;
+                });
             }
 
             // Get or create child for (action, observation) pair
@@ -1443,8 +1451,12 @@
                     guaranteedSafe: remainingBelief.min > action.out
                 });
             }
-            // Sort by visits (most explored = best)
-            results.sort((a, b) => b.visits - a.visits);
+            // Sort by success rate (higher = better), then visits as tiebreaker
+            results.sort((a, b) => {
+                const successDiff = b.successRate - a.successRate;
+                if (Math.abs(successDiff) > 0.01) return successDiff;
+                return b.visits - a.visits;
+            });
             return results;
         }
 
@@ -1829,7 +1841,29 @@
         }
 
         // Highlight the observation section to remind user to indicate state change
+        // Check if a threshold crossing is plausible given current mass used
+        function shouldShowObservationReminder() {
+            const massUsed = state.massUsed;
+            const minTotal = state.knownMinStart;
+            const maxTotal = state.knownMaxStart;
+
+            // Shrink happens when >50% mass used (remaining < 50%)
+            // Check if massUsed could have crossed 50% threshold for any mass in [minTotal, maxTotal]
+            const shrinkThresholdMin = minTotal * CONFIG.shrinkThreshold;  // 50% of min
+            const shrinkThresholdMax = maxTotal * CONFIG.shrinkThreshold;  // 50% of max
+            const shrinkPossible = massUsed >= shrinkThresholdMin && massUsed <= shrinkThresholdMax;
+
+            // Crit happens when >90% mass used (remaining < 10%)
+            const critThresholdMin = minTotal * (1 - CONFIG.critThreshold);  // 90% of min
+            const critThresholdMax = maxTotal * (1 - CONFIG.critThreshold);  // 90% of max
+            const critPossible = massUsed >= critThresholdMin && massUsed <= critThresholdMax;
+
+            return shrinkPossible || critPossible;
+        }
+
         function showObservationReminder() {
+            if (!shouldShowObservationReminder()) return;
+
             const obsSection = document.getElementById('observation-section');
             if (obsSection) {
                 obsSection.classList.remove('observation-reminder');

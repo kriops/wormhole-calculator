@@ -358,6 +358,65 @@
             background: linear-gradient(135deg, #6a5a3a, #8a7a4a);
         }
 
+        /* Recommended button highlight */
+        .jump-btn.recommended {
+            box-shadow: 0 0 15px #4a8a4a, 0 0 30px #4a8a4a;
+            border-color: #6aca6a !important;
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px #4a8a4a, 0 0 30px #4a8a4a; }
+            50% { box-shadow: 0 0 25px #6aca6a, 0 0 45px #4a8a4a; }
+        }
+
+        /* Observation prompt */
+        #observation-prompt {
+            background: rgba(60, 40, 20, 0.95);
+            border: 2px solid #c4a044;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .observation-question {
+            color: #fc8;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .observation-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .observation-buttons button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid;
+            font-weight: bold;
+        }
+
+        /* Observation reminder after jump */
+        .observation-reminder {
+            animation: remind-pulse 2s ease-in-out 3;
+        }
+
+        @keyframes remind-pulse {
+            0%, 100% {
+                background: rgba(60, 40, 20, 0.3);
+                box-shadow: none;
+            }
+            50% {
+                background: rgba(100, 80, 40, 0.5);
+                box-shadow: 0 0 15px rgba(200, 160, 80, 0.5);
+            }
+        }
+
         /* Monte Carlo Section */
         .monte-carlo {
             background: rgba(20, 40, 60, 0.9);
@@ -474,6 +533,117 @@
             font-size: 0.75em;
             margin-left: 10px;
             text-transform: uppercase;
+        }
+
+        /* Horizontal MCTS Results Layout */
+        .mcts-results {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mcts-recommendation {
+            background: rgba(30, 60, 40, 0.9);
+            border: 2px solid #4a8a4a;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .mcts-recommendation.risky {
+            background: rgba(60, 50, 30, 0.9);
+            border-color: #8a6a2a;
+        }
+
+        .mcts-recommendation.dangerous {
+            background: rgba(60, 30, 30, 0.9);
+            border-color: #8a3a3a;
+        }
+
+        .mcts-rec-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .mcts-rec-stats {
+            color: #8f8;
+            font-size: 0.95em;
+        }
+
+        .mcts-details {
+            display: flex;
+            gap: 12px;
+        }
+
+        .mcts-distribution {
+            flex: 0 0 180px;
+            background: rgba(30, 40, 60, 0.8);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #3a5a7a;
+        }
+
+        .mcts-distribution-title {
+            color: #8af;
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .mcts-distribution-item {
+            color: #aaa;
+            font-size: 0.9em;
+            padding: 2px 0;
+        }
+
+        .mcts-distribution-footer {
+            color: #666;
+            font-size: 0.75em;
+            margin-top: 8px;
+            border-top: 1px solid #3a5a7a;
+            padding-top: 8px;
+        }
+
+        .mcts-comparison {
+            flex: 1;
+            background: rgba(30, 40, 60, 0.8);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #3a5a7a;
+            overflow-x: auto;
+        }
+
+        .mcts-comparison-title {
+            color: #8af;
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .mcts-comparison table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .mcts-comparison th {
+            color: #888;
+            font-weight: normal;
+            text-align: left;
+            padding: 4px 8px;
+            border-bottom: 1px solid #4a5a7a;
+        }
+
+        .mcts-comparison td {
+            padding: 6px 8px;
+            color: #ccc;
+            border-bottom: 1px solid rgba(60, 80, 100, 0.3);
+        }
+
+        .mcts-comparison tr:first-child td {
+            color: #8f8;
+            font-weight: bold;
         }
 
         .history {
@@ -614,6 +784,14 @@
             .sequence-grid {
                 grid-template-columns: 1fr;
             }
+
+            .mcts-details {
+                flex-direction: column;
+            }
+
+            .mcts-distribution {
+                flex: none;
+            }
         }
     </style>
 </head>
@@ -722,8 +900,8 @@
                     HIC Ent →<br><span style="font-size: 0.8em; opacity: 0.8;">1.5 M</span>
                 </button>
             </div>
-            <div style="border-top: 1px solid #4a6a5a; padding-top: 12px;">
-                <div style="color: #fc8; font-size: 0.9em; margin-bottom: 8px;">Observed State Change</div>
+            <div id="observation-section" style="border-top: 1px solid #4a6a5a; padding-top: 12px; border-radius: 8px; padding: 12px; margin-top: 10px;">
+                <div style="color: #fc8; font-size: 0.9em; margin-bottom: 8px;">Did the hole change state?</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <button class="btn-recovery" onclick="holeJustShrunk()" style="background: linear-gradient(135deg, #7a6a2a, #9a8a3a); border-color: #ba9a4a; padding: 12px; font-size: 1em;">
                         SHRUNK
@@ -1459,191 +1637,154 @@
             const grid = document.getElementById('sequence-grid');
             grid.innerHTML = '';
 
-            if (!recommendedStrategy) return;
-
-            const { sequence, actionResults, nextAction, minRemaining, maxRemaining, isReturn, shipUsedOut, mctsIterations } = recommendedStrategy;
-
-            // Card 1: Next Recommended Action (prominent)
-            const nextCard = document.createElement('div');
-            nextCard.style.gridColumn = '1 / -1';
-            nextCard.style.borderWidth = '3px';
-
-            // Special handling for RETURN recommendations
-            if (isReturn && nextAction) {
-                const collapsePct = (nextAction.collapseRate * 100).toFixed(1);
-                nextCard.className = 'sequence-card safe';
-                nextCard.style.borderColor = '#c46444';
-                nextCard.style.background = 'rgba(100, 60, 40, 0.8)';
-
-                nextCard.innerHTML = `
-                    <div class="sequence-name" style="font-size: 1.3em; color: #faa;">
-                        YOU ARE AWAY WITH ${shipUsedOut} - RETURN OPTIONS:
-                    </div>
-                    <div class="sequence-name" style="font-size: 1.2em; margin-top: 10px;">
-                        RECOMMENDED RETURN: ${nextAction.act.label}
-                        <span class="foolproof-badge" style="background: #4a8a4a;">SAFE HOME</span>
-                    </div>
-                    <div class="sequence-detail" style="font-size: 1.1em; color: #8f8; margin: 10px 0;">
-                        Return uses ${nextAction.mass} M
-                    </div>
-                    <div class="sequence-detail">
-                        ${collapsePct}% chance hole collapses on return (you'll be home!)
-                    </div>
-                `;
-                grid.appendChild(nextCard);
-
-                // Show all return options
-                if (actionResults.length > 0) {
-                    const returnCard = document.createElement('div');
-                    returnCard.className = 'sequence-card';
-                    returnCard.style.background = 'rgba(30, 35, 50, 0.9)';
-
-                    let tableRows = '';
-                    for (const result of actionResults) {
-                        const collPct = (result.collapseRate * 100).toFixed(1);
-                        tableRows += `
-                            <tr style="border-bottom: 1px solid #3a3a5a;">
-                                <td style="padding: 8px; color: #ccc;">${result.act.label}</td>
-                                <td style="padding: 8px; text-align: right;">${result.mass} M</td>
-                                <td style="padding: 8px; text-align: right; color: #8f8;">${collPct}% close</td>
-                            </tr>
-                        `;
-                    }
-
-                    returnCard.innerHTML = `
-                        <div class="sequence-name">Return Options (${shipUsedOut} only)</div>
-                        <table style="width: 100%; font-size: 0.9em; margin-top: 10px;">
-                            <tr style="color: #888; border-bottom: 1px solid #4a4a6a;">
-                                <th style="padding: 6px; text-align: left;">Mode</th>
-                                <th style="padding: 6px; text-align: right;">Mass</th>
-                                <th style="padding: 6px; text-align: right;">Closes Hole</th>
-                            </tr>
-                            ${tableRows}
-                        </table>
-                        <div style="color: #aaa; font-size: 0.8em; margin-top: 10px;">
-                            Collapse on return = SUCCESS (you make it home as hole closes)
-                        </div>
-                    `;
-                    grid.appendChild(returnCard);
-                }
+            if (!recommendedStrategy) {
+                highlightRecommendedButton(null);
                 return;
             }
 
-            if (nextAction) {
-                const act = nextAction.act;
-                const totalMass = act.out + act.back;
-                const successPct = (nextAction.successRate * 100).toFixed(2);
-                const rolloutPct = (nextAction.rolloutRate * 100).toFixed(3);
+            const { sequence, actionResults, nextAction, minRemaining, maxRemaining, isReturn, shipUsedOut, mctsIterations, tripDistribution } = recommendedStrategy;
 
-                const isHighSuccess = nextAction.successRate >= 0.99;
-                nextCard.className = `sequence-card ${isHighSuccess ? 'safe' : (nextAction.successRate >= 0.95 ? 'risky' : 'dangerous')}`;
+            // Create container for new horizontal layout
+            const container = document.createElement('div');
+            container.className = 'mcts-results';
 
-                nextCard.innerHTML = `
-                    <div class="sequence-name" style="font-size: 1.3em;">
-                        RECOMMENDED: ${act.label}
-                        ${nextAction.guaranteedSafe ? '<span class="foolproof-badge">GUARANTEED SAFE</span>' : ''}
-                        ${nextAction.successRate >= 0.9999 ? '<span class="foolproof-badge">~0% ROLLOUT</span>' : ''}
-                    </div>
-                    <div class="sequence-detail" style="font-size: 1.1em; color: ${isHighSuccess ? '#8f8' : '#fc8'}; margin: 10px 0;">
-                        ${successPct}% success rate (${nextAction.successes.toLocaleString()}/${nextAction.total.toLocaleString()} simulations)
-                    </div>
-                    <div class="sequence-detail">
-                        Round trip uses ${totalMass} M (${act.out} M out, ${act.back} M back)
-                    </div>
-                    <div class="sequence-detail">
-                        Avg ${nextAction.avgSteps.toFixed(1)} round trips to close hole
-                    </div>
-                    ${!nextAction.guaranteedSafe ? `<div class="sequence-detail" style="color: #fc8;">Rollout risk: ${rolloutPct}%</div>` : ''}
-                `;
-            } else {
-                nextCard.className = 'sequence-card dangerous';
-                nextCard.innerHTML = `
-                    <div class="sequence-name" style="font-size: 1.3em; color: #f88;">
-                        NO SAFE ACTIONS AVAILABLE
-                    </div>
-                    <div class="sequence-detail" style="color: #faa;">
-                        Worst-case remaining mass (${Math.round(minRemaining)} M) is too low for any round trip.
-                        Consider a one-way pass or accept rollout risk.
-                    </div>
-                `;
-            }
-            grid.appendChild(nextCard);
+            // Special handling for RETURN recommendations
+            if (isReturn && nextAction) {
+                highlightRecommendedButton(nextAction.key);
 
-            // Card 2: Trip distribution (probabilistic)
-            const { tripDistribution } = recommendedStrategy;
-            if (tripDistribution && tripDistribution.length > 0) {
-                const distCard = document.createElement('div');
-                distCard.className = 'sequence-card';
-
-                // Format distribution as "3 trips (42%) · 4 trips (58%)"
-                const distStr = tripDistribution
-                    .map(d => `${d.trips} trips (${Math.round(d.pct * 100)}%)`)
-                    .join(' · ');
-
-                // Also show the sequence for reference
-                const seqStr = sequence.length > 0
-                    ? sequence.map(a => ACTIONS[a].label).join(' → ')
-                    : 'N/A';
-
-                distCard.innerHTML = `
-                    <div class="sequence-name">
-                        Likely: ${distStr}
-                    </div>
-                    <div class="sequence-detail" style="font-size: 0.9em; color: #aaa; margin-top: 8px;">
-                        Typical sequence: ${seqStr}
-                    </div>
-                    <div class="sequence-detail" style="color: #8af; font-size: 0.85em;">
-                        Based on ${mctsIterations.toLocaleString()} MCTS iterations
-                    </div>
-                `;
-                grid.appendChild(distCard);
-            }
-
-            // Card 3: Action comparison table (from MCTS results)
-            if (actionResults.length > 0) {
-                const compareCard = document.createElement('div');
-                compareCard.className = 'sequence-card';
-                compareCard.style.background = 'rgba(30, 35, 50, 0.9)';
+                const collapsePct = (nextAction.collapseRate * 100).toFixed(1);
+                const recDiv = document.createElement('div');
+                recDiv.className = 'mcts-recommendation';
+                recDiv.style.borderColor = '#c46444';
+                recDiv.style.background = 'rgba(100, 60, 40, 0.9)';
 
                 let tableRows = '';
                 for (const result of actionResults) {
-                    const act = result.act;
-                    const mass = act.out + act.back;
-                    const successPct = (result.successRate * 100).toFixed(2);
-                    const statusColor = result.guaranteedSafe ? '#8f8' :
-                                       (result.successRate >= 0.99 ? '#aef' :
-                                       (result.successRate >= 0.95 ? '#fc8' : '#f88'));
-
-                    tableRows += `
-                        <tr style="border-bottom: 1px solid #3a3a5a;">
-                            <td style="padding: 6px; color: #ccc;">${act.label}</td>
-                            <td style="padding: 6px; text-align: right;">${mass} M</td>
-                            <td style="padding: 6px; text-align: right;">${result.avgSteps.toFixed(1)}</td>
-                            <td style="padding: 6px; text-align: right; color: ${statusColor}; font-weight: bold;">
-                                ${successPct}%
-                                ${result.guaranteedSafe ? ' ✓' : ''}
-                            </td>
-                        </tr>
-                    `;
+                    const collPct = (result.collapseRate * 100).toFixed(1);
+                    const isTop = result.key === nextAction.key;
+                    tableRows += `<tr${isTop ? ' style="background: rgba(100, 80, 60, 0.3);"' : ''}>
+                        <td style="padding: 5px 8px; color: ${isTop ? '#fc8' : '#ccc'};">${result.act.label}</td>
+                        <td style="padding: 5px 8px; text-align: right;">${result.mass} M</td>
+                        <td style="padding: 5px 8px; text-align: right; color: #8f8;">${collPct}%</td>
+                    </tr>`;
                 }
 
-                compareCard.innerHTML = `
-                    <div class="sequence-name">All Actions - MCTS Analysis</div>
-                    <div class="sequence-detail" style="margin-bottom: 8px;">
-                        Success rate = probability of closing hole without rollout (simulated to terminal)
+                recDiv.innerHTML = `
+                    <div class="mcts-rec-title" style="color: #faa;">
+                        AWAY WITH ${shipUsedOut} → Return: <span style="color: #fff;">${nextAction.act.label}</span>
+                        <span class="foolproof-badge" style="background: #4a8a4a;">SAFE HOME</span>
                     </div>
-                    <table style="width: 100%; font-size: 0.9em; margin-top: 10px;">
-                        <tr style="color: #888; border-bottom: 1px solid #4a4a6a;">
-                            <th style="padding: 6px; text-align: left;">Action</th>
-                            <th style="padding: 6px; text-align: right;">Mass</th>
-                            <th style="padding: 6px; text-align: right;">Avg Steps</th>
-                            <th style="padding: 6px; text-align: right;">Success</th>
-                        </tr>
-                        ${tableRows}
-                    </table>
+                    <div class="mcts-rec-stats" style="color: #aaa; margin-top: 8px;">
+                        <table style="width: 100%; font-size: 0.85em;">
+                            <tr style="color: #777;"><th style="text-align: left; padding: 3px 8px;">Return</th><th style="text-align: right; padding: 3px 8px;">Mass</th><th style="text-align: right; padding: 3px 8px;">Closes</th></tr>
+                            ${tableRows}
+                        </table>
+                    </div>
                 `;
-                grid.appendChild(compareCard);
+                container.appendChild(recDiv);
+                grid.appendChild(container);
+                return;
             }
+
+            // Highlight recommended button
+            if (nextAction) {
+                highlightRecommendedButton(nextAction.key);
+            } else {
+                highlightRecommendedButton(null);
+            }
+
+            // 1. Recommendation bar (top)
+            const recDiv = document.createElement('div');
+            if (nextAction) {
+                const act = nextAction.act;
+                const totalMass = act.out + act.back;
+                const successPct = (nextAction.successRate * 100).toFixed(1);
+                const isHighSuccess = nextAction.successRate >= 0.99;
+
+                recDiv.className = `mcts-recommendation ${isHighSuccess ? '' : (nextAction.successRate >= 0.95 ? 'risky' : 'dangerous')}`;
+
+                const badges = [];
+                if (nextAction.guaranteedSafe) badges.push('<span class="foolproof-badge">GUARANTEED SAFE</span>');
+                if (nextAction.successRate >= 0.9999) badges.push('<span class="foolproof-badge">~0% ROLLOUT</span>');
+
+                recDiv.innerHTML = `
+                    <div class="mcts-rec-title">
+                        RECOMMENDED: ${act.label} ${badges.join('')}
+                    </div>
+                    <div class="mcts-rec-stats" style="color: ${isHighSuccess ? '#8f8' : '#fc8'};">
+                        ${successPct}% success · ${totalMass} M/trip · ~${nextAction.avgSteps.toFixed(1)} trips to close
+                    </div>
+                `;
+            } else {
+                recDiv.className = 'mcts-recommendation dangerous';
+                recDiv.innerHTML = `
+                    <div class="mcts-rec-title" style="color: #f88;">NO SAFE ACTIONS</div>
+                    <div class="mcts-rec-stats" style="color: #faa;">
+                        Remaining mass too low (${Math.round(minRemaining)}-${Math.round(maxRemaining)} M). Consider one-way pass.
+                    </div>
+                `;
+            }
+            container.appendChild(recDiv);
+
+            // 2. Details row (distribution + comparison side by side)
+            if ((tripDistribution && tripDistribution.length > 0) || actionResults.length > 0) {
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'mcts-details';
+
+                // Left: Trip distribution
+                if (tripDistribution && tripDistribution.length > 0) {
+                    const distDiv = document.createElement('div');
+                    distDiv.className = 'mcts-distribution';
+
+                    const distItems = tripDistribution
+                        .map(d => `<div class="mcts-distribution-item">${d.trips} trips: <strong>${Math.round(d.pct * 100)}%</strong></div>`)
+                        .join('');
+
+                    distDiv.innerHTML = `
+                        <div class="mcts-distribution-title">Trip Distribution</div>
+                        ${distItems}
+                        <div class="mcts-distribution-footer">${mctsIterations.toLocaleString()} iterations</div>
+                    `;
+                    detailsDiv.appendChild(distDiv);
+                }
+
+                // Right: Action comparison table
+                if (actionResults.length > 0) {
+                    const compDiv = document.createElement('div');
+                    compDiv.className = 'mcts-comparison';
+
+                    let tableRows = '';
+                    for (let i = 0; i < actionResults.length; i++) {
+                        const result = actionResults[i];
+                        const act = result.act;
+                        const mass = act.out + act.back;
+                        const successPct = (result.successRate * 100).toFixed(1);
+                        const statusColor = result.guaranteedSafe ? '#8f8' :
+                                           (result.successRate >= 0.99 ? '#aef' :
+                                           (result.successRate >= 0.95 ? '#fc8' : '#f88'));
+
+                        tableRows += `<tr>
+                            <td>${act.label}</td>
+                            <td style="text-align: right;">${mass} M</td>
+                            <td style="text-align: right;">${result.avgSteps.toFixed(1)}</td>
+                            <td style="text-align: right; color: ${statusColor}; font-weight: bold;">${successPct}%${result.guaranteedSafe ? ' ✓' : ''}</td>
+                        </tr>`;
+                    }
+
+                    compDiv.innerHTML = `
+                        <div class="mcts-comparison-title">Action Comparison</div>
+                        <table>
+                            <tr><th>Action</th><th style="text-align: right;">Mass</th><th style="text-align: right;">Trips</th><th style="text-align: right;">Success</th></tr>
+                            ${tableRows}
+                        </table>
+                    `;
+                    detailsDiv.appendChild(compDiv);
+                }
+
+                container.appendChild(detailsDiv);
+            }
+
+            grid.appendChild(container);
         }
 
         // Unified single jump recording - direction determined by history
@@ -1682,7 +1823,45 @@
             setTimeout(() => {
                 runStrategyAnalysis();
                 updateDisplay();
+                // Trigger observation reminder animation
+                showObservationReminder();
             }, 10);
+        }
+
+        // Highlight the observation section to remind user to indicate state change
+        function showObservationReminder() {
+            const obsSection = document.getElementById('observation-section');
+            if (obsSection) {
+                obsSection.classList.remove('observation-reminder');
+                // Force reflow to restart animation
+                void obsSection.offsetWidth;
+                obsSection.classList.add('observation-reminder');
+            }
+        }
+
+        // Highlight the recommended action button
+        function highlightRecommendedButton(actionKey) {
+            // Clear previous highlights
+            document.querySelectorAll('.jump-btn.recommended').forEach(btn => {
+                btn.classList.remove('recommended');
+            });
+
+            if (!actionKey) return;
+
+            // Map MCTS action keys to outbound jump types
+            // MCTS keys are like 'BS_HOT' (round trip), button data-jump is same
+            // For round trips like BS_HOT_COLD, we want the outbound (first part)
+            let jumpKey = actionKey;
+            if (actionKey.includes('_COLD_')) {
+                // e.g., BS_COLD_HOT -> outbound is BS_COLD
+                jumpKey = actionKey.split('_').slice(0, 2).join('_');
+            }
+
+            // Find and highlight the matching button
+            const btn = document.querySelector(`.jump-btn[data-jump="${jumpKey}"]`);
+            if (btn) {
+                btn.classList.add('recommended');
+            }
         }
 
         function recoverFromShrink() {

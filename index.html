@@ -640,14 +640,17 @@
                         Fresh Hole (1800-2200 M)
                     </button>
 
-                    <div style="color: #888; font-size: 0.8em; margin-bottom: 5px;">Import from tracker:</div>
+                    <div style="color: #888; font-size: 0.8em; margin-bottom: 5px;">Mass already passed through:</div>
                     <div style="display: flex; gap: 8px;">
-                        <input type="number" id="known-mass-input" placeholder="Mass (M)"
+                        <input type="number" id="known-mass-input" placeholder="Mass used (M)"
                                style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #4a8aaa;
                                       background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace; font-size: 0.9em;">
                         <button class="btn-cold" style="padding: 8px 12px;" onclick="applyKnownMass()">
                             Apply
                         </button>
+                    </div>
+                    <div style="color: #666; font-size: 0.7em; margin-top: 4px;">
+                        Note: Hole base is always 1800-2200 M (±10% variance)
                     </div>
                 </div>
 
@@ -1823,9 +1826,9 @@
             state.history = [];
             state.history.push({
                 type: 'setup-known-mass',
-                label: 'Known Mass Applied',
+                label: 'Mass Used Applied',
                 mass: knownMass,
-                note: 'Imported ' + knownMass + ' M from tracker',
+                note: knownMass + ' M already passed through hole',
                 timestamp: new Date().toLocaleTimeString()
             });
 

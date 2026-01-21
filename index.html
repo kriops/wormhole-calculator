@@ -897,7 +897,8 @@
             hasUnknownMass: false,
             knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
             knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance),
-            position: 'home'  // 'home' or 'away'
+            position: 'home',  // 'home' or 'away'
+            shipUsedOut: null  // Which ship we jumped out with (must return with same)
         };
 
         // Jump definitions for manual tracking
@@ -1268,7 +1269,25 @@
 
             const belief = { min: minRemaining, max: maxRemaining };
 
-            // Find best actions using MCTS
+            // If we're AWAY, we need to recommend RETURN options only
+            if (state.position === 'away') {
+                const returnResults = evaluateReturnOptions(belief, startMin, startMax, massUsed, state.shipUsedOut);
+                recommendedStrategy = {
+                    sequence: [],
+                    actionResults: returnResults,
+                    nextAction: returnResults.length > 0 ? returnResults[0] : null,
+                    minRemaining,
+                    maxRemaining,
+                    belief,
+                    isReturn: true,
+                    shipUsedOut: state.shipUsedOut
+                };
+                statusEl.textContent = `You are AWAY with ${state.shipUsedOut}. Showing return options.`;
+                displayStrategyAnalysis();
+                return;
+            }
+
+            // Normal case: we're HOME, evaluate full round trips
             const actionResults = findBestActionMCTS(belief, startMin, startMax, massUsed);
 
             // Build recommended sequence
@@ -1285,12 +1304,76 @@
                 nextAction,
                 minRemaining,
                 maxRemaining,
-                belief
+                belief,
+                isReturn: false
             };
 
             statusEl.textContent = `MCTS: ${CONFIG.simulations.toLocaleString()} simulations across ${actionResults.length} actions`;
 
             displayStrategyAnalysis();
+        }
+
+        // Evaluate return options when we're away
+        function evaluateReturnOptions(belief, startMin, startMax, massUsed, shipUsedOut) {
+            const results = [];
+
+            // Only consider return modes for the ship we went out with
+            const returnModes = shipUsedOut === 'BS'
+                ? [{ key: 'BS_HOT', mass: CONFIG.bsHot, label: 'BS Hot' },
+                   { key: 'BS_COLD', mass: CONFIG.bsCold, label: 'BS Cold' }]
+                : [{ key: 'HIC_HOT', mass: CONFIG.hicHot, label: 'HIC Hot' },
+                   { key: 'HIC_COLD', mass: CONFIG.hicCold, label: 'HIC Cold' },
+                   { key: 'HIC_ENT', mass: CONFIG.hicEnt, label: 'HIC Ent' }];
+
+            const numSims = Math.floor(CONFIG.simulations / returnModes.length);
+
+            for (const mode of returnModes) {
+                let successes = 0;  // Survived return (collapse on return = success!)
+                let collapses = 0;  // Hole collapsed
+
+                for (let i = 0; i < numSims; i++) {
+                    const originalMass = startMin + Math.random() * (startMax - startMin);
+                    const trueRemaining = originalMass - massUsed;
+
+                    // Return jump
+                    const afterReturn = trueRemaining - mode.mass;
+
+                    if (afterReturn <= 0) {
+                        // Collapsed on return - SUCCESS (we made it home as it closed)
+                        successes++;
+                        collapses++;
+                    } else {
+                        // Didn't collapse - we're home safe, hole still open
+                        successes++;
+                    }
+                }
+
+                results.push({
+                    key: mode.key,
+                    act: { out: 0, back: mode.mass, label: mode.label },
+                    mass: mode.mass,
+                    successRate: successes / numSims,
+                    collapseRate: collapses / numSims,
+                    rolloutRate: 0,  // Can't rollout on return - collapse = success
+                    successes,
+                    total: numSims,
+                    avgSteps: 1,
+                    guaranteedSafe: true,  // Return is always "safe" - collapse means success
+                    isReturn: true
+                });
+            }
+
+            // Sort by: prefer higher mass (close the hole faster), then by collapse rate
+            results.sort((a, b) => {
+                // If both might close the hole, prefer the one more likely to close it
+                if (a.collapseRate > 0.1 && b.collapseRate > 0.1) {
+                    return b.collapseRate - a.collapseRate;
+                }
+                // Otherwise prefer higher mass
+                return b.mass - a.mass;
+            });
+
+            return results;
         }
 
         // Display the strategy analysis
@@ -1300,12 +1383,73 @@
 
             if (!recommendedStrategy) return;
 
-            const { sequence, actionResults, nextAction, minRemaining, maxRemaining } = recommendedStrategy;
+            const { sequence, actionResults, nextAction, minRemaining, maxRemaining, isReturn, shipUsedOut } = recommendedStrategy;
 
             // Card 1: Next Recommended Action (prominent)
             const nextCard = document.createElement('div');
             nextCard.style.gridColumn = '1 / -1';
             nextCard.style.borderWidth = '3px';
+
+            // Special handling for RETURN recommendations
+            if (isReturn && nextAction) {
+                const collapsePct = (nextAction.collapseRate * 100).toFixed(1);
+                nextCard.className = 'sequence-card safe';
+                nextCard.style.borderColor = '#c46444';
+                nextCard.style.background = 'rgba(100, 60, 40, 0.8)';
+
+                nextCard.innerHTML = `
+                    <div class="sequence-name" style="font-size: 1.3em; color: #faa;">
+                        YOU ARE AWAY WITH ${shipUsedOut} - RETURN OPTIONS:
+                    </div>
+                    <div class="sequence-name" style="font-size: 1.2em; margin-top: 10px;">
+                        RECOMMENDED RETURN: ${nextAction.act.label}
+                        <span class="foolproof-badge" style="background: #4a8a4a;">SAFE HOME</span>
+                    </div>
+                    <div class="sequence-detail" style="font-size: 1.1em; color: #8f8; margin: 10px 0;">
+                        Return uses ${nextAction.mass} M
+                    </div>
+                    <div class="sequence-detail">
+                        ${collapsePct}% chance hole collapses on return (you'll be home!)
+                    </div>
+                `;
+                grid.appendChild(nextCard);
+
+                // Show all return options
+                if (actionResults.length > 0) {
+                    const returnCard = document.createElement('div');
+                    returnCard.className = 'sequence-card';
+                    returnCard.style.background = 'rgba(30, 35, 50, 0.9)';
+
+                    let tableRows = '';
+                    for (const result of actionResults) {
+                        const collPct = (result.collapseRate * 100).toFixed(1);
+                        tableRows += `
+                            <tr style="border-bottom: 1px solid #3a3a5a;">
+                                <td style="padding: 8px; color: #ccc;">${result.act.label}</td>
+                                <td style="padding: 8px; text-align: right;">${result.mass} M</td>
+                                <td style="padding: 8px; text-align: right; color: #8f8;">${collPct}% close</td>
+                            </tr>
+                        `;
+                    }
+
+                    returnCard.innerHTML = `
+                        <div class="sequence-name">Return Options (${shipUsedOut} only)</div>
+                        <table style="width: 100%; font-size: 0.9em; margin-top: 10px;">
+                            <tr style="color: #888; border-bottom: 1px solid #4a4a6a;">
+                                <th style="padding: 6px; text-align: left;">Mode</th>
+                                <th style="padding: 6px; text-align: right;">Mass</th>
+                                <th style="padding: 6px; text-align: right;">Closes Hole</th>
+                            </tr>
+                            ${tableRows}
+                        </table>
+                        <div style="color: #aaa; font-size: 0.8em; margin-top: 10px;">
+                            Collapse on return = SUCCESS (you make it home as hole closes)
+                        </div>
+                    `;
+                    grid.appendChild(returnCard);
+                }
+                return;
+            }
 
             if (nextAction) {
                 const act = nextAction.act;
@@ -1444,10 +1588,12 @@
             const jump = SINGLE_JUMPS[jumpType];
             state.massUsed += jump.mass;
             state.position = 'away';
+            state.shipUsedOut = jump.ship;  // Track which ship (BS or HIC)
             state.history.push({
                 type: 'jump-out-' + jumpType,
                 label: jump.label + ' OUT',
                 mass: jump.mass,
+                ship: jump.ship,
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
@@ -1464,12 +1610,19 @@
                 return;
             }
             const jump = SINGLE_JUMPS[jumpType];
+            // Enforce same ship constraint
+            if (state.shipUsedOut && jump.ship !== state.shipUsedOut) {
+                alert(`You went out with ${state.shipUsedOut}, you must return with ${state.shipUsedOut}!`);
+                return;
+            }
             state.massUsed += jump.mass;
             state.position = 'home';
+            state.shipUsedOut = null;  // Reset for next trip
             state.history.push({
                 type: 'jump-back-' + jumpType,
                 label: jump.label + ' BACK',
                 mass: jump.mass,
+                ship: jump.ship,
                 timestamp: new Date().toLocaleTimeString()
             });
             saveState();
@@ -1484,6 +1637,8 @@
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
             state.hasUnknownMass = true;
+            state.position = 'home';
+            state.shipUsedOut = null;
             state.history.push({
                 type: 'recovery-shrink',
                 label: 'Recovered: Hole Shrunk',
@@ -1503,6 +1658,8 @@
             state.knownMinStart = 0;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
             state.hasUnknownMass = true;
+            state.position = 'home';
+            state.shipUsedOut = null;
             state.history.push({
                 type: 'recovery-crit',
                 label: 'Recovered: Hole Crit',
@@ -1542,6 +1699,7 @@
             }
 
             // Reset massUsed and set new narrower starting range
+            // NOTE: Do NOT reset position/shipUsedOut - observation can happen while away
             state.massUsed = 0;
             state.knownMinStart = newMin;
             state.knownMaxStart = newMax;
@@ -1608,6 +1766,8 @@
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = false;
+            state.position = 'home';
+            state.shipUsedOut = null;
             state.history = [];
             state.history.push({
                 type: 'setup-fresh',
@@ -1628,6 +1788,8 @@
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.shrinkThreshold;
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = true;
+            state.position = 'home';
+            state.shipUsedOut = null;
             state.history = [];
             state.history.push({
                 type: 'setup-unknown-fresh',
@@ -1656,6 +1818,8 @@
             state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
             state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
             state.hasUnknownMass = false;
+            state.position = 'home';
+            state.shipUsedOut = null;
             state.history = [];
             state.history.push({
                 type: 'setup-known-mass',
@@ -1698,7 +1862,8 @@
                     hasUnknownMass: false,
                     knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
                     knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance),
-                    position: 'home'
+                    position: 'home',
+                    shipUsedOut: null
                 };
                 saveState();
                 setTimeout(() => {

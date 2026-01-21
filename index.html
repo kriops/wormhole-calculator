@@ -735,9 +735,25 @@
             </div>
         </div>
 
-        <!-- 4. ANALYSIS: MCTS Strategy recommendation -->
+        <!-- 4. HISTORY: Log of actions (near controls for visibility) -->
+        <div class="history" style="margin-bottom: 20px;">
+            <h3 style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Jump History</span>
+                <span>
+                    <button class="btn-undo" onclick="undoLast()" style="padding: 6px 12px; font-size: 0.85em;">Undo</button>
+                    <button class="btn-reset" onclick="resetCalculator()" style="padding: 6px 12px; font-size: 0.85em;">Reset</button>
+                </span>
+            </h3>
+            <div class="history-list" id="history-list" style="max-height: 120px;">
+                <div class="history-item">
+                    <span class="action">No jumps recorded</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. ANALYSIS: MCTS Strategy recommendation -->
         <div class="monte-carlo">
-            <h3>4. MCTS Strategy Analysis</h3>
+            <h3>5. MCTS Strategy Analysis</h3>
             <div class="simulation-info">
                 Uses <strong>Monte Carlo Tree Search</strong> to find optimal actions. Each action is evaluated by simulating
                 <strong>~10,000 games to terminal per action</strong>, accounting for observations (shrink/crit).
@@ -750,7 +766,7 @@
             </div>
         </div>
 
-        <!-- 5. REFERENCE: WH specs -->
+        <!-- 6. REFERENCE: WH specs -->
         <div class="wh-specs">
             <div class="spec-card">
                 <h3>Wormhole Type</h3>
@@ -771,20 +787,6 @@
                 <h3>HIC (Devoter)</h3>
                 <div class="value">30 / 134 / 1.5</div>
                 <div class="unit">M Cold / Hot / Ent</div>
-            </div>
-        </div>
-
-        <!-- 6. HISTORY: Log of actions -->
-        <div class="history">
-            <h3>Jump History</h3>
-            <div style="margin-bottom: 10px;">
-                <button class="btn-undo" onclick="undoLast()">Undo Last</button>
-                <button class="btn-reset" onclick="resetCalculator()">Reset All</button>
-            </div>
-            <div class="history-list" id="history-list">
-                <div class="history-item">
-                    <span class="action">No jumps recorded</span>
-                </div>
             </div>
         </div>
 
@@ -861,6 +863,7 @@
             const lastJump = jumps[jumps.length - 1];
             return lastJump?.ship || null;
         }
+
 
         function init() {
             loadState();
@@ -1124,8 +1127,6 @@
             }
 
             // Sort by: prefer higher mass when success rates are comparable
-            // Logic: Among "safe enough" actions (>= 99% success), prefer higher mass
-            // Only sacrifice mass for significantly better success rate
             results.sort((a, b) => {
                 const SAFE_THRESHOLD = 0.99;  // 99% success = "safe enough"
                 const aIsSafe = a.successRate >= SAFE_THRESHOLD;
@@ -1176,6 +1177,66 @@
             return sequence;
         }
 
+        // Simulate trip distribution using Monte Carlo with cached MCTS decisions
+        function simulateTripDistribution(belief, startMin, startMax, massUsed, numSims = 2000) {
+            const tripCounts = {};
+            const mctsCache = new Map();  // Cache MCTS results by belief key
+
+            for (let i = 0; i < numSims; i++) {
+                const originalMass = startMin + Math.random() * (startMax - startMin);
+                let remaining = originalMass - massUsed;
+                let trips = 0;
+                let currentBelief = { min: belief.min, max: belief.max };
+                let currentMassUsed = massUsed;
+
+                while (remaining > 0 && trips < 20) {
+                    // Cache key: rounded belief (round to nearest 10 for better cache hits)
+                    const beliefMinRounded = Math.round(currentBelief.min / 10) * 10;
+                    const beliefMaxRounded = Math.round(currentBelief.max / 10) * 10;
+                    const cacheKey = `${beliefMinRounded},${beliefMaxRounded}`;
+
+                    let bestAction;
+                    if (mctsCache.has(cacheKey)) {
+                        bestAction = mctsCache.get(cacheKey);
+                    } else {
+                        // Run full MCTS for this belief state
+                        const results = findBestActionMCTS(currentBelief, startMin, startMax, currentMassUsed);
+                        bestAction = results.length > 0 && results[0].successRate >= 0.5 ? results[0] : null;
+                        mctsCache.set(cacheKey, bestAction);
+                    }
+
+                    if (!bestAction) break;
+
+                    const act = bestAction.act;
+
+                    // Check for rollout (true mass perspective) - collapse on outbound = failure
+                    if (remaining <= act.out) {
+                        // Rolled out - don't count this trip, simulation ends
+                        break;
+                    }
+
+                    trips++;
+                    remaining -= act.out;
+
+                    // Return jump - collapse here = success (we made it home)
+                    remaining -= act.back;
+
+                    // Update belief for next decision
+                    currentBelief.min = Math.max(0, currentBelief.min - act.out - act.back);
+                    currentBelief.max = Math.max(0, currentBelief.max - act.out - act.back);
+                    currentMassUsed += act.out + act.back;
+                }
+
+                tripCounts[trips] = (tripCounts[trips] || 0) + 1;
+            }
+
+            // Convert to sorted distribution, filter out negligible probabilities
+            return Object.entries(tripCounts)
+                .map(([trips, count]) => ({ trips: parseInt(trips), pct: count / numSims }))
+                .filter(d => d.pct >= 0.01)  // Only show >=1%
+                .sort((a, b) => a.trips - b.trips);
+        }
+
         // Main MCTS analysis function
         function runStrategyAnalysis() {
             const statusEl = document.getElementById('sim-status');
@@ -1212,9 +1273,14 @@
             // Normal case: we're HOME, evaluate full round trips
             const actionResults = findBestActionMCTS(belief, startMin, startMax, massUsed);
 
-            // Build recommended sequence
+            // Build recommended sequence (deterministic, for reference)
             const sequence = actionResults.length > 0
                 ? buildMCTSStrategy(belief, startMin, startMax, massUsed)
+                : [];
+
+            // Simulate trip distribution (probabilistic)
+            const tripDistribution = actionResults.length > 0
+                ? simulateTripDistribution(belief, startMin, startMax, massUsed)
                 : [];
 
             // Get the best next action
@@ -1222,6 +1288,7 @@
 
             recommendedStrategy = {
                 sequence,
+                tripDistribution,
                 actionResults,
                 nextAction,
                 minRemaining,
@@ -1413,29 +1480,34 @@
             }
             grid.appendChild(nextCard);
 
-            // Card 2: Full recommended sequence (if available)
-            if (sequence.length > 0) {
-                const seqCard = document.createElement('div');
-                seqCard.className = 'sequence-card';
+            // Card 2: Trip distribution (probabilistic)
+            const { tripDistribution } = recommendedStrategy;
+            if (tripDistribution && tripDistribution.length > 0) {
+                const distCard = document.createElement('div');
+                distCard.className = 'sequence-card';
 
-                const totalMass = sequence.reduce((sum, key) => {
-                    const act = ACTIONS[key];
-                    return sum + act.out + act.back;
-                }, 0);
+                // Format distribution as "3 trips (42%) · 4 trips (58%)"
+                const distStr = tripDistribution
+                    .map(d => `${d.trips} trips (${Math.round(d.pct * 100)}%)`)
+                    .join(' · ');
 
-                const seqStr = sequence.map(a => ACTIONS[a].label).join(' → ');
+                // Also show the sequence for reference
+                const seqStr = sequence.length > 0
+                    ? sequence.map(a => ACTIONS[a].label).join(' → ')
+                    : 'N/A';
 
-                seqCard.innerHTML = `
+                distCard.innerHTML = `
                     <div class="sequence-name">
-                        MCTS Strategy: ${sequence.length} round trips
+                        Likely: ${distStr}
                     </div>
-                    <div class="sequence-detail" style="font-size: 0.95em; color: #ccc; line-height: 1.4;">${seqStr}</div>
-                    <div class="sequence-detail">Total mass: ${totalMass} M</div>
-                    <div class="sequence-detail" style="color: #8af;">
-                        Each step chosen by MCTS based on highest success rate to terminal
+                    <div class="sequence-detail" style="font-size: 0.9em; color: #aaa; margin-top: 8px;">
+                        Typical sequence: ${seqStr}
+                    </div>
+                    <div class="sequence-detail" style="color: #8af; font-size: 0.85em;">
+                        Based on ${tripDistribution.reduce((s, d) => s + Math.round(d.pct * 2000), 0).toLocaleString()} Monte Carlo simulations
                     </div>
                 `;
-                grid.appendChild(seqCard);
+                grid.appendChild(distCard);
             }
 
             // Card 3: Action comparison table (from MCTS results)

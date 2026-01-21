@@ -3022,10 +3022,9 @@ Sisters Core Scanner Probe x8</pre>
                 lastCompletedAction = getLastCompletedActionKey();
             }
 
-            // After any jump, await observation before next jump (unless already crit)
-            if (!hasHoleCrit()) {
-                state.awaitingObservation = true;
-            }
+            // After any jump, await observation before next jump
+            // Even when crit, user needs to confirm if hole collapsed or stayed crit
+            state.awaitingObservation = true;
 
             saveState();
             setTimeout(() => {

@@ -1,0 +1,168 @@
+// POMCTS - Result Extraction Functions
+
+import type { ActionResult, TripDistribution } from '../types';
+import { POMCTSNode } from './node';
+
+/**
+ * Extract all action results from POMCTS tree (aggregated across observations).
+ * Results are sorted by success rate (higher = better).
+ */
+export function getMCTSActionResults(root: POMCTSNode): ActionResult[] {
+  const results: ActionResult[] = [];
+  const remainingBelief = root.getRemainingBelief();
+
+  for (const actionKey of Object.keys(root.children)) {
+    const observations = root.children[actionKey];
+
+    // Aggregate stats across all observation branches
+    let totalVisits = 0;
+    let totalWins = 0;
+    let totalTrips = 0;
+    let totalSuccesses = 0;
+    let action = null;
+
+    for (const obs of Object.keys(observations)) {
+      const child = observations[obs];
+      totalVisits += child.visits;
+      totalWins += child.wins;
+      action = child.incomingAction;
+
+      // Aggregate terminal trips
+      for (const [trips, count] of Object.entries(child.terminalTrips)) {
+        totalTrips += parseInt(trips) * count;
+        totalSuccesses += count;
+      }
+    }
+
+    if (!action) continue;
+
+    const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
+    const rolloutRate = totalVisits > 0 ? (totalVisits - totalWins) / totalVisits : 0;
+
+    results.push({
+      key: actionKey,
+      act: action,
+      visits: totalVisits,
+      wins: totalWins,
+      successes: totalWins,
+      total: totalVisits,
+      successRate: totalVisits > 0 ? totalWins / totalVisits : 0,
+      rolloutRate,
+      avgSteps,
+      mass: action.out + action.back,
+      guaranteedSafe: remainingBelief.min > action.out
+    });
+  }
+
+  // Sort by success rate (higher = better), then visits as tiebreaker
+  results.sort((a, b) => {
+    const successDiff = b.successRate - a.successRate;
+    if (Math.abs(successDiff) > 0.01) return successDiff;
+    return b.visits - a.visits;
+  });
+
+  return results;
+}
+
+/**
+ * Extract trip distribution from POMCTS tree root.
+ * Returns the probability distribution of trip counts for successful completions.
+ */
+export function getMCTSTripDistribution(root: POMCTSNode): TripDistribution[] {
+  const totalWins = root.wins;
+  if (totalWins === 0) return [];
+
+  const distribution: TripDistribution[] = [];
+  for (const [trips, count] of Object.entries(root.terminalTrips)) {
+    const pct = count / totalWins;
+    if (pct >= 0.01) {  // Only show >=1%
+      distribution.push({ trips: parseInt(trips), pct });
+    }
+  }
+  return distribution.sort((a, b) => a.trips - b.trips);
+}
+
+/**
+ * Extract recommended sequence by following most-visited path.
+ * This gives the most likely action sequence based on the search.
+ */
+export function getMCTSSequence(root: POMCTSNode): string[] {
+  const sequence: string[] = [];
+  let node: POMCTSNode = root;
+
+  while (Object.keys(node.children).length > 0) {
+    // Find best action (most visited)
+    let bestKey: string | null = null;
+    let bestVisits = 0;
+
+    for (const actionKey of Object.keys(node.children)) {
+      const stats = node.getActionStats(actionKey);
+      if (stats.visits > bestVisits) {
+        bestVisits = stats.visits;
+        bestKey = actionKey;
+      }
+    }
+
+    if (!bestKey || bestVisits === 0) break;
+    sequence.push(bestKey);
+
+    // Follow the most-visited observation branch for this action
+    const observations = node.children[bestKey];
+    let bestChild: POMCTSNode | null = null;
+    let bestChildVisits = 0;
+    for (const obs of Object.keys(observations)) {
+      if (observations[obs].visits > bestChildVisits) {
+        bestChildVisits = observations[obs].visits;
+        bestChild = observations[obs];
+      }
+    }
+
+    if (!bestChild) break;
+    node = bestChild;
+  }
+
+  return sequence;
+}
+
+/**
+ * Extract best action from POMCTS tree (most visited action, aggregated across observations).
+ */
+export function getMCTSBestAction(root: POMCTSNode): {
+  key: string;
+  action: typeof root.incomingAction;
+  visits: number;
+  wins: number;
+  successRate: number;
+  guaranteedSafe: boolean;
+} | null {
+  const actionKeys = Object.keys(root.children);
+  if (actionKeys.length === 0) return null;
+
+  let bestKey: string | null = null;
+  let bestStats = { visits: 0, wins: 0 };
+  let bestAction: typeof root.incomingAction = null;
+
+  for (const key of actionKeys) {
+    const stats = root.getActionStats(key);
+    if (stats.visits > bestStats.visits) {
+      bestStats = stats;
+      bestKey = key;
+      // Get action from any observation branch
+      const observations = root.children[key];
+      const firstObs = Object.keys(observations)[0];
+      bestAction = observations[firstObs].incomingAction;
+    }
+  }
+
+  if (!bestAction || !bestKey) return null;
+
+  const remainingBelief = root.getRemainingBelief();
+  return {
+    key: bestKey,
+    action: bestAction,
+    visits: bestStats.visits,
+    wins: bestStats.wins,
+    successRate: bestStats.visits > 0 ? bestStats.wins / bestStats.visits : 0,
+    guaranteedSafe: remainingBelief.min > bestAction.out
+  };
+}

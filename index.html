@@ -992,7 +992,7 @@
             shrinkThreshold: 0.50,
             critThreshold: 0.10,
             // MC settings
-            simulations: 60000
+            simulations: 200000
         };
 
         // State (position is derived from history, not stored)
@@ -1132,7 +1132,7 @@
                 const remaining = this.getRemainingBelief();
                 // Filter out actions that can't survive outbound
                 // Also filter out actions that would take >15 trips (inefficient)
-                const maxReasonableTrips = 15;
+                const maxReasonableTrips = 8;
                 const minMassPerTrip = remaining.max / maxReasonableTrips;
 
                 return Object.entries(ACTIONS).filter(([key, act]) => {

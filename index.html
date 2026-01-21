@@ -911,6 +911,253 @@
         const SHRINK_THRESHOLD = CONFIG.baseMass * CONFIG.shrinkThreshold;  // 1000 M
         const CRIT_THRESHOLD = CONFIG.baseMass * CONFIG.critThreshold;       // 200 M
 
+        // ============================================================
+        // MCTS Implementation - Proper tree search with backpropagation
+        // ============================================================
+
+        class MCTSNode {
+            constructor(belief, parent = null, action = null, actionKey = null, depth = 0) {
+                this.belief = { min: belief.min, max: belief.max };
+                this.parent = parent;
+                this.action = action;      // The action object that led here
+                this.actionKey = actionKey; // The key (e.g., 'BS_HOT')
+                this.children = new Map(); // actionKey -> MCTSNode
+                this.visits = 0;
+                this.wins = 0;             // Successful completions (no rollout)
+                this.depth = depth;        // Number of round trips taken to reach this node
+                this.terminalTrips = {};   // { tripCount: count } for distribution
+            }
+
+            isTerminal() {
+                return this.belief.max <= 0;
+            }
+
+            getValidActions() {
+                return Object.entries(ACTIONS).filter(([key, act]) =>
+                    this.belief.max > act.out  // Must be possible to survive outbound
+                );
+            }
+
+            ucb1(C = 1.414) {
+                if (this.visits === 0) return Infinity;
+                const parentVisits = this.parent ? this.parent.visits : this.visits;
+                return (this.wins / this.visits) + C * Math.sqrt(Math.log(parentVisits) / this.visits);
+            }
+        }
+
+        // Main MCTS algorithm
+        function runMCTS(rootBelief, startMin, startMax, massUsed, numIterations = 60000) {
+            const root = new MCTSNode(rootBelief);
+
+            for (let i = 0; i < numIterations; i++) {
+                // Sample true mass for this iteration (step 0 of rollout)
+                const trueMass = startMin + Math.random() * (startMax - startMin);
+                let remaining = trueMass - massUsed;
+
+                // 1. SELECTION: traverse tree using UCB1 until we hit a leaf
+                let node = root;
+                let rolledOut = false;
+
+                while (node.children.size > 0 && !node.isTerminal()) {
+                    // Pick child with highest UCB1
+                    let bestChild = null;
+                    let bestUCB = -Infinity;
+                    for (const child of node.children.values()) {
+                        const ucb = child.ucb1();
+                        if (ucb > bestUCB) {
+                            bestUCB = ucb;
+                            bestChild = child;
+                        }
+                    }
+                    node = bestChild;
+
+                    // Apply the action to remaining mass
+                    const act = node.action;
+                    // Check for rollout on outbound
+                    if (remaining <= act.out) {
+                        rolledOut = true;
+                        break;
+                    }
+                    remaining -= act.out + act.back;
+                }
+
+                // 2. EXPANSION: if not terminal and not expanded, add children
+                if (!rolledOut && !node.isTerminal() && node.children.size === 0) {
+                    for (const [key, act] of node.getValidActions()) {
+                        const newBelief = {
+                            min: Math.max(0, node.belief.min - act.out - act.back),
+                            max: Math.max(0, node.belief.max - act.out - act.back)
+                        };
+                        const child = new MCTSNode(newBelief, node, act, key, node.depth + 1);
+                        node.children.set(key, child);
+                    }
+
+                    // Select one child to simulate from (pick randomly for exploration)
+                    if (node.children.size > 0) {
+                        const childArray = Array.from(node.children.values());
+                        const selectedChild = childArray[Math.floor(Math.random() * childArray.length)];
+                        node = selectedChild;
+
+                        // Apply selected action
+                        const act = node.action;
+                        if (remaining <= act.out) {
+                            rolledOut = true;
+                        } else {
+                            remaining -= act.out + act.back;
+                        }
+                    }
+                }
+
+                // 3. SIMULATION: random rollout to terminal
+                let simBelief = { min: node.belief.min, max: node.belief.max };
+                let trips = node.depth;
+
+                if (!rolledOut) {
+                    while (remaining > 0 && trips < 20) {
+                        // Get valid actions for current belief
+                        const validActions = Object.entries(ACTIONS).filter(([k, a]) =>
+                            simBelief.max > a.out
+                        );
+                        if (validActions.length === 0) break;
+
+                        // Pick action using heuristic (prefer higher mass when safe)
+                        validActions.sort((a, b) => (b[1].out + b[1].back) - (a[1].out + a[1].back));
+                        const [key, act] = validActions[0];
+
+                        // Check for rollout on outbound
+                        if (remaining <= act.out) {
+                            rolledOut = true;
+                            break;
+                        }
+
+                        trips++;
+                        remaining -= act.out + act.back;
+
+                        // Update simulation belief
+                        simBelief.min = Math.max(0, simBelief.min - act.out - act.back);
+                        simBelief.max = Math.max(0, simBelief.max - act.out - act.back);
+                    }
+                }
+
+                // 4. BACKPROPAGATION: update stats up the tree
+                const success = !rolledOut && remaining <= 0;
+                let backNode = node;
+                while (backNode !== null) {
+                    backNode.visits++;
+                    if (success) {
+                        backNode.wins++;
+                        // Track terminal trip count at each node
+                        backNode.terminalTrips[trips] = (backNode.terminalTrips[trips] || 0) + 1;
+                    }
+                    backNode = backNode.parent;
+                }
+            }
+
+            return root;
+        }
+
+        // Extract best action from MCTS tree (most visited child)
+        function getMCTSBestAction(root) {
+            if (root.children.size === 0) return null;
+
+            let bestKey = null;
+            let bestChild = null;
+            let bestVisits = 0;
+
+            for (const [key, child] of root.children) {
+                if (child.visits > bestVisits) {
+                    bestVisits = child.visits;
+                    bestKey = key;
+                    bestChild = child;
+                }
+            }
+
+            return {
+                key: bestKey,
+                action: bestChild.action,
+                visits: bestChild.visits,
+                wins: bestChild.wins,
+                successRate: bestChild.visits > 0 ? bestChild.wins / bestChild.visits : 0,
+                guaranteedSafe: root.belief.min > bestChild.action.out
+            };
+        }
+
+        // Extract all action results from MCTS tree
+        function getMCTSActionResults(root) {
+            const results = [];
+            for (const [key, child] of root.children) {
+                // Calculate average trips from child's terminalTrips
+                let totalTrips = 0;
+                let totalSuccesses = 0;
+                for (const [trips, count] of Object.entries(child.terminalTrips)) {
+                    totalTrips += parseInt(trips) * count;
+                    totalSuccesses += count;
+                }
+                const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
+
+                // Rollout rate is failures / total visits
+                const rolloutRate = child.visits > 0 ? (child.visits - child.wins) / child.visits : 0;
+
+                results.push({
+                    key,
+                    act: child.action,
+                    visits: child.visits,
+                    wins: child.wins,
+                    successes: child.wins,  // Alias for display
+                    total: child.visits,    // Alias for display
+                    successRate: child.visits > 0 ? child.wins / child.visits : 0,
+                    rolloutRate,
+                    avgSteps,
+                    mass: child.action.out + child.action.back,
+                    guaranteedSafe: root.belief.min > child.action.out
+                });
+            }
+            // Sort by visits (most explored = best)
+            results.sort((a, b) => b.visits - a.visits);
+            return results;
+        }
+
+        // Extract trip distribution from MCTS tree root
+        function getMCTSTripDistribution(root) {
+            const totalWins = root.wins;
+            if (totalWins === 0) return [];
+
+            const distribution = [];
+            for (const [trips, count] of Object.entries(root.terminalTrips)) {
+                const pct = count / totalWins;
+                if (pct >= 0.01) {  // Only show >=1%
+                    distribution.push({ trips: parseInt(trips), pct });
+                }
+            }
+            return distribution.sort((a, b) => a.trips - b.trips);
+        }
+
+        // Extract recommended sequence by following most-visited path
+        function getMCTSSequence(root) {
+            const sequence = [];
+            let node = root;
+
+            while (node.children.size > 0) {
+                let bestChild = null;
+                let bestKey = null;
+                let bestVisits = 0;
+
+                for (const [key, child] of node.children) {
+                    if (child.visits > bestVisits) {
+                        bestVisits = child.visits;
+                        bestKey = key;
+                        bestChild = child;
+                    }
+                }
+
+                if (!bestChild || bestVisits === 0) break;
+                sequence.push(bestKey);
+                node = bestChild;
+            }
+
+            return sequence;
+        }
+
         // Update belief based on observation (shrink/crit)
         // originalMass is the true total mass of the hole, trueRemaining is current remaining
         function updateBeliefWithObservation(belief, originalMass, trueRemaining, prevRemaining) {
@@ -939,303 +1186,9 @@
             return newBelief;
         }
 
-        // Pick action for simulation rollout (heuristic: prefer higher mass that seems safe)
-        function pickSimulationAction(belief) {
-            const actionList = Object.entries(ACTIONS)
-                .map(([key, act]) => ({ key, act, mass: act.out + act.back }))
-                .sort((a, b) => b.mass - a.mass);  // Highest mass first
 
-            // Pick highest mass action where we have a decent chance
-            for (const { key, act } of actionList) {
-                // If average remaining > outbound mass, consider it
-                const avgRemaining = (belief.min + belief.max) / 2;
-                if (avgRemaining > act.out * 1.5) {
-                    return key;
-                }
-            }
 
-            // Fall back to safest option
-            for (const { key, act } of actionList.reverse()) {
-                if (belief.max > act.out) {
-                    return key;
-                }
-            }
 
-            return null;
-        }
-
-        // Pick best return action when away (maximize mass while being safe-ish)
-        function pickReturnAction(belief) {
-            // When returning, we WANT to collapse the hole ideally
-            // Pick highest mass that doesn't guarantee rollout
-            const returns = [
-                { key: 'BS_HOT', mass: CONFIG.bsHot },
-                { key: 'BS_COLD', mass: CONFIG.bsCold },
-                { key: 'HIC_HOT', mass: CONFIG.hicHot },
-                { key: 'HIC_COLD', mass: CONFIG.hicCold },
-                { key: 'HIC_ENT', mass: CONFIG.hicEnt }
-            ].sort((a, b) => b.mass - a.mass);
-
-            // If hole might collapse, pick something that uses good mass
-            // Prefer to collapse it on the way home
-            for (const r of returns) {
-                // If max remaining > mass, we might survive. If min < mass, might collapse (good!)
-                if (belief.max > r.mass || belief.min <= r.mass) {
-                    return r;
-                }
-            }
-            return returns[returns.length - 1];  // Safest option
-        }
-
-        // Simulate from taking a specific outbound action until terminal
-        // Models: jump out -> observe -> jump back -> repeat
-        // Returns { success: bool, steps: number }
-        function simulateFromAction(firstActionKey, belief, originalMass, trueMass) {
-            let remaining = trueMass;
-            let currentBelief = { min: belief.min, max: belief.max };
-            let steps = 1;
-            let position = 'home';
-
-            // Execute first action (outbound)
-            const firstAct = ACTIONS[firstActionKey];
-
-            // OUTBOUND JUMP
-            let prevRemaining = remaining;
-            remaining -= firstAct.out;
-            position = 'away';
-
-            if (remaining <= 0) {
-                return { success: false, steps };  // Collapsed while jumping OUT = rollout
-            }
-
-            // OBSERVATION while away
-            currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prevRemaining);
-            currentBelief.min = Math.max(0, currentBelief.min - firstAct.out);
-            currentBelief.max = Math.max(0, currentBelief.max - firstAct.out);
-
-            // RETURN JUMP (use the back mass from the action)
-            prevRemaining = remaining;
-            remaining -= firstAct.back;
-            position = 'home';
-
-            // Observation after return
-            currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prevRemaining);
-            currentBelief.min = Math.max(0, currentBelief.min - firstAct.back);
-            currentBelief.max = Math.max(0, currentBelief.max - firstAct.back);
-
-            if (remaining <= 0) {
-                return { success: true, steps };  // Collapsed while jumping HOME = success!
-            }
-
-            // Continue with more round trips until terminal
-            while (remaining > 0 && steps < 30) {
-                const actionKey = pickSimulationAction(currentBelief);
-                if (!actionKey) break;
-
-                const act = ACTIONS[actionKey];
-                steps++;
-
-                // OUTBOUND
-                prevRemaining = remaining;
-                remaining -= act.out;
-                position = 'away';
-
-                if (remaining <= 0) {
-                    return { success: false, steps };  // Rollout
-                }
-
-                // Observation while away
-                currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prevRemaining);
-                currentBelief.min = Math.max(0, currentBelief.min - act.out);
-                currentBelief.max = Math.max(0, currentBelief.max - act.out);
-
-                // RETURN
-                prevRemaining = remaining;
-                remaining -= act.back;
-                position = 'home';
-
-                // Observation after return
-                currentBelief = updateBeliefWithObservation(currentBelief, originalMass, remaining, prevRemaining);
-                currentBelief.min = Math.max(0, currentBelief.min - act.back);
-                currentBelief.max = Math.max(0, currentBelief.max - act.back);
-
-                if (remaining <= 0) {
-                    return { success: true, steps };  // Collapsed while jumping HOME = success!
-                }
-            }
-
-            return { success: true, steps };  // Didn't collapse but no more actions
-        }
-
-        // Evaluate an action: immediate safety + simulation for avg steps
-        function evaluateActionMCTS(actionKey, belief, startMin, startMax, massUsed, numSims) {
-            const act = ACTIONS[actionKey];
-            let immediateSuccesses = 0;  // Survived this action's outbound jump
-            let terminalSuccesses = 0;   // Successfully closed hole without rollout
-            let totalSteps = 0;
-
-            for (let i = 0; i < numSims; i++) {
-                // Sample true original mass and calculate true remaining
-                const originalMass = startMin + Math.random() * (startMax - startMin);
-                const trueMass = originalMass - massUsed;
-
-                // Check immediate rollout on THIS action
-                if (trueMass <= act.out) {
-                    // Would roll out on this action
-                    continue;
-                }
-
-                // This action succeeded (didn't roll out)
-                immediateSuccesses++;
-
-                const result = simulateFromAction(actionKey, belief, originalMass, trueMass);
-                if (result.success) {
-                    terminalSuccesses++;
-                    totalSteps += result.steps;
-                }
-            }
-
-            // Success rate = probability THIS action doesn't cause rollout
-            // (not penalized for bad luck in future actions)
-            return {
-                successRate: immediateSuccesses / numSims,
-                terminalRate: terminalSuccesses / numSims,
-                rolloutRate: 1 - (immediateSuccesses / numSims),
-                avgSteps: terminalSuccesses > 0 ? totalSteps / terminalSuccesses : Infinity,
-                successes: immediateSuccesses,
-                total: numSims
-            };
-        }
-
-        // Find the best action using MCTS
-        function findBestActionMCTS(belief, startMin, startMax, massUsed) {
-            const simsPerAction = Math.floor(CONFIG.simulations / Object.keys(ACTIONS).length);
-            const results = [];
-
-            for (const [key, act] of Object.entries(ACTIONS)) {
-                // Skip actions that can't possibly succeed (max remaining < outbound)
-                if (belief.max <= act.out) continue;
-
-                const eval_result = evaluateActionMCTS(key, belief, startMin, startMax, massUsed, simsPerAction);
-                results.push({
-                    key,
-                    act,
-                    ...eval_result,
-                    mass: act.out + act.back,
-                    guaranteedSafe: belief.min > act.out
-                });
-            }
-
-            // Sort by: prefer higher mass when success rates are comparable
-            results.sort((a, b) => {
-                const SAFE_THRESHOLD = 0.99;  // 99% success = "safe enough"
-                const aIsSafe = a.successRate >= SAFE_THRESHOLD;
-                const bIsSafe = b.successRate >= SAFE_THRESHOLD;
-
-                // If both are safe, prefer higher mass (faster rolling)
-                if (aIsSafe && bIsSafe) {
-                    return b.mass - a.mass;
-                }
-
-                // If only one is safe, prefer the safe one
-                if (aIsSafe !== bIsSafe) {
-                    return bIsSafe - aIsSafe;
-                }
-
-                // If neither is safe, prefer higher success rate, then higher mass
-                if (Math.abs(b.successRate - a.successRate) > 0.01) {
-                    return b.successRate - a.successRate;
-                }
-                return b.mass - a.mass;
-            });
-
-            return results;
-        }
-
-        // Build recommended sequence using MCTS (greedy on MCTS results)
-        function buildMCTSStrategy(belief, startMin, startMax, massUsed) {
-            const sequence = [];
-            let currentBelief = { min: belief.min, max: belief.max };
-            let currentMassUsed = massUsed;
-
-            while (currentBelief.min > 0 && sequence.length < 15) {
-                // Find best action for current state
-                const results = findBestActionMCTS(currentBelief, startMin, startMax, currentMassUsed);
-
-                if (results.length === 0 || results[0].successRate < 0.5) break;
-
-                const best = results[0];
-                sequence.push(best.key);
-
-                // Update state for next iteration
-                const act = ACTIONS[best.key];
-                currentBelief.min = Math.max(0, currentBelief.min - act.out - act.back);
-                currentBelief.max = Math.max(0, currentBelief.max - act.out - act.back);
-                currentMassUsed += act.out + act.back;
-            }
-
-            return sequence;
-        }
-
-        // Simulate trip distribution using Monte Carlo with cached MCTS decisions
-        function simulateTripDistribution(belief, startMin, startMax, massUsed, numSims = 2000) {
-            const tripCounts = {};
-            const mctsCache = new Map();  // Cache MCTS results by belief key
-
-            for (let i = 0; i < numSims; i++) {
-                const originalMass = startMin + Math.random() * (startMax - startMin);
-                let remaining = originalMass - massUsed;
-                let trips = 0;
-                let currentBelief = { min: belief.min, max: belief.max };
-                let currentMassUsed = massUsed;
-
-                while (remaining > 0 && trips < 20) {
-                    // Cache key: rounded belief (round to nearest 10 for better cache hits)
-                    const beliefMinRounded = Math.round(currentBelief.min / 10) * 10;
-                    const beliefMaxRounded = Math.round(currentBelief.max / 10) * 10;
-                    const cacheKey = `${beliefMinRounded},${beliefMaxRounded}`;
-
-                    let bestAction;
-                    if (mctsCache.has(cacheKey)) {
-                        bestAction = mctsCache.get(cacheKey);
-                    } else {
-                        // Run full MCTS for this belief state
-                        const results = findBestActionMCTS(currentBelief, startMin, startMax, currentMassUsed);
-                        bestAction = results.length > 0 && results[0].successRate >= 0.5 ? results[0] : null;
-                        mctsCache.set(cacheKey, bestAction);
-                    }
-
-                    if (!bestAction) break;
-
-                    const act = bestAction.act;
-
-                    // Check for rollout (true mass perspective) - collapse on outbound = failure
-                    if (remaining <= act.out) {
-                        // Rolled out - don't count this trip, simulation ends
-                        break;
-                    }
-
-                    trips++;
-                    remaining -= act.out;
-
-                    // Return jump - collapse here = success (we made it home)
-                    remaining -= act.back;
-
-                    // Update belief for next decision
-                    currentBelief.min = Math.max(0, currentBelief.min - act.out - act.back);
-                    currentBelief.max = Math.max(0, currentBelief.max - act.out - act.back);
-                    currentMassUsed += act.out + act.back;
-                }
-
-                tripCounts[trips] = (tripCounts[trips] || 0) + 1;
-            }
-
-            // Convert to sorted distribution, filter out negligible probabilities
-            return Object.entries(tripCounts)
-                .map(([trips, count]) => ({ trips: parseInt(trips), pct: count / numSims }))
-                .filter(d => d.pct >= 0.01)  // Only show >=1%
-                .sort((a, b) => a.trips - b.trips);
-        }
 
         // Main MCTS analysis function
         function runStrategyAnalysis() {
@@ -1270,18 +1223,17 @@
                 return;
             }
 
-            // Normal case: we're HOME, evaluate full round trips
-            const actionResults = findBestActionMCTS(belief, startMin, startMax, massUsed);
+            // Normal case: we're HOME, run proper MCTS
+            const mctsRoot = runMCTS(belief, startMin, startMax, massUsed);
 
-            // Build recommended sequence (deterministic, for reference)
-            const sequence = actionResults.length > 0
-                ? buildMCTSStrategy(belief, startMin, startMax, massUsed)
-                : [];
+            // Extract results from tree
+            const actionResults = getMCTSActionResults(mctsRoot);
 
-            // Simulate trip distribution (probabilistic)
-            const tripDistribution = actionResults.length > 0
-                ? simulateTripDistribution(belief, startMin, startMax, massUsed)
-                : [];
+            // Build recommended sequence from tree (follows most-visited path)
+            const sequence = getMCTSSequence(mctsRoot);
+
+            // Trip distribution comes free from tree statistics
+            const tripDistribution = getMCTSTripDistribution(mctsRoot);
 
             // Get the best next action
             const nextAction = actionResults.length > 0 ? actionResults[0] : null;
@@ -1294,10 +1246,11 @@
                 minRemaining,
                 maxRemaining,
                 belief,
-                isReturn: false
+                isReturn: false,
+                mctsIterations: mctsRoot.visits
             };
 
-            statusEl.textContent = `MCTS: ${CONFIG.simulations.toLocaleString()} simulations across ${actionResults.length} actions`;
+            statusEl.textContent = `MCTS: ${mctsRoot.visits.toLocaleString()} iterations across ${actionResults.length} actions`;
 
             displayStrategyAnalysis();
         }
@@ -1372,7 +1325,7 @@
 
             if (!recommendedStrategy) return;
 
-            const { sequence, actionResults, nextAction, minRemaining, maxRemaining, isReturn, shipUsedOut } = recommendedStrategy;
+            const { sequence, actionResults, nextAction, minRemaining, maxRemaining, isReturn, shipUsedOut, mctsIterations } = recommendedStrategy;
 
             // Card 1: Next Recommended Action (prominent)
             const nextCard = document.createElement('div');
@@ -1504,7 +1457,7 @@
                         Typical sequence: ${seqStr}
                     </div>
                     <div class="sequence-detail" style="color: #8af; font-size: 0.85em;">
-                        Based on ${tripDistribution.reduce((s, d) => s + Math.round(d.pct * 2000), 0).toLocaleString()} Monte Carlo simulations
+                        Based on ${mctsIterations.toLocaleString()} MCTS iterations
                     </div>
                 `;
                 grid.appendChild(distCard);

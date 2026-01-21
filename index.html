@@ -3444,25 +3444,41 @@ Sisters Core Scanner Probe x8</pre>
                 note = `Normal state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
             } else if (visualState === 'reduced') {
                 // Reduced: 10-50% remaining
-                // Bounds represent REMAINING mass (10-50% of original total)
-                // If massUsed > 0: tighter bounds from the constraint that it just shrunk
-                const impliedMin = massUsed > 0 ? massUsed / 0.9 : baseMin * critThreshold;
-                const impliedMax = massUsed > 0 ? 2 * massUsed : baseMax * shrinkThreshold;
-                minStart = Math.max(baseMin * critThreshold, impliedMin);  // At least 180M
-                maxStart = Math.min(baseMax, impliedMax);  // At most 1100M when mass=0
-                // Ensure valid range
-                if (minStart > maxStart) {
-                    minStart = baseMin * critThreshold;
-                    maxStart = baseMax * shrinkThreshold;
+                // Tracked mass is TOTAL since hole was fresh, not since it became reduced
+                // Visual state bounds: 180-1100M (10-50% of 1800-2200M)
+                // Tracked mass only constrains when large enough:
+                //   - Upper bound affected when massUsed > 1100 (remaining ≤ 2200 - massUsed)
+                //   - Lower bound affected when massUsed > 1620 (remaining > massUsed/9)
+                const visualMin = baseMin * critThreshold;  // 180M
+                const visualMax = baseMax * shrinkThreshold;  // 1100M
+                const massConstrainedMax = baseMax - massUsed;  // 2200 - massUsed
+                const massConstrainedMin = massUsed / 9;  // Only relevant for large massUsed
+
+                minStart = massUsed > baseMin * 0.9 ? Math.max(visualMin, massConstrainedMin) : visualMin;
+                maxStart = Math.min(visualMax, massConstrainedMax);
+
+                // Validate: if min >= max, tracked mass is too high for reduced
+                if (minStart >= maxStart) {
+                    alert(`With ≥${massUsed}M passed, the hole cannot be reduced (would be critical or collapsed).`);
+                    return;
                 }
                 label = 'Setup: Reduced';
                 note = `Reduced state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
             } else {  // critical
                 // Critical: <10% remaining
-                // Bounds represent REMAINING mass (<10% of original total)
-                const impliedMax = massUsed > 0 ? massUsed / 0.9 : baseMax * critThreshold;
+                // Visual state bounds: 0-220M (<10% of 2200M)
+                // Tracked mass constrains upper bound when massUsed > 1980
+                const visualMax = baseMax * critThreshold;  // 220M
+                const massConstrainedMax = baseMax - massUsed;  // 2200 - massUsed
+
                 minStart = 0;
-                maxStart = Math.min(baseMax * critThreshold, impliedMax);  // At most 220M
+                maxStart = Math.min(visualMax, massConstrainedMax);
+
+                // Validate: if max <= 0, hole is collapsed
+                if (maxStart <= 0) {
+                    alert(`With ≥${massUsed}M passed, the hole should be collapsed, not critical.`);
+                    return;
+                }
                 label = 'Setup: Critical';
                 note = `Critical state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
             }

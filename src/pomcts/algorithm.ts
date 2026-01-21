@@ -116,6 +116,9 @@ export function runPOMCTS(
       node = child;
       path.push(node);
 
+      // Exit if hole collapsed (remaining <= 0 for this sample)
+      if (remaining <= 0) break;
+
       // If we just expanded, break to go to simulation
       if (needsExpansion) break;
     }
@@ -152,10 +155,12 @@ export function runPOMCTS(
 
     // 3. BACKPROPAGATION: update stats along path
     const success = !rolledOut && remaining <= 0;
+    const score = success ? Math.pow(CONFIG.tripDecay, trips) : 0;
     for (const n of path) {
       n.visits++;
       if (success) {
-        n.wins++;
+        n.wins += score;
+        n.successes++;
         n.terminalTrips[trips] = (n.terminalTrips[trips] || 0) + 1;
       }
     }

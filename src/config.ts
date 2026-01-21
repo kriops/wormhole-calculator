@@ -5,12 +5,12 @@ export const CONFIG = {
   baseMass: 2000,      // Base mass in millions (M)
   variance: 0.10,      // ±10% variance
 
-  // Ship masses
-  bsHot: 300,          // Battleship hot (higgs + prop)
-  bsCold: 200,         // Battleship cold (higgs, no prop)
-  hicHot: 134,         // HIC hot
-  hicCold: 30,         // HIC cold
-  hicEnt: 1.5,         // HIC with entosis link
+  // Ship masses (Apocalypse + Devoter with Higgs)
+  bsHot: 294.2,        // Apocalypse hot (higgs + MWD)
+  bsCold: 194.2,       // Apocalypse cold (higgs, no MWD)
+  hicHot: 132.4,       // Devoter hot (higgs + MWD)
+  hicCold: 32.4,       // Devoter cold (higgs, no MWD)
+  hicEnt: 0.83,        // Devoter entangled
 
   // Thresholds (percentage of total mass remaining)
   shrinkThreshold: 0.50,  // Hole shrinks at 50% remaining
@@ -19,8 +19,8 @@ export const CONFIG = {
   // POMCTS settings
   simulations: 1000000,   // Number of MCTS iterations (1M for accuracy)
   maxDepth: 20,           // Maximum simulation depth (trips)
-  maxReasonableTrips: 8,  // Filter out actions needing more trips than this
   ucbConstant: 1.414,     // UCB1 exploration constant (sqrt(2))
+  tripDecay: 0.95,        // Exponential decay per trip (score = decay^trips)
 } as const;
 
 export type Config = typeof CONFIG;

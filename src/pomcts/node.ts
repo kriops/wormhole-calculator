@@ -1,7 +1,6 @@
 // POMCTS - Node Class for Tree Search
 
 import { ACTIONS } from '../actions';
-import { CONFIG } from '../config';
 import type { Action, Belief, Observation } from '../types';
 
 /**
@@ -17,7 +16,8 @@ export class POMCTSNode {
   incomingObservation: Observation | null;
   children: Record<string, Record<string, POMCTSNode>>;
   visits: number;
-  wins: number;
+  wins: number;  // Weighted score (sum of decay^trips)
+  successes: number;  // Raw success count
   depth: number;
   terminalTrips: Record<number, number>;
 
@@ -43,6 +43,7 @@ export class POMCTSNode {
 
     this.visits = 0;
     this.wins = 0;
+    this.successes = 0;
     this.depth = depth;
     this.terminalTrips = {};
   }
@@ -67,35 +68,13 @@ export class POMCTSNode {
 
   /**
    * Get valid actions from this state.
-   * Filters out actions that can't survive outbound or would take too many trips.
-   * Allows inefficient safe actions only when no efficient action is guaranteed safe.
+   * Only filters out actions that can't possibly survive outbound.
    */
   getValidActions(): Array<[string, Action]> {
     const remaining = this.getRemainingBelief();
-    const minMassPerTrip = remaining.max / CONFIG.maxReasonableTrips;
-
-    // Check if any efficient action is guaranteed safe
-    const hasEfficientSafeAction = Object.values(ACTIONS).some(act => {
-      const tripMass = act.out + act.back;
-      const isEfficient = tripMass >= minMassPerTrip;
-      const isSafe = act.out < remaining.min;
-      return isEfficient && isSafe && remaining.max > act.out;
-    });
-
+    // Only filter out actions that can't possibly survive outbound
     return Object.entries(ACTIONS).filter(([_key, act]) => {
-      if (remaining.max <= act.out) return false;  // Can't survive outbound
-
-      const tripMass = act.out + act.back;
-      const isEfficient = tripMass >= minMassPerTrip;
-      const isSafe = act.out < remaining.min;
-
-      // Allow efficient actions
-      if (isEfficient) return true;
-
-      // Allow inefficient safe actions only if no efficient action is safe
-      if (isSafe && !hasEfficientSafeAction) return true;
-
-      return false;
+      return remaining.max > act.out;
     });
   }
 
@@ -129,17 +108,19 @@ export class POMCTSNode {
   /**
    * Aggregate stats for an action across all observation branches
    */
-  getActionStats(actionKey: string): { visits: number; wins: number } {
+  getActionStats(actionKey: string): { visits: number; wins: number; successes: number } {
     const branches = this.children[actionKey];
-    if (!branches) return { visits: 0, wins: 0 };
+    if (!branches) return { visits: 0, wins: 0, successes: 0 };
 
     let totalVisits = 0;
     let totalWins = 0;
+    let totalSuccesses = 0;
     for (const obs in branches) {
       totalVisits += branches[obs].visits;
       totalWins += branches[obs].wins;
+      totalSuccesses += branches[obs].successes;
     }
-    return { visits: totalVisits, wins: totalWins };
+    return { visits: totalVisits, wins: totalWins, successes: totalSuccesses };
   }
 
   /**

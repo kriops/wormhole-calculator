@@ -16,63 +16,65 @@ export function getMCTSActionResults(root: POMCTSNode): ActionResult[] {
 
     // Aggregate stats across all observation branches
     let totalVisits = 0;
-    let totalWins = 0;
+    let totalWins = 0;  // Weighted score (sum of decay^trips)
+    let totalSuccesses = 0;  // Raw success count
     let totalTrips = 0;
-    let totalSuccesses = 0;
     let action = null;
 
     for (const obs of Object.keys(observations)) {
       const child = observations[obs];
       totalVisits += child.visits;
       totalWins += child.wins;
+      totalSuccesses += child.successes;
       action = child.incomingAction;
 
-      // Aggregate terminal trips
+      // Aggregate terminal trips for avgSteps calculation
       for (const [trips, count] of Object.entries(child.terminalTrips)) {
         totalTrips += parseInt(trips) * count;
-        totalSuccesses += count;
       }
     }
 
     if (!action) continue;
 
     const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
-    const rolloutRate = totalVisits > 0 ? (totalVisits - totalWins) / totalVisits : 0;
 
     // Calculate probability of safe outbound jump
-    // If action.out > remaining.min, there's rollout risk
+    // MCTS only explores actions when trueMass > act.out, so observed rate
+    // is biased towards safe scenarios. Adjust for full belief distribution.
     const beliefRange = remainingBelief.max - remainingBelief.min;
     let pSafeOutbound = 1.0;
     if (beliefRange > 0 && action.out > remainingBelief.min) {
-      // P(remaining >= action.out) = (max - action.out) / (max - min)
       const safeRange = Math.max(0, remainingBelief.max - action.out);
       pSafeOutbound = safeRange / beliefRange;
     }
 
-    // Observed success rate is conditional on safe outbound
-    // True success rate = P(safe outbound) * P(success | safe outbound)
-    const observedSuccessRate = totalVisits > 0 ? totalWins / totalVisits : 0;
-    const adjustedSuccessRate = pSafeOutbound * observedSuccessRate;
+    // Raw success rate (probability of completing without rollout)
+    const observedSuccessRate = totalVisits > 0 ? totalSuccesses / totalVisits : 0;
+    const successRate = pSafeOutbound * observedSuccessRate;
+
+    // Strategy score (weighted by trip count)
+    const observedScore = totalVisits > 0 ? totalWins / totalVisits : 0;
+    const strategyScore = pSafeOutbound * observedScore;
 
     results.push({
       key: actionKey,
       act: action,
       visits: totalVisits,
       wins: totalWins,
-      successes: totalWins,
+      successes: totalSuccesses,
       total: totalVisits,
-      successRate: adjustedSuccessRate,
-      rolloutRate,
+      successRate,
+      strategyScore,
       avgSteps,
       mass: action.out + action.back,
       guaranteedSafe: remainingBelief.min > action.out
     });
   }
 
-  // Sort by success rate (higher = better), then visits as tiebreaker
+  // Sort by strategy score (higher = better), then visits as tiebreaker
   results.sort((a, b) => {
-    const successDiff = b.successRate - a.successRate;
-    if (Math.abs(successDiff) > 0.01) return successDiff;
+    const scoreDiff = b.strategyScore - a.strategyScore;
+    if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
     return b.visits - a.visits;
   });
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EEDVR Wormhole Rolling Calculator | J215101</title>
+    <title>Wormhole Rolling Calculator</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230a0a2a'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%234af' stroke-width='3' opacity='0.8'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%2384f' stroke-width='3' opacity='0.6'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='%23a4f' stroke-width='3' opacity='0.4'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23f4a' opacity='0.8'/%3E%3C/svg%3E">
     <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230a0a2a'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%234af' stroke-width='3' opacity='0.8'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%2384f' stroke-width='3' opacity='0.6'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='%23a4f' stroke-width='3' opacity='0.4'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23f4a' opacity='0.8'/%3E%3C/svg%3E">
     <style>
@@ -280,6 +280,146 @@
             padding: 20px;
         }
 
+        .section-header {
+            color: #8af !important;
+            margin-bottom: 15px !important;
+            font-size: 1.1em !important;
+            text-align: left !important;
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+        }
+
+        .section-header::before {
+            content: none !important;
+        }
+
+        .setup-label {
+            color: #8cf;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .setup-divider {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            color: #666;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .setup-divider::before,
+        .setup-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #4a6a8a, transparent);
+        }
+
+        /* Hole Setup Section - Overhauled Layout */
+        .hole-setup-section {
+            background: rgba(40, 80, 60, 0.3);
+            border: 2px solid #2a8a6a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .settings-toggle {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            background: rgba(40, 60, 80, 0.6);
+            border: 1px solid #4a6a8a;
+            border-radius: 4px;
+            color: #8cf;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settings-toggle:hover {
+            background: rgba(50, 70, 90, 0.8);
+            border-color: #5a7a9a;
+        }
+
+        .session-setup {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .setup-group {
+            background: rgba(30, 40, 50, 0.4);
+            border: 1px solid #3a5a6a;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .primary-cta {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2a7a4a, #4aaa6a);
+            border: 2px solid #5aca7a;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .primary-cta:hover {
+            box-shadow: 0 0 20px rgba(90, 200, 120, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .setup-settings {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #3a5a6a;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            color: #888;
+            font-size: 0.85em;
+            padding: 8px 0;
+        }
+
+        .settings-header:hover {
+            color: #aaa;
+        }
+
+        #settings-summary {
+            flex: 1;
+            color: #6af;
+        }
+
+        .expand-icon {
+            transition: transform 0.2s;
+        }
+
+        .settings-expanded {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
         .control-section h3 {
             color: #8af;
             margin-bottom: 15px;
@@ -384,6 +524,67 @@
             50% { box-shadow: 0 0 25px #6aca6a, 0 0 45px #4a8a4a; }
         }
 
+        /* Combined Action Panel Layout */
+        .action-history-container {
+            display: grid;
+            grid-template-columns: auto auto 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .jump-buttons-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .jump-buttons-vertical .jump-btn {
+            padding: 12px 15px;
+            font-size: 0.95em;
+            white-space: nowrap;
+        }
+
+        .inline-history {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .inline-history .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.85em;
+        }
+
+        .inline-history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #3a5a6a;
+        }
+
+        .inline-history-header h4 {
+            color: #8af;
+            font-size: 0.95em;
+            margin: 0;
+        }
+
+        @media (max-width: 600px) {
+            .action-history-container {
+                grid-template-columns: 1fr;
+            }
+            .jump-buttons-vertical {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .jump-buttons-vertical .jump-btn {
+                flex: 1;
+                min-width: 80px;
+            }
+        }
+
         /* Observation prompt */
         #observation-prompt {
             background: rgba(60, 40, 20, 0.95);
@@ -429,6 +630,123 @@
                 background: rgba(100, 80, 40, 0.5);
                 box-shadow: 0 0 15px rgba(200, 160, 80, 0.5);
             }
+        }
+
+        /* Observation Buttons */
+        .observation-buttons-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 90px;
+        }
+
+        .obs-btn {
+            padding: 12px 15px;
+            font-size: 0.95em;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .obs-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .btn-normal {
+            background: linear-gradient(135deg, #3a4a3a, #4a5a4a);
+            color: #8f8;
+            border: 2px solid #5a7a5a;
+        }
+
+        .btn-normal:not(:disabled):hover {
+            box-shadow: 0 0 15px rgba(80, 200, 80, 0.4);
+        }
+
+        .btn-shrunk {
+            background: linear-gradient(135deg, #5a4a2a, #7a6a3a);
+            color: #fc8;
+            border: 2px solid #9a8a4a;
+        }
+
+        .btn-shrunk:not(:disabled):hover {
+            box-shadow: 0 0 15px rgba(200, 160, 80, 0.4);
+        }
+
+        .btn-crit {
+            background: linear-gradient(135deg, #5a2a2a, #7a3a3a);
+            color: #f88;
+            border: 2px solid #9a4a4a;
+        }
+
+        .btn-crit:not(:disabled):hover {
+            box-shadow: 0 0 15px rgba(200, 80, 80, 0.4);
+        }
+
+        .btn-closed {
+            background: linear-gradient(135deg, #2a2a2a, #4a4a4a);
+            color: #aaa;
+            border: 2px solid #666;
+        }
+
+        .btn-closed:not(:disabled):hover {
+            box-shadow: 0 0 15px rgba(150, 150, 150, 0.4);
+        }
+
+        .obs-btn.required {
+            animation: obs-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes obs-pulse {
+            0%, 100% { box-shadow: 0 0 10px currentColor; }
+            50% { box-shadow: 0 0 25px currentColor; }
+        }
+
+        .obs-spacer {
+            flex: 1;
+            min-height: 8px;
+        }
+
+        .observation-buttons-vertical .btn-copy,
+        .observation-buttons-vertical .btn-undo,
+        .observation-buttons-vertical .btn-reset {
+            padding: 8px 12px;
+            font-size: 0.85em;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all 0.2s ease;
+        }
+
+        .observation-buttons-vertical .btn-copy {
+            background: linear-gradient(135deg, #2a4a5a, #3a5a6a);
+            color: #8cf;
+            border-color: #4a7a9a;
+        }
+
+        .observation-buttons-vertical .btn-copy:hover {
+            background: linear-gradient(135deg, #3a5a6a, #4a6a7a);
+        }
+
+        .observation-buttons-vertical .btn-undo {
+            background: linear-gradient(135deg, #5a4a2a, #6a5a3a);
+            color: #ed9;
+            border-color: #8a7a4a;
+        }
+
+        .observation-buttons-vertical .btn-undo:hover {
+            background: linear-gradient(135deg, #6a5a3a, #7a6a4a);
+        }
+
+        .observation-buttons-vertical .btn-reset {
+            background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
+            color: #ccc;
+            border-color: #6a6a6a;
+        }
+
+        .observation-buttons-vertical .btn-reset:hover {
+            background: linear-gradient(135deg, #4a4a4a, #5a5a5a);
         }
 
         /* Monte Carlo Section */
@@ -625,7 +943,7 @@
             border-radius: 8px;
             padding: 12px;
             border: 1px solid #3a5a7a;
-            overflow-x: auto;
+            overflow: visible;
         }
 
         .mcts-comparison-title {
@@ -658,6 +976,51 @@
         .mcts-comparison tr:first-child td {
             color: #8f8;
             font-weight: bold;
+        }
+
+        .info-icon {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            line-height: 14px;
+            text-align: center;
+            font-size: 10px;
+            color: #888;
+            border: 1px solid #666;
+            border-radius: 50%;
+            margin-left: 4px;
+            cursor: help;
+            position: relative;
+        }
+
+        .info-icon:hover {
+            color: #aaa;
+            border-color: #888;
+        }
+
+        .info-icon .info-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a3a;
+            color: #ccc;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #4a4a8a;
+            font-size: 11px;
+            font-weight: normal;
+            white-space: nowrap;
+            z-index: 100;
+            margin-bottom: 6px;
+            transition: opacity 0.2s;
+        }
+
+        .info-icon:hover .info-tooltip {
+            visibility: visible;
+            opacity: 1;
         }
 
         .history {
@@ -771,6 +1134,126 @@
         .warning { color: #f88; }
         .safe { color: #8f8; }
 
+        /* Fittings Section */
+        .fittings-section {
+            background: rgba(20, 30, 50, 0.9);
+            border: 2px solid #3a5a7a;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .fittings-section h3 {
+            color: #8cf;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .fittings-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .fitting-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .fitting-header {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ship-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fc8;
+        }
+
+        .fit-name {
+            font-size: 0.85em;
+            color: #8ab;
+        }
+
+        .fitting-mass {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .mass-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .mass-cold {
+            background: rgba(80, 150, 200, 0.2);
+            border: 1px solid #4a8ab0;
+            color: #8cf;
+        }
+
+        .mass-hot {
+            background: rgba(200, 100, 80, 0.2);
+            border: 1px solid #b06a4a;
+            color: #f98;
+        }
+
+        .mass-ent {
+            background: rgba(150, 100, 200, 0.2);
+            border: 1px solid #8a6ab0;
+            color: #c8f;
+        }
+
+        .fitting-text-container {
+            position: relative;
+        }
+
+        .fitting-copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 6px 8px;
+            font-size: 0.9em;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #4a6a8a;
+            background: rgba(30, 50, 70, 0.9);
+            color: #8ab;
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+
+        .fitting-text-container:hover .fitting-copy-btn {
+            opacity: 1;
+        }
+
+        .fitting-copy-btn:hover {
+            background: rgba(50, 80, 110, 0.95);
+            color: #adf;
+            border-color: #6a8aaa;
+        }
+
+        .fitting-text {
+            display: block;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75em;
+            color: #9a9ac0;
+            white-space: pre;
+            margin: 0;
+            line-height: 1.4;
+            background: rgba(10, 20, 40, 0.8);
+            border: 1px solid #2a4a6a;
+            border-radius: 8px;
+            padding: 12px;
+            padding-top: 36px;
+        }
+
         footer {
             text-align: center;
             padding: 20px;
@@ -806,6 +1289,10 @@
             .mcts-distribution {
                 flex: none;
             }
+
+            .fittings-container {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -815,20 +1302,54 @@
 
     <div class="container">
         <header>
-            <h1>EEDVR Wormhole Rolling Calculator</h1>
+            <h1>Wormhole Rolling Calculator</h1>
             <div class="system-info">
-                Home System: <span>J215101</span> | Static: <span>C247 (C3 Static)</span>
+                by <a href="https://kristofferopsahl.com" target="_blank" style="color: #8cf; text-decoration: none;">Kristoffer Opsahl</a>
             </div>
         </header>
 
         <!-- 1. SETUP: First thing user does -->
-        <div class="recovery-section" style="border-color: #2a8a6a; background: rgba(40, 80, 60, 0.3);">
-            <h3 style="color: #6fa;">1. Hole Setup</h3>
+        <div class="hole-setup-section">
+            <div class="setup-header">
+                <h3 class="section-header" style="margin-bottom: 0;">Hole Setup</h3>
+                <button class="settings-toggle" onclick="toggleSetupSettings()">⚙ Settings</button>
+            </div>
 
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <!-- Visual state selection -->
-                <div>
-                    <div style="color: #8cf; font-size: 0.9em; margin-bottom: 10px;">Current visual state:</div>
+            <!-- Primary: Session Setup -->
+            <div class="session-setup">
+                <!-- Wormhole Type (per-session) -->
+                <div class="setup-group">
+                    <div class="setup-label">Wormhole Type</div>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <select id="wormhole-select" onchange="onWormholeChange()"
+                                style="padding: 10px; border-radius: 6px; border: 1px solid #4a8aaa;
+                                       background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace; font-size: 1em; min-width: 200px;">
+                            <option value="c247">C247 (C3 Static) - 2000M</option>
+                            <option value="c391">C391 (C5/C6 Static) - 3000M</option>
+                            <option value="h296">H296 (C5 Static) - 3000M</option>
+                            <option value="c140">C140 (Lowsec) - 2000M</option>
+                            <option value="d382">D382 (C2 Static) - 2000M</option>
+                            <option value="x877">X877 (C4 Static) - 2000M</option>
+                            <option value="custom">Custom...</option>
+                        </select>
+                        <div id="custom-wormhole" style="display: none; gap: 10px; align-items: center;">
+                            <input type="number" id="custom-base-mass" placeholder="Base Mass (M)" min="100"
+                                   style="width: 120px; padding: 8px; border-radius: 6px; border: 1px solid #4a8aaa;
+                                          background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
+                            <span style="color: #888;">±</span>
+                            <input type="number" id="custom-variance" placeholder="10" min="1" max="50" value="10"
+                                   style="width: 60px; padding: 8px; border-radius: 6px; border: 1px solid #4a8aaa;
+                                          background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
+                            <span style="color: #888;">%</span>
+                            <button onclick="applyCustomWormhole()" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #4a8a6a;
+                                    background: linear-gradient(135deg, #2a6a4a, #3a8a6a); color: #adf; cursor: pointer;">Apply</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual State -->
+                <div class="setup-group">
+                    <div class="setup-label">Visual State</div>
                     <div style="display: flex; gap: 10px;">
                         <label style="flex: 1; cursor: pointer;">
                             <input type="radio" name="hole-state" value="normal" checked style="display: none;">
@@ -860,20 +1381,70 @@
                     </div>
                 </div>
 
-                <!-- Mass already used (optional) -->
-                <div>
-                    <div style="color: #888; font-size: 0.9em; margin-bottom: 8px;">Mass already passed through (optional):</div>
+                <!-- Minimum Mass Passed -->
+                <div class="setup-group">
+                    <div class="setup-label">Minimum Mass Passed <span style="text-transform: none; color: #666;">(optional)</span></div>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <input type="number" id="setup-mass-input" placeholder="0" min="0"
                                style="width: 120px; padding: 10px; border-radius: 6px; border: 1px solid #4a8aaa;
                                       background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace; font-size: 1em;">
                         <span style="color: #888;">M</span>
-                        <button class="btn-recovery" style="padding: 10px 20px; background: linear-gradient(135deg, #2a6a4a, #3a8a6a);" onclick="applyHoleSetup()">
-                            Apply Setup
-                        </button>
                     </div>
-                    <div style="color: #666; font-size: 0.75em; margin-top: 6px;">
+                    <div id="wormhole-hint" style="color: #666; font-size: 0.75em; margin-top: 6px;">
                         C247 base mass: 2000M ±10% (1800-2200M)
+                    </div>
+                </div>
+
+                <!-- Primary CTA -->
+                <button class="primary-cta" onclick="applyHoleSetup()">▶ Start Rolling Session</button>
+            </div>
+
+            <!-- Secondary: Collapsible Settings -->
+            <div class="setup-settings" id="setup-settings">
+                <div class="settings-header" onclick="toggleSetupSettings()">
+                    <span>⚙ Settings:</span>
+                    <span id="settings-summary">Battleship + HIC • 100k iterations</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="settings-expanded" id="settings-expanded" style="display: none;">
+                    <!-- Ships Config -->
+                    <div class="setup-group">
+                        <div class="setup-label">Ships</div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span id="ships-summary" style="color: #aaa; font-size: 0.85em;"></span>
+                        </div>
+                        <div id="ship-config" style="margin-top: 10px;">
+                            <div id="ship-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <button onclick="addShip()" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #4a8a6a;
+                                        background: linear-gradient(135deg, #2a6a4a, #3a8a6a); color: #adf; cursor: pointer;">+ Add Ship</button>
+                                <button onclick="resetShips()" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #6a6a4a;
+                                        background: linear-gradient(135deg, #4a4a3a, #5a5a4a); color: #ca8; cursor: pointer;">Reset to Defaults</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Iterations -->
+                    <div class="setup-group">
+                        <div class="setup-label">Analysis Iterations</div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <input type="range" id="iteration-slider" min="10000" max="1000000" step="10000" value="100000"
+                                   style="flex: 1; max-width: 200px; accent-color: #6af;">
+                            <span id="iteration-value" style="font-size: 0.9em; color: #8af; min-width: 50px;">100k</span>
+                        </div>
+                    </div>
+
+                    <!-- Trip Decay -->
+                    <div class="setup-group">
+                        <div class="setup-label">Trip Decay Factor</div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <input type="range" id="decay-slider" min="0.80" max="0.99" step="0.01" value="0.95"
+                                   style="flex: 1; max-width: 200px; accent-color: #6af;">
+                            <span id="decay-value" style="font-size: 0.9em; color: #8af; min-width: 40px;">0.95</span>
+                        </div>
+                        <div style="color: #666; font-size: 0.7em; margin-top: 4px;">
+                            Score = decay^trips (lower = prefer fewer trips)
+                        </div>
                     </div>
                 </div>
             </div>
@@ -881,7 +1452,7 @@
 
         <!-- 2. CURRENT STATE: Shows mass after setup -->
         <div class="mass-display">
-            <h3 style="color: #8af; margin-bottom: 15px;">2. Current Mass Estimate</h3>
+            <h3 class="section-header">Current Mass Estimate</h3>
             <div class="mass-bar-container">
                 <div class="mass-bar fresh" id="mass-bar" style="width: 100%"></div>
                 <div class="variance-overlay" id="variance-overlay">
@@ -905,153 +1476,263 @@
             </div>
         </div>
 
-        <!-- 3. JUMP ACTIONS (unified, adapts to position) -->
+        <!-- 3. JUMP ACTIONS + HISTORY (combined panel) -->
         <div id="action-panel" class="control-section" style="margin-bottom: 20px; border-color: #4a8a6a; background: rgba(30, 60, 50, 0.4);">
-            <h3 style="color: #8cf; display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <span>Record Jump</span>
                 <span id="direction-label" style="font-size: 0.9em; color: #8f8;">→ Jumping OUT</span>
             </h3>
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
-                <button class="btn-hot jump-btn" data-jump="BS_HOT" onclick="recordSingleJump('BS_HOT')" style="padding: 15px 10px; font-size: 1em;">
-                    BS Hot →<br><span style="font-size: 0.8em; opacity: 0.8;">300 M</span>
-                </button>
-                <button class="btn-cold jump-btn" data-jump="BS_COLD" onclick="recordSingleJump('BS_COLD')" style="padding: 15px 10px; font-size: 1em;">
-                    BS Cold →<br><span style="font-size: 0.8em; opacity: 0.8;">200 M</span>
-                </button>
-                <button class="btn-hot jump-btn" data-jump="HIC_HOT" onclick="recordSingleJump('HIC_HOT')" style="padding: 15px 10px; font-size: 1em; background: linear-gradient(135deg, #5a4a3a, #7a6a4a);">
-                    HIC Hot →<br><span style="font-size: 0.8em; opacity: 0.8;">134 M</span>
-                </button>
-                <button class="btn-cold jump-btn" data-jump="HIC_COLD" onclick="recordSingleJump('HIC_COLD')" style="padding: 15px 10px; font-size: 1em; background: linear-gradient(135deg, #2a5a5a, #3a7a7a);">
-                    HIC Cold →<br><span style="font-size: 0.8em; opacity: 0.8;">30 M</span>
-                </button>
-                <button class="btn-recovery jump-btn" data-jump="HIC_ENT" onclick="recordSingleJump('HIC_ENT')" style="padding: 15px 10px; font-size: 1em; background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
-                    HIC Ent →<br><span style="font-size: 0.8em; opacity: 0.8;">1.5 M</span>
-                </button>
-            </div>
-            <div id="observation-section" style="border-top: 1px solid #4a6a5a; padding-top: 12px; border-radius: 8px; padding: 12px; margin-top: 10px;">
-                <div style="color: #fc8; font-size: 0.9em; margin-bottom: 8px;">Did the hole change state?</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button class="btn-recovery" onclick="holeJustShrunk()" style="background: linear-gradient(135deg, #7a6a2a, #9a8a3a); border-color: #ba9a4a; padding: 12px; font-size: 1em;">
-                        SHRUNK
+            <div class="action-history-container">
+                <div class="jump-buttons-vertical">
+                    <button class="btn-hot jump-btn" data-jump="BS_HOT" onclick="recordSingleJump('BS_HOT')">
+                        BS Hot → <span style="opacity: 0.7;">294M</span>
                     </button>
-                    <button class="btn-recovery" onclick="holeJustCrit()" style="background: linear-gradient(135deg, #7a3a3a, #9a4a4a); border-color: #ba5a5a; padding: 12px; font-size: 1em;">
-                        CRIT
+                    <button class="btn-cold jump-btn" data-jump="BS_COLD" onclick="recordSingleJump('BS_COLD')">
+                        BS Cold → <span style="opacity: 0.7;">194M</span>
+                    </button>
+                    <button class="btn-hot jump-btn" data-jump="HIC_HOT" onclick="recordSingleJump('HIC_HOT')" style="background: linear-gradient(135deg, #5a4a3a, #7a6a4a);">
+                        HIC Hot → <span style="opacity: 0.7;">132M</span>
+                    </button>
+                    <button class="btn-cold jump-btn" data-jump="HIC_COLD" onclick="recordSingleJump('HIC_COLD')" style="background: linear-gradient(135deg, #2a5a5a, #3a7a7a);">
+                        HIC Cold → <span style="opacity: 0.7;">32M</span>
+                    </button>
+                    <button class="btn-recovery jump-btn" data-jump="HIC_ENT" onclick="recordSingleJump('HIC_ENT')" style="background: linear-gradient(135deg, #4a2a5a, #6a3a7a);">
+                        HIC Ent → <span style="opacity: 0.7;">0.8M</span>
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- 4. HISTORY: Log of actions (near controls for visibility) -->
-        <div class="history" style="margin-bottom: 20px;">
-            <h3 style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Jump History</span>
-                <span>
-                    <button class="btn-undo" onclick="undoLast()" style="padding: 6px 12px; font-size: 0.85em;">Undo</button>
-                    <button class="btn-reset" onclick="resetCalculator()" style="padding: 6px 12px; font-size: 0.85em;">Reset</button>
-                </span>
-            </h3>
-            <div class="history-list" id="history-list" style="max-height: 120px;">
-                <div class="history-item">
-                    <span class="action">No jumps recorded</span>
+                <div class="observation-buttons-vertical">
+                    <button id="btn-normal" class="btn-normal obs-btn" onclick="recordNormalObservation()" disabled>
+                        NORMAL
+                    </button>
+                    <button id="btn-shrunk" class="btn-shrunk obs-btn" onclick="holeJustShrunk()" disabled>
+                        SHRUNK
+                    </button>
+                    <button id="btn-crit" class="btn-crit obs-btn" onclick="holeJustCrit()" disabled>
+                        CRIT
+                    </button>
+                    <button id="btn-closed" class="btn-closed obs-btn" onclick="holeJustClosed()" disabled>
+                        CLOSED
+                    </button>
+                    <div class="obs-spacer"></div>
+                    <button class="btn-copy" onclick="copyEventLog()">Copy</button>
+                    <button class="btn-undo" onclick="undoLast()">Undo</button>
+                    <button class="btn-reset" onclick="resetCalculator()">Reset</button>
+                </div>
+                <div class="inline-history">
+                    <div class="inline-history-header">
+                        <h4>Event Log</h4>
+                    </div>
+                    <div class="history-list" id="history-list">
+                        <div class="history-item">
+                            <span class="action">No jumps recorded</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- 5. ANALYSIS: MCTS Strategy recommendation -->
         <div class="monte-carlo">
-            <h3>5. MCTS Strategy Analysis</h3>
-            <div class="simulation-info">
-                Uses <strong>Monte Carlo Tree Search</strong> to find optimal actions. Each action is evaluated by simulating
-                <strong>~10,000 games to terminal per action</strong>, accounting for observations (shrink/crit).
-                <br><span style="color: #6f6;">GUARANTEED SAFE</span> = survives worst-case mass.
-                <span style="color: #8af;">Success %</span> = probability of closing hole without rollout.
-            </div>
+            <h3 class="section-header">MCTS Strategy Analysis</h3>
             <div id="sim-status" style="color: #8af; margin-bottom: 10px;"></div>
             <div class="sequence-grid" id="sequence-grid">
                 <!-- Populated by JS -->
             </div>
         </div>
 
-        <!-- 6. REFERENCE: WH specs -->
-        <div class="wh-specs">
-            <div class="spec-card">
-                <h3>Wormhole Type</h3>
-                <div class="value">C247</div>
-                <div class="unit">Leads to C3</div>
-            </div>
-            <div class="spec-card">
-                <h3>Total Mass</h3>
-                <div class="value">2,000</div>
-                <div class="unit">M (±10%: 1800-2200)</div>
-            </div>
-            <div class="spec-card">
-                <h3>Battleship (Higgs)</h3>
-                <div class="value">200 / 300</div>
-                <div class="unit">M Cold / Hot</div>
-            </div>
-            <div class="spec-card">
-                <h3>HIC (Devoter)</h3>
-                <div class="value">30 / 134 / 1.5</div>
-                <div class="unit">M Cold / Hot / Ent</div>
+        <!-- FITTINGS: Reference builds -->
+        <div class="fittings-section">
+            <h3 class="section-header">Ship Fittings</h3>
+            <div class="fittings-container">
+                <div class="fitting-card">
+                    <div class="fitting-header">
+                        <span class="ship-name">Apocalypse</span>
+                        <span class="fit-name">WH Roller - Bulk</span>
+                    </div>
+                    <div class="fitting-mass">
+                        <span class="mass-badge mass-cold">Cold: 194M</span>
+                        <span class="mass-badge mass-hot">Hot: 294M</span>
+                    </div>
+                    <div class="fitting-text-container">
+                        <button class="fitting-copy-btn" onclick="copyFitting('fit-apocalypse')" title="Copy to clipboard">&#128203;</button>
+                        <pre class="fitting-text" id="fit-apocalypse">[Apocalypse, WH Roller - Bulk]
+Damage Control II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+Reinforced Bulkheads II
+
+500MN Y-T8 Compact Microwarpdrive
+Large Micro Jump Drive
+Warp Scrambler II
+Eutectic Compact Cap Recharger
+
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Heavy Gremlin Compact Energy Neutralizer
+Core Probe Launcher I
+
+Large Higgs Anchor I
+Large Transverse Bulkhead I
+Large Transverse Bulkhead I
+
+Hornet EC-300 x5
+
+Mobile Depot x1
+Prototype Cloaking Device I x1
+Warp Core Stabilizer I x1
+Inertial Stabilizers II x2
+Core Scanner Probe I x16</pre>
+                    </div>
+                </div>
+                <div class="fitting-card">
+                    <div class="fitting-header">
+                        <span class="ship-name">Devoter</span>
+                        <span class="fit-name">WH Roller - Precision</span>
+                    </div>
+                    <div class="fitting-mass">
+                        <span class="mass-badge mass-cold">Cold: 32M</span>
+                        <span class="mass-badge mass-hot">Hot: 132M</span>
+                        <span class="mass-badge mass-ent">Ent: 0.8M</span>
+                    </div>
+                    <div class="fitting-text-container">
+                        <button class="fitting-copy-btn" onclick="copyFitting('fit-devoter')" title="Copy to clipboard">&#128203;</button>
+                        <pre class="fitting-text" id="fit-devoter">[Devoter, WH Roller - Precision]
+Nanofiber Internal Structure II
+Nanofiber Internal Structure II
+Nanofiber Internal Structure II
+Inertial Stabilizers II
+Capacitor Flux Coil II
+Reactor Control Unit II
+Co-Processor II
+
+500MN Y-T8 Compact Microwarpdrive
+Eutectic Compact Cap Recharger
+100MN Y-S8 Compact Afterburner
+
+Zero-Point Mass Entangler
+Zero-Point Mass Entangler
+Zero-Point Mass Entangler
+Zero-Point Mass Entangler
+Core Probe Launcher I, Sisters Core Scanner Probe
+Prototype Cloaking Device I
+
+Medium Higgs Anchor I
+Medium Ancillary Current Router II
+
+Hornet EC-300 x10
+
+Mobile Depot x1
+Warp Core Stabilizer I x1
+Sisters Core Scanner Probe x8</pre>
+                    </div>
+                </div>
             </div>
         </div>
 
         <footer>
-            EEDVR Wormhole Calculator | J215101 C247 Static<br>
+            Wormhole Rolling Calculator<br>
             <a href="https://wiki.eveuniversity.org/Wormhole_attributes" target="_blank">EVE University Wormhole Guide</a>
         </footer>
     </div>
 
     <script>
+        // Wormhole presets
+        const WORMHOLE_PRESETS = {
+            'c247': { id: 'c247', name: 'C247', desc: 'C3 Static', baseMass: 2000, variance: 0.10, maxJump: 375 },
+            'c391': { id: 'c391', name: 'C391', desc: 'C5/C6 Static', baseMass: 3000, variance: 0.10, maxJump: 1350 },
+            'h296': { id: 'h296', name: 'H296', desc: 'C5 Static', baseMass: 3000, variance: 0.10, maxJump: 1350 },
+            'c140': { id: 'c140', name: 'C140', desc: 'Lowsec', baseMass: 2000, variance: 0.10, maxJump: 375 },
+            'd382': { id: 'd382', name: 'D382', desc: 'C2 Static', baseMass: 2000, variance: 0.10, maxJump: 375 },
+            'x877': { id: 'x877', name: 'X877', desc: 'C4 Static', baseMass: 2000, variance: 0.10, maxJump: 375 },
+            'custom': { id: 'custom', name: 'Custom', desc: 'User-defined', baseMass: 2000, variance: 0.10, maxJump: 375 }
+        };
+
+        // Active wormhole (can be changed via selector)
+        let activeWormhole = { ...WORMHOLE_PRESETS['c247'] };
+
         // Configuration
         const CONFIG = {
-            whType: 'C247',
-            baseMass: 2000,
-            variance: 0.10,
-            maxJumpMass: 375,
-            // Battleship (Higgs Megathron)
-            bsCold: 200,
-            bsHot: 300,
-            // HIC (Devoter with Higgs)
-            hicCold: 30,
-            hicHot: 134,
-            hicEnt: 1.5,
             // Thresholds
             shrinkThreshold: 0.50,
             critThreshold: 0.10,
             // MC settings
-            simulations: 1000000
+            simulations: 100000,  // Default - configurable via slider
+            chunkSize: 25000,  // Iterations per chunk for async execution
+            tripDecay: 0.95  // Exponential decay per trip (score = decay^trips)
         };
+
+        // Derived config values (computed from activeWormhole and activeShips)
+        function getBaseMass() { return activeWormhole.baseMass; }
+        function getVariance() { return activeWormhole.variance; }
+        function getMaxJumpMass() { return activeWormhole.maxJump; }
+
+        // Async helper - yields to event loop for UI responsiveness
+        function yieldToMain() {
+            return new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        // Default ships (Apocalypse + Devoter with Higgs)
+        const DEFAULT_SHIPS = [
+            { id: 'bs', name: 'Battleship', cold: 194.2, hot: 294.2, ent: null },
+            { id: 'hic', name: 'HIC', cold: 32.4, hot: 132.4, ent: 0.83 }
+        ];
+
+        // Active ships (editable by user)
+        let activeShips = JSON.parse(JSON.stringify(DEFAULT_SHIPS));
+
+        // Generate single jump actions from active ships
+        function generateSingleJumps() {
+            const jumps = {};
+            for (const ship of activeShips) {
+                const prefix = ship.id.toUpperCase();
+                jumps[`${prefix}_HOT`] = { mass: ship.hot, label: `${ship.name} Hot`, ship: ship.id.toUpperCase() };
+                jumps[`${prefix}_COLD`] = { mass: ship.cold, label: `${ship.name} Cold`, ship: ship.id.toUpperCase() };
+                if (ship.ent !== null) {
+                    jumps[`${prefix}_ENT`] = { mass: ship.ent, label: `${ship.name} Ent`, ship: ship.id.toUpperCase() };
+                }
+            }
+            return jumps;
+        }
+
+        // Generate round-trip actions from active ships
+        function generateActions() {
+            const actions = {};
+            for (const ship of activeShips) {
+                const prefix = ship.id.toUpperCase();
+                const isHic = ship.ent !== null; // Has entangler = HIC-like behavior
+
+                actions[`${prefix}_HOT`] = { out: ship.hot, back: ship.hot, label: `${ship.name} H/H`, isHic };
+                actions[`${prefix}_COLD`] = { out: ship.cold, back: ship.cold, label: `${ship.name} C/C`, isHic };
+                actions[`${prefix}_COLD_HOT`] = { out: ship.cold, back: ship.hot, label: `${ship.name} C/H`, isHic };
+
+                if (ship.ent !== null) {
+                    actions[`${prefix}_ENT`] = { out: ship.ent, back: ship.ent, label: `${ship.name} E/E`, isHic };
+                    actions[`${prefix}_ENT_HOT`] = { out: ship.ent, back: ship.hot, label: `${ship.name} E/H`, isHic };
+                }
+            }
+            return actions;
+        }
+
+        // Dynamic actions (regenerated when ships change)
+        let SINGLE_JUMPS = generateSingleJumps();
+        let ACTIONS = generateActions();
 
         // State (position is derived from history, not stored)
         let state = {
             massUsed: 0,
             history: [],
             hasUnknownMass: false,
-            knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
-            knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
-        };
-
-        // Action types for MC simulation
-        // Single jump actions (the atomic unit)
-        const SINGLE_JUMPS = {
-            'BS_HOT': { mass: CONFIG.bsHot, label: 'BS Hot', ship: 'BS' },
-            'BS_COLD': { mass: CONFIG.bsCold, label: 'BS Cold', ship: 'BS' },
-            'HIC_HOT': { mass: CONFIG.hicHot, label: 'HIC Hot', ship: 'HIC' },
-            'HIC_COLD': { mass: CONFIG.hicCold, label: 'HIC Cold', ship: 'HIC' },
-            'HIC_ENT': { mass: CONFIG.hicEnt, label: 'HIC Ent', ship: 'HIC' }
-        };
-
-        // Round trip combinations (for convenience display, built from single jumps)
-        const ACTIONS = {
-            'BS_HOT': { out: CONFIG.bsHot, back: CONFIG.bsHot, label: 'BS H/H', isHic: false },
-            'BS_COLD': { out: CONFIG.bsCold, back: CONFIG.bsCold, label: 'BS C/C', isHic: false },
-            'BS_COLD_HOT': { out: CONFIG.bsCold, back: CONFIG.bsHot, label: 'BS C/H', isHic: false },
-            'HIC_HOT': { out: CONFIG.hicHot, back: CONFIG.hicHot, label: 'HIC H/H', isHic: true },
-            'HIC_COLD': { out: CONFIG.hicCold, back: CONFIG.hicCold, label: 'HIC C/C', isHic: true },
-            'HIC_COLD_HOT': { out: CONFIG.hicCold, back: CONFIG.hicHot, label: 'HIC C/H', isHic: true },
-            'HIC_ENT': { out: CONFIG.hicEnt, back: CONFIG.hicEnt, label: 'HIC E/E', isHic: true },
-            'HIC_ENT_HOT': { out: CONFIG.hicEnt, back: CONFIG.hicHot, label: 'HIC E/H', isHic: true }
+            knownMinStart: getBaseMass() * (1 - getVariance()),
+            knownMaxStart: getBaseMass() * (1 + getVariance()),
+            awaitingObservation: false
         };
 
         let recommendedStrategy = null;
@@ -1106,17 +1787,366 @@
             lastObservation = null;
         }
 
+        // ========== WORMHOLE CONFIGURATION ==========
+
+        function onWormholeChange() {
+            const select = document.getElementById('wormhole-select');
+            const customDiv = document.getElementById('custom-wormhole');
+            const whId = select.value;
+
+            if (whId === 'custom') {
+                customDiv.style.display = 'flex';
+                return;
+            }
+
+            customDiv.style.display = 'none';
+            activeWormhole = { ...WORMHOLE_PRESETS[whId] };
+            applyWormholeConfig();
+        }
+
+        function applyCustomWormhole() {
+            const baseMass = parseFloat(document.getElementById('custom-base-mass').value) || 2000;
+            const variance = (parseFloat(document.getElementById('custom-variance').value) || 10) / 100;
+
+            activeWormhole = {
+                id: 'custom',
+                name: 'Custom',
+                desc: `${baseMass}M`,
+                baseMass: baseMass,
+                variance: variance,
+                maxJump: baseMass * 0.3  // Reasonable default
+            };
+            applyWormholeConfig();
+        }
+
+        function applyWormholeConfig() {
+            // Update state bounds
+            state.knownMinStart = getBaseMass() * (1 - getVariance());
+            state.knownMaxStart = getBaseMass() * (1 + getVariance());
+
+            // Update UI
+            updateWormholeDisplay();
+            updateSpecCards();
+            clearMctsTree();
+            saveConfig();
+            resetState();  // Reset mass tracking for new wormhole
+        }
+
+        function updateWormholeDisplay() {
+            const wh = activeWormhole;
+            const minMass = Math.round(wh.baseMass * (1 - wh.variance));
+            const maxMass = Math.round(wh.baseMass * (1 + wh.variance));
+            const variancePct = Math.round(wh.variance * 100);
+
+            // Update hint text
+            const hint = document.getElementById('wormhole-hint');
+            if (hint) {
+                hint.textContent = `${wh.name}: ${minMass}-${maxMass}M total. Untracked mass (prop mods, hostiles) may add more.`;
+            }
+        }
+
+        // ========== SHIP CONFIGURATION ==========
+
+        function toggleShipConfig() {
+            const config = document.getElementById('ship-config');
+            const btn = document.getElementById('ship-config-toggle');
+            if (config.style.display === 'none') {
+                config.style.display = 'block';
+                btn.textContent = 'Hide';
+                renderShipList();
+            } else {
+                config.style.display = 'none';
+                btn.textContent = 'Configure';
+            }
+        }
+
+        function renderShipList() {
+            const container = document.getElementById('ship-list');
+            container.innerHTML = activeShips.map((ship, idx) => `
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" value="${ship.name}" placeholder="Name" data-idx="${idx}" data-field="name"
+                           onchange="updateShipField(${idx}, 'name', this.value)"
+                           style="width: 100px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
+                                  background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <span style="color: #888; font-size: 0.85em;">Cold:</span>
+                        <input type="number" value="${ship.cold}" step="0.1" data-idx="${idx}" data-field="cold"
+                               onchange="updateShipField(${idx}, 'cold', parseFloat(this.value))"
+                               style="width: 70px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
+                                      background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <span style="color: #888; font-size: 0.85em;">Hot:</span>
+                        <input type="number" value="${ship.hot}" step="0.1" data-idx="${idx}" data-field="hot"
+                               onchange="updateShipField(${idx}, 'hot', parseFloat(this.value))"
+                               style="width: 70px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
+                                      background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <span style="color: #888; font-size: 0.85em;">Ent:</span>
+                        <input type="number" value="${ship.ent !== null ? ship.ent : ''}" step="0.01" placeholder="-"
+                               data-idx="${idx}" data-field="ent"
+                               onchange="updateShipField(${idx}, 'ent', this.value ? parseFloat(this.value) : null)"
+                               style="width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
+                                      background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
+                    </div>
+                    <button onclick="removeShip(${idx})" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #8a4a4a;
+                            background: rgba(80, 40, 40, 0.6); color: #f88; cursor: pointer; font-size: 1.1em;">×</button>
+                </div>
+            `).join('');
+        }
+
+        function updateShipField(idx, field, value) {
+            activeShips[idx][field] = value;
+            // Update ID based on name if name changes
+            if (field === 'name') {
+                activeShips[idx].id = value.toLowerCase().replace(/[^a-z0-9]/g, '');
+            }
+            applyShipConfig();
+        }
+
+        function addShip() {
+            const newId = 'ship' + (activeShips.length + 1);
+            activeShips.push({ id: newId, name: 'New Ship', cold: 100, hot: 200, ent: null });
+            renderShipList();
+            applyShipConfig();
+        }
+
+        function removeShip(idx) {
+            if (activeShips.length <= 1) {
+                alert('You need at least one ship!');
+                return;
+            }
+            activeShips.splice(idx, 1);
+            renderShipList();
+            applyShipConfig();
+        }
+
+        function resetShips() {
+            activeShips = JSON.parse(JSON.stringify(DEFAULT_SHIPS));
+            renderShipList();
+            applyShipConfig();
+        }
+
+        function applyShipConfig() {
+            // Regenerate actions
+            SINGLE_JUMPS = generateSingleJumps();
+            ACTIONS = generateActions();
+
+            // Update UI
+            renderJumpButtons();
+            updateShipsSummary();
+            updateSettingsSummary();
+            updateSpecCards();
+            clearMctsTree();
+            saveConfig();
+            runStrategyAnalysis();
+        }
+
+        function updateShipsSummary() {
+            const summary = document.getElementById('ships-summary');
+            if (summary) {
+                summary.textContent = activeShips.map(s => s.name).join(', ');
+            }
+        }
+
+        function renderJumpButtons() {
+            const container = document.querySelector('.jump-buttons-vertical');
+            if (!container) return;
+
+            container.innerHTML = '';
+            for (const [key, jump] of Object.entries(SINGLE_JUMPS)) {
+                const btn = document.createElement('button');
+                const isHot = key.includes('_HOT');
+                const isEnt = key.includes('_ENT');
+                const ship = activeShips.find(s => s.id.toUpperCase() === jump.ship);
+                const isHic = ship && ship.ent !== null;
+
+                let bgStyle, borderColor;
+                if (isEnt) {
+                    bgStyle = 'linear-gradient(135deg, #4a2a5a, #6a3a7a)';
+                    borderColor = '#8a4a9a';
+                } else if (isHic) {
+                    bgStyle = isHot
+                        ? 'linear-gradient(135deg, #5a4a3a, #7a6a4a)'
+                        : 'linear-gradient(135deg, #3a4a4a, #4a6a6a)';
+                    borderColor = isHot ? '#9a8a5a' : '#5a7a7a';
+                } else {
+                    bgStyle = isHot
+                        ? 'linear-gradient(135deg, #5a3a2a, #7a5a3a)'
+                        : 'linear-gradient(135deg, #2a4a5a, #3a6a7a)';
+                    borderColor = isHot ? '#9a6a4a' : '#4a7a9a';
+                }
+
+                btn.className = 'jump-btn';
+                btn.dataset.jump = key;
+                btn.onclick = () => recordSingleJump(key);
+                btn.style.background = bgStyle;
+                btn.style.border = `2px solid ${borderColor}`;
+                btn.style.color = '#fff';
+                btn.innerHTML = `${jump.label} → <span style="opacity: 0.7;">${Math.round(jump.mass)}M</span>`;
+                container.appendChild(btn);
+            }
+        }
+
+        function updateSpecCards() {
+            updateWormholeDisplay();
+        }
+
+        // ========== CONFIGURATION PERSISTENCE ==========
+
+        function saveConfig() {
+            localStorage.setItem('wh-calc-config', JSON.stringify({
+                wormhole: activeWormhole,
+                ships: activeShips
+            }));
+        }
+
+        function loadConfig() {
+            const saved = localStorage.getItem('wh-calc-config');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    if (config.wormhole) {
+                        activeWormhole = config.wormhole;
+                        // Update selector to match
+                        const select = document.getElementById('wormhole-select');
+                        if (select) {
+                            select.value = activeWormhole.id || 'c247';
+                            if (activeWormhole.id === 'custom') {
+                                document.getElementById('custom-wormhole').style.display = 'flex';
+                                document.getElementById('custom-base-mass').value = activeWormhole.baseMass;
+                                document.getElementById('custom-variance').value = Math.round(activeWormhole.variance * 100);
+                            }
+                        }
+                    }
+                    if (config.ships && config.ships.length > 0) {
+                        activeShips = config.ships;
+                    }
+                } catch (e) {
+                    console.error('Failed to load config:', e);
+                }
+            }
+
+            // Regenerate actions from loaded config
+            SINGLE_JUMPS = generateSingleJumps();
+            ACTIONS = generateActions();
+        }
 
         function init() {
+            loadConfig();
             loadState();
             createStarfield();
             createWormholeEffect();
             initStateSelection();
+            initIterationSlider();
+            initDecaySlider();
+            // Initialize dynamic UI components
+            updateWormholeDisplay();
+            updateShipsSummary();
+            updateSettingsSummary();
+            updateSpecCards();
+            renderJumpButtons();
             // Run analysis asynchronously to not block UI
             setTimeout(() => {
                 runStrategyAnalysis();
                 updateDisplay();
             }, 100);
+        }
+
+        function initIterationSlider() {
+            const slider = document.getElementById('iteration-slider');
+            const valueDisplay = document.getElementById('iteration-value');
+            if (!slider || !valueDisplay) return;
+
+            // Load saved value from localStorage (with migration from old key)
+            let savedIterations = localStorage.getItem('wh-calc-iterations');
+            if (!savedIterations) {
+                const oldIterations = localStorage.getItem('eedvr-wh-calc-iterations');
+                if (oldIterations) {
+                    savedIterations = oldIterations;
+                    localStorage.setItem('wh-calc-iterations', oldIterations);
+                    localStorage.removeItem('eedvr-wh-calc-iterations');
+                }
+            }
+            if (savedIterations) {
+                const value = parseInt(savedIterations);
+                if (value >= 10000 && value <= 1000000) {
+                    slider.value = value;
+                    CONFIG.simulations = value;
+                    valueDisplay.textContent = value >= 1000000 ? '1M' : Math.round(value / 1000) + 'k';
+                }
+            }
+
+            slider.addEventListener('input', () => {
+                const value = parseInt(slider.value);
+                CONFIG.simulations = value;
+                valueDisplay.textContent = value >= 1000000 ? '1M' : Math.round(value / 1000) + 'k';
+                localStorage.setItem('wh-calc-iterations', value);
+                updateSettingsSummary();
+            });
+
+            slider.addEventListener('change', () => {
+                // Re-run analysis with new iteration count
+                runStrategyAnalysis();
+                updateSettingsSummary();
+            });
+        }
+
+        function initDecaySlider() {
+            const slider = document.getElementById('decay-slider');
+            const valueDisplay = document.getElementById('decay-value');
+            if (!slider || !valueDisplay) return;
+
+            // Load saved value from localStorage
+            const savedDecay = localStorage.getItem('wh-calc-decay');
+            if (savedDecay) {
+                const value = parseFloat(savedDecay);
+                if (value >= 0.80 && value <= 0.99) {
+                    slider.value = value;
+                    CONFIG.tripDecay = value;
+                    valueDisplay.textContent = value.toFixed(2);
+                }
+            }
+
+            slider.addEventListener('input', () => {
+                const value = parseFloat(slider.value);
+                CONFIG.tripDecay = value;
+                valueDisplay.textContent = value.toFixed(2);
+                localStorage.setItem('wh-calc-decay', value);
+            });
+
+            slider.addEventListener('change', () => {
+                // Re-run analysis with new decay value
+                runStrategyAnalysis();
+            });
+        }
+
+        function toggleSetupSettings() {
+            const expanded = document.getElementById('settings-expanded');
+            const icon = document.querySelector('.expand-icon');
+            if (!expanded) return;
+
+            if (expanded.style.display === 'none') {
+                expanded.style.display = 'flex';
+                if (icon) icon.style.transform = 'rotate(180deg)';
+                renderShipList();  // Make sure ship list is rendered
+            } else {
+                expanded.style.display = 'none';
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function updateSettingsSummary() {
+            const summaryEl = document.getElementById('settings-summary');
+            if (!summaryEl) return;
+
+            const ships = activeShips.map(s => s.name).join(' + ');
+            const iterations = CONFIG.simulations >= 1000000
+                ? '1M'
+                : Math.round(CONFIG.simulations / 1000) + 'k';
+
+            summaryEl.textContent = `${ships} • ${iterations} iterations`;
         }
 
         function createStarfield() {
@@ -1151,8 +2181,8 @@
         }
 
         // MCTS Thresholds (remaining mass thresholds for visual state)
-        const SHRINK_THRESHOLD = CONFIG.baseMass * CONFIG.shrinkThreshold;  // 1000 M
-        const CRIT_THRESHOLD = CONFIG.baseMass * CONFIG.critThreshold;       // 200 M
+        function getShrinkThreshold() { return getBaseMass() * CONFIG.shrinkThreshold; }
+        function getCritThreshold() { return getBaseMass() * CONFIG.critThreshold; }
 
         // ============================================================
         // MCTS Implementation - Proper tree search with backpropagation
@@ -1175,7 +2205,8 @@
                 this.children = {};
 
                 this.visits = 0;
-                this.wins = 0;
+                this.wins = 0;  // Weighted score (sum of decay^trips)
+                this.successes = 0;  // Raw success count
                 this.depth = depth;  // Number of round trips
                 this.terminalTrips = {};
             }
@@ -1195,33 +2226,9 @@
 
             getValidActions() {
                 const remaining = this.getRemainingBelief();
-                // Filter out actions that can't survive outbound
-                // Also filter out actions that would take too many trips (inefficient)
-                const maxReasonableTrips = 8;
-                const minMassPerTrip = remaining.max / maxReasonableTrips;
-
-                // Check if any efficient action is guaranteed safe
-                const hasEfficientSafeAction = Object.values(ACTIONS).some(act => {
-                    const tripMass = act.out + act.back;
-                    const isEfficient = tripMass >= minMassPerTrip;
-                    const isSafe = act.out < remaining.min;
-                    return isEfficient && isSafe && remaining.max > act.out;
-                });
-
+                // Only filter out actions that can't possibly survive outbound
                 return Object.entries(ACTIONS).filter(([key, act]) => {
-                    if (remaining.max <= act.out) return false;  // Can't survive outbound
-
-                    const tripMass = act.out + act.back;
-                    const isEfficient = tripMass >= minMassPerTrip;
-                    const isSafe = act.out < remaining.min;
-
-                    // Allow efficient actions
-                    if (isEfficient) return true;
-
-                    // Allow inefficient safe actions only if no efficient action is safe
-                    if (isSafe && !hasEfficientSafeAction) return true;
-
-                    return false;
+                    return remaining.max > act.out;
                 });
             }
 
@@ -1247,15 +2254,17 @@
             // Aggregate stats for an action across all observation branches
             getActionStats(actionKey) {
                 const branches = this.children[actionKey];
-                if (!branches) return { visits: 0, wins: 0 };
+                if (!branches) return { visits: 0, wins: 0, successes: 0 };
 
                 let totalVisits = 0;
                 let totalWins = 0;
+                let totalSuccesses = 0;
                 for (const obs in branches) {
                     totalVisits += branches[obs].visits;
                     totalWins += branches[obs].wins;
+                    totalSuccesses += branches[obs].successes;
                 }
-                return { visits: totalVisits, wins: totalWins };
+                return { visits: totalVisits, wins: totalWins, successes: totalSuccesses };
             }
 
             // UCB1 for an action (aggregated across observation branches)
@@ -1305,144 +2314,136 @@
             return { min: newMin, max: newMax };
         }
 
-        // Main POMCTS algorithm - branches on (action, observation) pairs
-        function runPOMCTS(startMin, startMax, initialMassUsed, numIterations = CONFIG.simulations) {
-            const rootTotalBelief = { min: startMin, max: startMax };
-            const root = new POMCTSNode(rootTotalBelief, initialMassUsed);
+        // Run a single MCTS iteration (extracted for reuse)
+        function runSingleIteration(root, startMin, startMax, initialMassUsed) {
+            const trueMass = startMin + Math.random() * (startMax - startMin);
+            let currentMassUsed = initialMassUsed;
+            let remaining = trueMass - currentMassUsed;
 
-            for (let i = 0; i < numIterations; i++) {
-                // Sample true mass for this iteration
-                const trueMass = startMin + Math.random() * (startMax - startMin);
-                let currentMassUsed = initialMassUsed;
-                let remaining = trueMass - currentMassUsed;
+            const path = [root];
+            let node = root;
+            let rolledOut = false;
 
-                // Track path for backpropagation
-                const path = [root];
-                let node = root;
-                let rolledOut = false;
+            // 1. SELECTION + EXPANSION
+            while (!node.isTerminal() && !rolledOut) {
+                const validActions = node.getValidActions();
+                if (validActions.length === 0) break;
 
-                // 1. SELECTION + EXPANSION: traverse/expand tree
-                while (!node.isTerminal() && !rolledOut) {
-                    const validActions = node.getValidActions();
-                    if (validActions.length === 0) break;
+                let selectedActionKey = null;
+                let selectedAction = null;
+                let needsExpansion = false;
 
-                    // Find an unexplored (action, observation) pair, or select via UCB1
-                    let selectedActionKey = null;
-                    let selectedAction = null;
-                    let needsExpansion = false;
-
-                    // First, check if any valid action has unexplored observation branch for this trueMass
-                    for (const [key, act] of validActions) {
-                        // Check for rollout before computing observation
-                        if (remaining <= act.out) continue;
-
-                        const newMassUsed = currentMassUsed + act.out + act.back;
-                        const observation = computeObservation(trueMass, newMassUsed);
-
-                        if (!node.hasChild(key, observation)) {
-                            // This (action, observation) pair is unexplored - expand here
-                            selectedActionKey = key;
-                            selectedAction = act;
-                            needsExpansion = true;
-                            break;
-                        }
-                    }
-
-                    if (!needsExpansion) {
-                        // All reachable (action, observation) pairs explored - use UCB1 to select action
-                        let bestUCB = -Infinity;
-                        for (const [key, act] of validActions) {
-                            if (remaining <= act.out) continue;  // Skip if would roll out
-
-                            const ucb = node.ucb1ForAction(key);
-                            if (ucb > bestUCB) {
-                                bestUCB = ucb;
-                                selectedActionKey = key;
-                                selectedAction = act;
-                            }
-                        }
-                    }
-
-                    if (!selectedAction) {
-                        // No valid action found (all would roll out)
-                        rolledOut = true;
-                        break;
-                    }
-
-                    // Check for rollout on outbound
-                    if (remaining <= selectedAction.out) {
-                        rolledOut = true;
-                        break;
-                    }
-
-                    // Apply action
-                    const newMassUsed = currentMassUsed + selectedAction.out + selectedAction.back;
-                    remaining = trueMass - newMassUsed;
+                for (const [key, act] of validActions) {
+                    if (remaining <= act.out) continue;
+                    const newMassUsed = currentMassUsed + act.out + act.back;
                     const observation = computeObservation(trueMass, newMassUsed);
 
-                    // Get or create child node
-                    let child = node.getChild(selectedActionKey, observation);
-                    if (!child) {
-                        // Create new child with updated belief
-                        const newTotalBelief = updateTotalBelief(node.totalBelief, newMassUsed, observation);
-                        child = new POMCTSNode(
-                            newTotalBelief,
-                            newMassUsed,
-                            node,
-                            selectedAction,
-                            selectedActionKey,
-                            observation,
-                            node.depth + 1
-                        );
-                        node.setChild(selectedActionKey, observation, child);
+                    if (!node.hasChild(key, observation)) {
+                        selectedActionKey = key;
+                        selectedAction = act;
+                        needsExpansion = true;
+                        break;
                     }
-
-                    currentMassUsed = newMassUsed;
-                    node = child;
-                    path.push(node);
-
-                    // If we just expanded, break to go to simulation
-                    if (needsExpansion) break;
                 }
 
-                // 2. SIMULATION: random rollout to terminal
-                let trips = node.depth;
-                let simTotalBelief = { ...node.totalBelief };
-                let simMassUsed = currentMassUsed;
-
-                if (!rolledOut && remaining > 0) {
-                    while (remaining > 0 && trips < 20) {
-                        // Get valid actions based on actual remaining mass
-                        const validActions = Object.entries(ACTIONS).filter(([k, a]) =>
-                            remaining > a.out
-                        );
-                        if (validActions.length === 0) {
-                            rolledOut = true;
-                            break;
+                // Use UCB1 for selection
+                if (!needsExpansion && !selectedActionKey) {
+                    let bestUCB = -Infinity;
+                    for (const [key, act] of validActions) {
+                        if (remaining <= act.out) continue;
+                        const ucb = node.ucb1ForAction(key);
+                        if (ucb > bestUCB) {
+                            bestUCB = ucb;
+                            selectedActionKey = key;
+                            selectedAction = act;
                         }
-
-                        // Pick action using heuristic (prefer higher mass to close hole faster)
-                        validActions.sort((a, b) => (b[1].out + b[1].back) - (a[1].out + a[1].back));
-                        const [key, act] = validActions[0];
-
-                        trips++;
-                        simMassUsed += act.out + act.back;
-                        remaining = trueMass - simMassUsed;
-
-                        // Compute observation and update belief (for accurate simulation)
-                        const observation = computeObservation(trueMass, simMassUsed);
-                        simTotalBelief = updateTotalBelief(simTotalBelief, simMassUsed, observation);
                     }
                 }
 
-                // 3. BACKPROPAGATION: update stats along path
-                const success = !rolledOut && remaining <= 0;
-                for (const n of path) {
-                    n.visits++;
-                    if (success) {
-                        n.wins++;
-                        n.terminalTrips[trips] = (n.terminalTrips[trips] || 0) + 1;
+                if (!selectedAction) {
+                    rolledOut = true;
+                    break;
+                }
+
+                if (remaining <= selectedAction.out) {
+                    rolledOut = true;
+                    break;
+                }
+
+                const newMassUsed = currentMassUsed + selectedAction.out + selectedAction.back;
+                remaining = trueMass - newMassUsed;
+                const observation = computeObservation(trueMass, newMassUsed);
+
+                let child = node.getChild(selectedActionKey, observation);
+                if (!child) {
+                    const newTotalBelief = updateTotalBelief(node.totalBelief, newMassUsed, observation);
+                    child = new POMCTSNode(
+                        newTotalBelief,
+                        newMassUsed,
+                        node,
+                        selectedAction,
+                        selectedActionKey,
+                        observation,
+                        node.depth + 1
+                    );
+                    node.setChild(selectedActionKey, observation, child);
+                }
+
+                currentMassUsed = newMassUsed;
+                node = child;
+                path.push(node);
+
+                // Exit if hole collapsed (remaining <= 0 for this sample)
+                if (remaining <= 0) break;
+
+                if (needsExpansion) break;
+            }
+
+            // 2. SIMULATION
+            let trips = node.depth;
+            let simMassUsed = currentMassUsed;
+
+            if (!rolledOut && remaining > 0) {
+                while (remaining > 0 && trips < 20) {
+                    const validActions = Object.entries(ACTIONS).filter(([k, a]) => remaining > a.out);
+                    if (validActions.length === 0) {
+                        rolledOut = true;
+                        break;
                     }
+                    validActions.sort((a, b) => (b[1].out + b[1].back) - (a[1].out + a[1].back));
+                    const [key, act] = validActions[0];
+                    trips++;
+                    simMassUsed += act.out + act.back;
+                    remaining = trueMass - simMassUsed;
+                }
+            }
+
+            // 3. BACKPROPAGATION
+            const success = !rolledOut && remaining <= 0;
+            const score = success ? Math.pow(CONFIG.tripDecay, trips) : 0;
+            for (const n of path) {
+                n.visits++;
+                if (success) {
+                    n.wins += score;
+                    n.successes++;
+                    n.terminalTrips[trips] = (n.terminalTrips[trips] || 0) + 1;
+                }
+            }
+        }
+
+        // Main POMCTS algorithm - async chunked for UI responsiveness
+        async function runPOMCTS(startMin, startMax, initialMassUsed, numIterations = CONFIG.simulations, onProgress = null) {
+            const rootTotalBelief = { min: startMin, max: startMax };
+            const root = new POMCTSNode(rootTotalBelief, initialMassUsed);
+            const chunkSize = CONFIG.chunkSize;
+
+            for (let i = 0; i < numIterations; i++) {
+                runSingleIteration(root, startMin, startMax, initialMassUsed);
+
+                // Yield to event loop every chunkSize iterations
+                if (i > 0 && i % chunkSize === 0) {
+                    if (onProgress) onProgress(i, numIterations);
+                    await yieldToMain();
                 }
             }
 
@@ -1450,8 +2451,8 @@
         }
 
         // Alias for backward compatibility
-        function runMCTS(rootBelief, startMin, startMax, massUsed, numIterations = CONFIG.simulations) {
-            return runPOMCTS(startMin, startMax, massUsed, numIterations);
+        async function runMCTS(rootBelief, startMin, startMax, massUsed, numIterations = CONFIG.simulations, onProgress = null) {
+            return runPOMCTS(startMin, startMax, massUsed, numIterations, onProgress);
         }
 
         // Extract best action from POMCTS tree (most visited action, aggregated across observations)
@@ -1498,67 +2499,98 @@
 
                 // Aggregate stats across all observation branches
                 let totalVisits = 0;
-                let totalWins = 0;
+                let totalWins = 0;  // Weighted score (sum of decay^trips)
+                let totalSuccesses = 0;  // Raw success count
                 let totalTrips = 0;
-                let totalSuccesses = 0;
                 let action = null;
 
                 for (const obs of Object.keys(observations)) {
                     const child = observations[obs];
                     totalVisits += child.visits;
                     totalWins += child.wins;
+                    totalSuccesses += child.successes;
                     action = child.incomingAction;
 
-                    // Aggregate terminal trips
+                    // Aggregate terminal trips for avgSteps calculation
                     for (const [trips, count] of Object.entries(child.terminalTrips)) {
                         totalTrips += parseInt(trips) * count;
-                        totalSuccesses += count;
                     }
                 }
 
+                if (!action) continue;
+
                 const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
-                const rolloutRate = totalVisits > 0 ? (totalVisits - totalWins) / totalVisits : 0;
 
                 // Calculate probability of safe outbound jump
-                // If action.out > remaining.min, there's rollout risk
+                // MCTS only explores actions when trueMass > act.out, so observed rate
+                // is biased towards safe scenarios. Adjust for full belief distribution.
                 const beliefRange = remainingBelief.max - remainingBelief.min;
                 let pSafeOutbound = 1.0;
                 if (beliefRange > 0 && action.out > remainingBelief.min) {
-                    // P(remaining >= action.out) = (max - action.out) / (max - min)
                     const safeRange = Math.max(0, remainingBelief.max - action.out);
                     pSafeOutbound = safeRange / beliefRange;
                 }
 
-                // Observed success rate is conditional on safe outbound
-                // True success rate = P(safe outbound) * P(success | safe outbound)
-                const observedSuccessRate = totalVisits > 0 ? totalWins / totalVisits : 0;
-                const adjustedSuccessRate = pSafeOutbound * observedSuccessRate;
+                // Raw success rate (probability of completing without rollout)
+                const observedSuccessRate = totalVisits > 0 ? totalSuccesses / totalVisits : 0;
+                const successRate = pSafeOutbound * observedSuccessRate;
+
+                // Strategy score (weighted by trip count)
+                const observedScore = totalVisits > 0 ? totalWins / totalVisits : 0;
+                const strategyScore = pSafeOutbound * observedScore;
 
                 results.push({
                     key: actionKey,
                     act: action,
                     visits: totalVisits,
                     wins: totalWins,
-                    successes: totalWins,
+                    successes: totalSuccesses,
                     total: totalVisits,
-                    successRate: adjustedSuccessRate,
-                    rolloutRate,
+                    successRate,
+                    strategyScore,
                     avgSteps,
                     mass: action.out + action.back,
                     guaranteedSafe: remainingBelief.min > action.out
                 });
             }
-            // Sort by success rate (higher = better), then visits as tiebreaker
+            // Sort by strategy score (higher = better), then visits as tiebreaker
             results.sort((a, b) => {
-                const successDiff = b.successRate - a.successRate;
-                if (Math.abs(successDiff) > 0.01) return successDiff;
+                const scoreDiff = b.strategyScore - a.strategyScore;
+                if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
                 return b.visits - a.visits;
             });
             return results;
         }
 
         // Extract trip distribution from POMCTS tree root
-        function getMCTSTripDistribution(root) {
+        function getMCTSTripDistribution(root, actionKey = null) {
+            // If actionKey provided, get distribution for that specific action
+            if (actionKey && root.children[actionKey]) {
+                const observations = root.children[actionKey];
+                let totalSuccesses = 0;
+                const tripCounts = {};
+
+                for (const obs of Object.keys(observations)) {
+                    const child = observations[obs];
+                    for (const [trips, count] of Object.entries(child.terminalTrips)) {
+                        tripCounts[trips] = (tripCounts[trips] || 0) + count;
+                        totalSuccesses += count;
+                    }
+                }
+
+                if (totalSuccesses === 0) return [];
+
+                const distribution = [];
+                for (const [trips, count] of Object.entries(tripCounts)) {
+                    const pct = count / totalSuccesses;
+                    if (pct >= 0.01) {
+                        distribution.push({ trips: parseInt(trips), pct });
+                    }
+                }
+                return distribution.sort((a, b) => a.trips - b.trips);
+            }
+
+            // Otherwise return overall distribution
             const totalWins = root.wins;
             if (totalWins === 0) return [];
 
@@ -1613,14 +2645,25 @@
 
 
 
-        // Main MCTS analysis function
-        function runStrategyAnalysis() {
+        // Main MCTS analysis function - async for UI responsiveness
+        async function runStrategyAnalysis() {
             const statusEl = document.getElementById('sim-status');
             statusEl.textContent = 'Running MCTS analysis...';
 
-            const startMin = state.knownMinStart;
-            const startMax = state.knownMaxStart;
+            let startMin = state.knownMinStart;
+            let startMax = state.knownMaxStart;
             const massUsed = state.massUsed;
+
+            // Narrow bounds based on required observation (streamline MCTS search space)
+            const requiredObs = getRequiredObservation();
+            if (requiredObs === 'crit') {
+                // Remaining ≤ 10% → total ≤ massUsed/0.9
+                startMax = Math.min(startMax, massUsed / 0.9);
+            } else if (requiredObs === 'shrink') {
+                // 10% < remaining ≤ 50% → massUsed/0.9 < total ≤ 2*massUsed
+                startMin = Math.max(startMin, massUsed / 0.9 + 1);
+                startMax = Math.min(startMax, 2 * massUsed);
+            }
             const minRemaining = startMin - massUsed;
             const maxRemaining = startMax - massUsed;
 
@@ -1628,20 +2671,37 @@
             const position = getPosition();
             const shipUsedOut = getShipUsedOut();
 
-            // If we're AWAY, we need to recommend RETURN options only
+            // Progress callback to update UI
+            const updateProgress = (current, total) => {
+                const pct = Math.round((current / total) * 100);
+                statusEl.textContent = `Running MCTS... ${pct}% (${current.toLocaleString()}/${total.toLocaleString()})`;
+            };
+
+            // If we're AWAY, compute return options AND outbound analysis for when we get back
             if (position === 'away') {
                 const returnResults = evaluateReturnOptions(belief, startMin, startMax, massUsed, shipUsedOut);
+
+                // Also run MCTS to show what to do when we get back
+                statusEl.textContent = `Running MCTS analysis...`;
+                const mctsRoot = await runMCTS(belief, startMin, startMax, massUsed, CONFIG.simulations, updateProgress);
+                const outboundResults = getMCTSActionResults(mctsRoot);
+                const topActionKey = outboundResults.length > 0 ? outboundResults[0].key : null;
+                const tripDist = getMCTSTripDistribution(mctsRoot, topActionKey);
+
                 recommendedStrategy = {
                     sequence: [],
-                    actionResults: returnResults,
+                    returnResults: returnResults,
+                    actionResults: outboundResults,
+                    tripDistribution: tripDist,
                     nextAction: returnResults.length > 0 ? returnResults[0] : null,
                     minRemaining,
                     maxRemaining,
                     belief,
                     isReturn: true,
-                    shipUsedOut: shipUsedOut
+                    shipUsedOut: shipUsedOut,
+                    mctsIterations: mctsRoot.visits
                 };
-                statusEl.textContent = `You are AWAY with ${shipUsedOut}. Showing return options.`;
+                statusEl.textContent = `You are AWAY with ${shipUsedOut}. Showing return options + analysis.`;
                 displayStrategyAnalysis();
                 return;
             }
@@ -1649,7 +2709,7 @@
             // Normal case: we're HOME, try to reuse existing tree
             let mctsRoot = null;
             let reusedTree = false;
-            const additionalIterations = Math.floor(CONFIG.simulations / 4);  // 250k additional iterations
+            const additionalIterations = Math.floor(CONFIG.simulations / 10);  // 10% additional iterations
 
             // Try to descend existing tree if we have a completed action + observation
             if (currentMctsRoot && lastCompletedAction && lastObservation) {
@@ -1662,13 +2722,13 @@
 
                     // Run additional iterations on the subtree
                     statusEl.textContent = `Running ${additionalIterations.toLocaleString()} additional iterations...`;
-                    runAdditionalIterations(mctsRoot, startMin, startMax, massUsed, additionalIterations);
+                    await runAdditionalIterations(mctsRoot, startMin, startMax, massUsed, additionalIterations, updateProgress);
                 }
             }
 
             // If we couldn't reuse, build fresh tree
             if (!mctsRoot) {
-                mctsRoot = runMCTS(belief, startMin, startMax, massUsed);
+                mctsRoot = await runMCTS(belief, startMin, startMax, massUsed, CONFIG.simulations, updateProgress);
             }
 
             // Store for future reuse
@@ -1682,8 +2742,9 @@
             // Build recommended sequence from tree (follows most-visited path)
             const sequence = getMCTSSequence(mctsRoot);
 
-            // Trip distribution comes free from tree statistics
-            const tripDistribution = getMCTSTripDistribution(mctsRoot);
+            // Trip distribution for top strategy
+            const topActionKey = actionResults.length > 0 ? actionResults[0].key : null;
+            const tripDistribution = getMCTSTripDistribution(mctsRoot, topActionKey);
 
             // Get the best next action
             const nextAction = actionResults.length > 0 ? actionResults[0] : null;
@@ -1706,116 +2767,16 @@
             displayStrategyAnalysis();
         }
 
-        // Run additional MCTS iterations on an existing subtree
-        function runAdditionalIterations(root, startMin, startMax, initialMassUsed, numIterations) {
+        // Run additional MCTS iterations on an existing subtree - async chunked
+        async function runAdditionalIterations(root, startMin, startMax, initialMassUsed, numIterations, onProgress = null) {
+            const chunkSize = CONFIG.chunkSize;
+
             for (let i = 0; i < numIterations; i++) {
-                // Sample true mass for this iteration
-                const trueMass = startMin + Math.random() * (startMax - startMin);
-                let currentMassUsed = initialMassUsed;
-                let remaining = trueMass - currentMassUsed;
+                runSingleIteration(root, startMin, startMax, initialMassUsed);
 
-                // Track path for backpropagation
-                const path = [root];
-                let node = root;
-                let rolledOut = false;
-
-                // Selection + Expansion
-                while (!node.isTerminal() && !rolledOut) {
-                    const validActions = node.getValidActions();
-                    if (validActions.length === 0) break;
-
-                    let selectedActionKey = null;
-                    let selectedAction = null;
-                    let needsExpansion = false;
-
-                    for (const [key, act] of validActions) {
-                        if (remaining <= act.out) continue;
-                        const newMassUsed = currentMassUsed + act.out + act.back;
-                        const observation = computeObservation(trueMass, newMassUsed);
-                        if (!node.hasChild(key, observation)) {
-                            selectedActionKey = key;
-                            selectedAction = act;
-                            needsExpansion = true;
-                            break;
-                        }
-                    }
-
-                    if (!needsExpansion) {
-                        let bestUCB = -Infinity;
-                        for (const [key, act] of validActions) {
-                            if (remaining <= act.out) continue;
-                            const ucb = node.ucb1ForAction(key);
-                            if (ucb > bestUCB) {
-                                bestUCB = ucb;
-                                selectedActionKey = key;
-                                selectedAction = act;
-                            }
-                        }
-                    }
-
-                    if (!selectedAction) {
-                        rolledOut = true;
-                        break;
-                    }
-
-                    if (remaining <= selectedAction.out) {
-                        rolledOut = true;
-                        break;
-                    }
-
-                    const newMassUsed = currentMassUsed + selectedAction.out + selectedAction.back;
-                    remaining = trueMass - newMassUsed;
-                    const observation = computeObservation(trueMass, newMassUsed);
-
-                    let child = node.getChild(selectedActionKey, observation);
-                    if (!child) {
-                        const newTotalBelief = updateTotalBelief(node.totalBelief, newMassUsed, observation);
-                        child = new POMCTSNode(
-                            newTotalBelief,
-                            newMassUsed,
-                            node,
-                            ACTIONS[selectedActionKey],
-                            selectedActionKey,
-                            observation,
-                            node.depth + 1
-                        );
-                        node.setChild(selectedActionKey, observation, child);
-                    }
-
-                    currentMassUsed = newMassUsed;
-                    node = child;
-                    path.push(node);
-
-                    if (needsExpansion) break;
-                }
-
-                // Simulation
-                let trips = node.depth;
-                let simMassUsed = currentMassUsed;
-
-                if (!rolledOut && remaining > 0) {
-                    while (remaining > 0 && trips < 20) {
-                        const validActions = Object.entries(ACTIONS).filter(([k, a]) => remaining > a.out);
-                        if (validActions.length === 0) {
-                            rolledOut = true;
-                            break;
-                        }
-                        validActions.sort((a, b) => (b[1].out + b[1].back) - (a[1].out + a[1].back));
-                        const [key, act] = validActions[0];
-                        trips++;
-                        simMassUsed += act.out + act.back;
-                        remaining = trueMass - simMassUsed;
-                    }
-                }
-
-                // Backpropagation
-                const success = !rolledOut && remaining <= 0;
-                for (const n of path) {
-                    n.visits++;
-                    if (success) {
-                        n.wins++;
-                        n.terminalTrips[trips] = (n.terminalTrips[trips] || 0) + 1;
-                    }
+                if (i > 0 && i % chunkSize === 0) {
+                    if (onProgress) onProgress(i, numIterations);
+                    await yieldToMain();
                 }
             }
         }
@@ -1825,12 +2786,9 @@
             const results = [];
 
             // Only consider return modes for the ship we went out with
-            const returnModes = shipUsedOut === 'BS'
-                ? [{ key: 'BS_HOT', mass: CONFIG.bsHot, label: 'BS Hot' },
-                   { key: 'BS_COLD', mass: CONFIG.bsCold, label: 'BS Cold' }]
-                : [{ key: 'HIC_HOT', mass: CONFIG.hicHot, label: 'HIC Hot' },
-                   { key: 'HIC_COLD', mass: CONFIG.hicCold, label: 'HIC Cold' },
-                   { key: 'HIC_ENT', mass: CONFIG.hicEnt, label: 'HIC Ent' }];
+            const returnModes = Object.entries(SINGLE_JUMPS)
+                .filter(([key, jump]) => jump.ship === shipUsedOut)
+                .map(([key, jump]) => ({ key, mass: jump.mass, label: jump.label }));
 
             const numSims = Math.floor(CONFIG.simulations / returnModes.length);
 
@@ -1899,18 +2857,19 @@
             const container = document.createElement('div');
             container.className = 'mcts-results';
 
-            // Special handling for RETURN recommendations
+            // Special handling for RETURN recommendations (show return options panel)
             if (isReturn && nextAction) {
                 highlightRecommendedButton(nextAction.key);
 
-                const collapsePct = (nextAction.collapseRate * 100).toFixed(1);
+                const returnResults = recommendedStrategy.returnResults || [];
                 const recDiv = document.createElement('div');
                 recDiv.className = 'mcts-recommendation';
                 recDiv.style.borderColor = '#c46444';
                 recDiv.style.background = 'rgba(100, 60, 40, 0.9)';
+                recDiv.style.marginBottom = '15px';
 
                 let tableRows = '';
-                for (const result of actionResults) {
+                for (const result of returnResults) {
                     const collPct = (result.collapseRate * 100).toFixed(1);
                     const isTop = result.key === nextAction.key;
                     tableRows += `<tr${isTop ? ' style="background: rgba(100, 80, 60, 0.3);"' : ''}>
@@ -1933,8 +2892,7 @@
                     </div>
                 `;
                 container.appendChild(recDiv);
-                grid.appendChild(container);
-                return;
+                // Don't return early - continue to show the outbound analysis below
             }
 
             // Highlight recommended button
@@ -1944,55 +2902,23 @@
                 highlightRecommendedButton(null);
             }
 
-            // 1. Recommendation bar (top)
-            const recDiv = document.createElement('div');
-            if (nextAction) {
-                const act = nextAction.act;
-                const totalMass = act.out + act.back;
-                const successPct = (nextAction.successRate * 100).toFixed(1);
-                const isHighSuccess = nextAction.successRate >= 0.99;
-
-                recDiv.className = `mcts-recommendation ${isHighSuccess ? '' : (nextAction.successRate >= 0.95 ? 'risky' : 'dangerous')}`;
-
-                const badges = [];
-                if (nextAction.guaranteedSafe) badges.push('<span class="foolproof-badge">GUARANTEED SAFE</span>');
-                if (nextAction.successRate >= 0.9999) badges.push('<span class="foolproof-badge">~0% ROLLOUT</span>');
-
-                recDiv.innerHTML = `
-                    <div class="mcts-rec-title">
-                        RECOMMENDED: ${act.label} ${badges.join('')}
-                    </div>
-                    <div class="mcts-rec-stats" style="color: ${isHighSuccess ? '#8f8' : '#fc8'};">
-                        ${successPct}% success · ${totalMass} M/trip · ~${nextAction.avgSteps.toFixed(1)} trips to close
-                    </div>
-                `;
-            } else {
-                recDiv.className = 'mcts-recommendation dangerous';
-                recDiv.innerHTML = `
-                    <div class="mcts-rec-title" style="color: #f88;">NO SAFE ACTIONS</div>
-                    <div class="mcts-rec-stats" style="color: #faa;">
-                        Remaining mass too low (${Math.round(minRemaining)}-${Math.round(maxRemaining)} M). Consider one-way pass.
-                    </div>
-                `;
-            }
-            container.appendChild(recDiv);
-
-            // 2. Details row (distribution + comparison side by side)
+            // Details row (distribution + comparison side by side)
             if ((tripDistribution && tripDistribution.length > 0) || actionResults.length > 0) {
                 const detailsDiv = document.createElement('div');
                 detailsDiv.className = 'mcts-details';
 
-                // Left: Trip distribution
+                // Left: Trip distribution for top strategy
                 if (tripDistribution && tripDistribution.length > 0) {
                     const distDiv = document.createElement('div');
                     distDiv.className = 'mcts-distribution';
 
+                    const topActionLabel = nextAction ? nextAction.act.label : 'Top Strategy';
                     const distItems = tripDistribution
                         .map(d => `<div class="mcts-distribution-item">${d.trips} trips: <strong>${Math.round(d.pct * 100)}%</strong></div>`)
                         .join('');
 
                     distDiv.innerHTML = `
-                        <div class="mcts-distribution-title">Trip Distribution</div>
+                        <div class="mcts-distribution-title">Trip Distribution (${topActionLabel})</div>
                         ${distItems}
                         <div class="mcts-distribution-footer">${mctsIterations.toLocaleString()} iterations</div>
                     `;
@@ -2008,24 +2934,33 @@
                     for (let i = 0; i < actionResults.length; i++) {
                         const result = actionResults[i];
                         const act = result.act;
-                        const mass = act.out + act.back;
-                        const successPct = (result.successRate * 100).toFixed(1);
-                        const statusColor = result.guaranteedSafe ? '#8f8' :
-                                           (result.successRate >= 0.99 ? '#aef' :
-                                           (result.successRate >= 0.95 ? '#fc8' : '#f88'));
+                        const mass = (act.out + act.back).toFixed(1);
+                        const successPct = (result.successRate * 100).toFixed(0);
+                        const scoreInt = Math.round(result.strategyScore * 10000);
+                        const scoreColor = result.strategyScore >= 0.90 ? '#8f8' :
+                                          (result.strategyScore >= 0.70 ? '#fc8' : '#f88');
 
                         tableRows += `<tr>
                             <td>${act.label}</td>
+                            <td style="text-align: center;">${result.guaranteedSafe ? '✓' : ''}</td>
                             <td style="text-align: right;">${mass} M</td>
                             <td style="text-align: right;">${result.avgSteps.toFixed(1)}</td>
-                            <td style="text-align: right; color: ${statusColor}; font-weight: bold;">${successPct}%${result.guaranteedSafe ? ' ✓' : ''}</td>
+                            <td style="text-align: right;">${successPct}%</td>
+                            <td style="text-align: right; color: ${scoreColor}; font-weight: bold;">${scoreInt}</td>
                         </tr>`;
                     }
 
                     compDiv.innerHTML = `
                         <div class="mcts-comparison-title">Action Comparison</div>
                         <table>
-                            <tr><th>Action</th><th style="text-align: right;">Mass</th><th style="text-align: right;">Trips</th><th style="text-align: right;">Success</th></tr>
+                            <tr>
+                                <th>Action<span class="info-icon">?<span class="info-tooltip">Ship configuration (Out/Back)</span></span></th>
+                                <th style="text-align: center;">Safe<span class="info-icon">?<span class="info-tooltip">Guaranteed safe outbound (won't get rolled going out)</span></span></th>
+                                <th style="text-align: right;">Mass<span class="info-icon">?<span class="info-tooltip">Total mass per round trip</span></span></th>
+                                <th style="text-align: right;">Trips<span class="info-icon">?<span class="info-tooltip">Average trips to close the hole</span></span></th>
+                                <th style="text-align: right;">Success<span class="info-icon">?<span class="info-tooltip">Chance of strategy terminating the wormhole without being rolled out</span></span></th>
+                                <th style="text-align: right;">Score<span class="info-icon">?<span class="info-tooltip">Success weighted by trip count (0-10000, fewer trips = higher)</span></span></th>
+                            </tr>
                             ${tableRows}
                         </table>
                     `;
@@ -2078,17 +3013,35 @@
                 lastCompletedAction = getLastCompletedActionKey();
             }
 
+            // After any jump, await observation before next jump (unless already crit)
+            if (!hasHoleCrit()) {
+                state.awaitingObservation = true;
+            }
+
             saveState();
             setTimeout(() => {
                 runStrategyAnalysis();
                 updateDisplay();
-                // Trigger observation reminder animation
-                showObservationReminder();
             }, 10);
         }
 
-        // Highlight the observation section to remind user to indicate state change
-        // Check if a threshold crossing is plausible given current mass used
+        // Check if observation is REQUIRED (mass bounds make it impossible NOT to have crossed threshold)
+        function getRequiredObservation() {
+            const massUsed = state.massUsed;
+            const maxTotal = state.knownMaxStart;
+
+            // If massUsed >= 90% of maxTotal, hole MUST be crit
+            if (massUsed >= maxTotal * (1 - CONFIG.critThreshold)) {
+                return 'crit';
+            }
+            // If massUsed >= 50% of maxTotal, hole MUST have shrunk
+            if (massUsed >= maxTotal * CONFIG.shrinkThreshold) {
+                return 'shrink';
+            }
+            return null;
+        }
+
+        // Check if a threshold crossing is POSSIBLE (for reminder glow)
         function shouldShowObservationReminder() {
             const massUsed = state.massUsed;
             const minTotal = state.knownMinStart;
@@ -2108,16 +3061,9 @@
             return shrinkPossible || critPossible;
         }
 
-        function showObservationReminder() {
-            if (!shouldShowObservationReminder()) return;
-
-            const obsSection = document.getElementById('observation-section');
-            if (obsSection) {
-                obsSection.classList.remove('observation-reminder');
-                // Force reflow to restart animation
-                void obsSection.offsetWidth;
-                obsSection.classList.add('observation-reminder');
-            }
+        // Check if jumps are blocked due to required observation
+        function areJumpsBlocked() {
+            return getRequiredObservation() !== null && getPosition() === 'home';
         }
 
         // Highlight the recommended action button
@@ -2148,8 +3094,8 @@
         function recoverFromShrink() {
             clearMctsTree();
             state.massUsed = 0;
-            state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
+            state.knownMinStart = getBaseMass() * (1 - getVariance()) * CONFIG.critThreshold;
+            state.knownMaxStart = getBaseMass() * (1 + getVariance()) * CONFIG.shrinkThreshold;
             state.hasUnknownMass = true;
             state.history = [];  // Reset history (position will be home)
             state.history.push({
@@ -2170,7 +3116,7 @@
             clearMctsTree();
             state.massUsed = 0;
             state.knownMinStart = 0;
-            state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
+            state.knownMaxStart = getBaseMass() * (1 + getVariance()) * CONFIG.critThreshold;
             state.hasUnknownMass = true;
             state.history = [];  // Reset history (position will be home)
             state.history.push({
@@ -2188,6 +3134,84 @@
         }
 
         // State change observed while tracking - combine tracking data with state info
+        function recordNormalObservation() {
+            // Record observation for tree reuse (no state change = fresh)
+            lastObservation = 'fresh';
+
+            // Fresh means remaining is still >50% of original
+            // This can help narrow the max if we've used significant mass
+            const minTotal = state.massUsed / CONFIG.shrinkThreshold;  // massUsed / 0.5 = 2x massUsed
+            if (minTotal > state.knownMinStart) {
+                state.knownMinStart = Math.ceil(minTotal);
+            }
+
+            state.history.push({
+                type: 'state-normal',
+                label: 'No Change',
+                mass: 0,
+                note: `Still fresh (>${Math.round(state.knownMinStart - state.massUsed)} M)`,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            state.awaitingObservation = false;
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        // Helper: get mass of the last jump from history
+        function getLastJumpMass() {
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                if (state.history[i].type.startsWith('jump-')) {
+                    return state.history[i].mass;
+                }
+            }
+            return 0;
+        }
+
+        // Helper: check if hole was fresh before the last jump
+        // (no shrink/crit observation, or most recent observation was "normal")
+        function wasHoleFreshBeforeLastJump() {
+            // Walk backwards through history, skip jumps until we find an observation
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                const event = state.history[i];
+                if (event.type === 'state-normal') {
+                    return true;  // Explicitly confirmed fresh
+                }
+                if (event.type === 'state-shrunk' || event.type === 'state-crit') {
+                    return false;  // Was already shrunk/crit
+                }
+                // Skip jumps and setup events, keep looking
+            }
+            // No state observation found = hole was fresh (default state)
+            return true;
+        }
+
+        // Helper: check if hole has ever shrunk (at any point in history)
+        function hasHoleShrunk() {
+            return state.history.some(e => e.type === 'state-shrunk');
+        }
+
+        // Helper: check if hole has ever crit'd (at any point in history)
+        function hasHoleCrit() {
+            return state.history.some(e => e.type === 'state-crit');
+        }
+
+        // Helper: check if hole was shrunk (not fresh, not crit) before the last jump
+        function wasHoleShrunkBeforeLastJump() {
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                const event = state.history[i];
+                if (event.type === 'state-shrunk') {
+                    return true;  // Was shrunk
+                }
+                if (event.type === 'state-normal' || event.type === 'state-crit') {
+                    return false;  // Was fresh or already crit
+                }
+            }
+            return false;  // No shrunk observation = wasn't shrunk
+        }
+
         function holeJustShrunk() {
             // Record observation for tree reuse
             lastObservation = 'shrink';
@@ -2197,8 +3221,8 @@
             const trackedMax = state.knownMaxStart - state.massUsed;
 
             // Shrink means remaining is 10%-50% of original (with variance)
-            const shrinkMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;  // 180 M
-            const shrinkMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold; // 1100 M
+            const shrinkMin = getBaseMass() * (1 - getVariance()) * CONFIG.critThreshold;  // 180 M
+            const shrinkMax = getBaseMass() * (1 + getVariance()) * CONFIG.shrinkThreshold; // 1100 M
 
             // Intersect the ranges
             let newMin = Math.max(trackedMin, shrinkMin);
@@ -2207,9 +3231,20 @@
 
             // Handle invalid intersection (tracking was wrong)
             if (newMin > newMax) {
-                newMin = shrinkMin;
+                // Even when inconsistent, we can use constraints from recent jumps
+                // If hole was fresh before and we jumped X, remaining > 0.5*minOriginal - X
+                const lastJumpMass = getLastJumpMass();
+                const wasFresh = wasHoleFreshBeforeLastJump();
+
+                if (wasFresh && lastJumpMass > 0) {
+                    const minOriginal = getBaseMass() * (1 - getVariance());
+                    const minFromFreshConstraint = 0.5 * minOriginal - lastJumpMass;
+                    newMin = Math.max(shrinkMin, minFromFreshConstraint);
+                } else {
+                    newMin = shrinkMin;
+                }
                 newMax = shrinkMax;
-                note = `Tracking inconsistent, reset to ${Math.round(shrinkMin)}-${Math.round(shrinkMax)} M`;
+                note = `Tracking inconsistent, reset to ${Math.round(newMin)}-${Math.round(newMax)} M`;
                 clearMctsTree();  // Tree no longer valid
             } else {
                 note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
@@ -2229,6 +3264,7 @@
                 note: note,
                 timestamp: new Date().toLocaleTimeString()
             });
+            state.awaitingObservation = false;
             saveState();
             setTimeout(() => {
                 runStrategyAnalysis();
@@ -2246,7 +3282,7 @@
 
             // Crit means remaining is 0%-10% of original (with variance)
             const critMin = 0;
-            const critMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold; // 220 M
+            const critMax = getBaseMass() * (1 + getVariance()) * CONFIG.critThreshold; // 220 M
 
             // Intersect the ranges
             let newMin = Math.max(trackedMin, critMin);
@@ -2255,9 +3291,20 @@
 
             // Handle invalid intersection (tracking was wrong)
             if (newMin > newMax) {
-                newMin = critMin;
+                // Even when inconsistent, we can use constraints from recent jumps
+                // If hole was shrunk before (>10% remaining) and we jumped X, remaining > 0.1*minOriginal - X
+                const lastJumpMass = getLastJumpMass();
+                const wasShrunkBefore = wasHoleShrunkBeforeLastJump();
+
+                if (wasShrunkBefore && lastJumpMass > 0) {
+                    const minOriginal = getBaseMass() * (1 - getVariance());
+                    const minFromShrunkConstraint = CONFIG.critThreshold * minOriginal - lastJumpMass;
+                    newMin = Math.max(critMin, minFromShrunkConstraint);
+                } else {
+                    newMin = critMin;
+                }
                 newMax = critMax;
-                note = `Tracking inconsistent, reset to ${Math.round(critMin)}-${Math.round(critMax)} M`;
+                note = `Tracking inconsistent, reset to ${Math.round(newMin)}-${Math.round(newMax)} M`;
                 clearMctsTree();  // Tree no longer valid
             } else {
                 note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
@@ -2275,11 +3322,81 @@
                 note: note,
                 timestamp: new Date().toLocaleTimeString()
             });
+            state.awaitingObservation = false;
             saveState();
             setTimeout(() => {
                 runStrategyAnalysis();
                 updateDisplay();
             }, 10);
+        }
+
+        function holeJustClosed() {
+            // Record observation for tree reuse
+            lastObservation = 'collapsed';
+
+            state.history.push({
+                type: 'state-closed',
+                label: 'Hole Closed!',
+                mass: 0,
+                note: 'Wormhole has collapsed - roll complete!',
+                timestamp: new Date().toLocaleTimeString()
+            });
+            state.awaitingObservation = false;
+            saveState();
+            setTimeout(() => {
+                runStrategyAnalysis();
+                updateDisplay();
+            }, 10);
+        }
+
+        // Update observation button states based on awaitingObservation state
+        function updateObservationButtons() {
+            const normalBtn = document.getElementById('btn-normal');
+            const shrunkBtn = document.getElementById('btn-shrunk');
+            const critBtn = document.getElementById('btn-crit');
+            const closedBtn = document.getElementById('btn-closed');
+            if (!normalBtn || !shrunkBtn || !critBtn || !closedBtn) return;
+
+            const required = getRequiredObservation();
+            const alreadyShrunk = hasHoleShrunk();
+            const alreadyCrit = hasHoleCrit();
+
+            // Start with buttons disabled
+            normalBtn.disabled = true;
+            shrunkBtn.disabled = true;
+            critBtn.disabled = true;
+            closedBtn.disabled = true;
+            normalBtn.classList.remove('required');
+            shrunkBtn.classList.remove('required');
+            critBtn.classList.remove('required');
+            closedBtn.classList.remove('required');
+
+            // Only enable if awaiting observation after a jump
+            if (!state.awaitingObservation) {
+                return;
+            }
+
+            // CLOSED is always an option when awaiting observation (hole can always close)
+            closedBtn.disabled = false;
+
+            if (required === 'crit' || alreadyCrit) {
+                // Only crit or closed valid - already crit or must be crit
+                critBtn.disabled = false;
+                critBtn.classList.add('required');
+            } else if (required === 'shrink' || alreadyShrunk) {
+                // Hole has shrunk - only shrunk, crit, or closed valid (not normal)
+                shrunkBtn.disabled = false;
+                critBtn.disabled = false;
+                if (required === 'shrink') {
+                    shrunkBtn.classList.add('required');
+                    critBtn.classList.add('required');
+                }
+            } else {
+                // Fresh hole - all options available
+                normalBtn.disabled = false;
+                shrunkBtn.disabled = false;
+                critBtn.disabled = false;
+            }
         }
 
         // Initialize state selection UI
@@ -2311,8 +3428,8 @@
             clearMctsTree();
 
             // Calculate belief bounds based on visual state
-            const baseMin = CONFIG.baseMass * (1 - CONFIG.variance);  // 1800
-            const baseMax = CONFIG.baseMass * (1 + CONFIG.variance);  // 2200
+            const baseMin = getBaseMass() * (1 - getVariance());  // 1800
+            const baseMax = getBaseMass() * (1 + getVariance());  // 2200
             const shrinkThreshold = CONFIG.shrinkThreshold;  // 0.5
             const critThreshold = CONFIG.critThreshold;      // 0.1
 
@@ -2320,34 +3437,30 @@
 
             if (visualState === 'normal') {
                 // Normal: >50% remaining
-                // If massUsed > 0, we know total > 2 * massUsed (since still >50% remaining)
+                // With minimum mass semantics: if ≥massUsed passed and still fresh, total > 2 * massUsed
                 minStart = Math.max(baseMin, massUsed > 0 ? 2 * massUsed + 1 : baseMin);
                 maxStart = baseMax;
                 label = 'Setup: Normal';
-                note = `Normal state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+                note = `Normal state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
             } else if (visualState === 'reduced') {
                 // Reduced: 10-50% remaining
-                // remaining is 10-50% of total → total is in range [massUsed/0.9, 2*massUsed]
-                // But also constrained by base variance
-                const impliedMin = massUsed > 0 ? massUsed / 0.9 : baseMin * critThreshold;
-                const impliedMax = massUsed > 0 ? 2 * massUsed : baseMax * shrinkThreshold;
-                minStart = Math.max(baseMin * critThreshold, impliedMin);  // At least 180M (crit lower bound)
-                maxStart = Math.min(baseMax, impliedMax);  // At most 2200M
-                // Ensure valid range
-                if (minStart > maxStart) {
-                    minStart = baseMin * critThreshold;
-                    maxStart = baseMax * shrinkThreshold;
-                }
+                // With minimum mass semantics, we can only constrain the lower bound
+                // Lower bound: total > massMin / 0.9 (since remaining > 10% means massUsed < 0.9 * total)
+                const impliedMin = massUsed > 0 ? massUsed / 0.9 : baseMin;
+                minStart = Math.max(baseMin, impliedMin);
+                // Upper bound: just base variance (can't constrain tightly from minimum mass alone)
+                maxStart = baseMax;
                 label = 'Setup: Reduced';
-                note = `Reduced state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+                note = `Reduced state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
             } else {  // critical
                 // Critical: <10% remaining
-                // remaining is <10% of total → total ≤ massUsed / 0.9
-                const impliedMax = massUsed > 0 ? massUsed / 0.9 : baseMax * critThreshold;
-                minStart = 0;
-                maxStart = Math.min(baseMax * critThreshold, impliedMax);  // At most 220M
+                // Lower bound: total > massUsed (hole hasn't collapsed)
+                minStart = massUsed > 0 ? massUsed + 1 : 0;
+                // Upper bound: critical means remaining < 10% of total
+                // With minimum mass semantics, use baseMax * critThreshold as upper bound
+                maxStart = baseMax * critThreshold;
                 label = 'Setup: Critical';
-                note = `Critical state, ${massUsed}M used → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
+                note = `Critical state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
             }
 
             state.massUsed = massUsed;
@@ -2371,6 +3484,96 @@
             }, 10);
         }
 
+        function copyEventLog() {
+            const minRemaining = Math.max(0, state.knownMinStart - state.massUsed);
+            const maxRemaining = Math.max(0, state.knownMaxStart - state.massUsed);
+
+            let markdown = `## Wormhole Roll Log\n\n`;
+            markdown += `**Mass Estimate:** ${Math.round(minRemaining)}-${Math.round(maxRemaining)} M remaining\n\n`;
+
+            if (state.history.length === 0) {
+                markdown += `*No events recorded*\n`;
+            } else {
+                markdown += `### Event Log\n\n`;
+                state.history.forEach((item, i) => {
+                    if (item.type.startsWith('jump-')) {
+                        markdown += `${i + 1}. **${item.label}** (-${item.mass} M)\n`;
+                    } else if (item.type.startsWith('state-')) {
+                        markdown += `${i + 1}. *${item.label}* — ${item.note}\n`;
+                    } else if (item.type.startsWith('setup')) {
+                        markdown += `${i + 1}. Setup: ${item.note}\n`;
+                    }
+                });
+            }
+
+            // Add MCTS analysis if available
+            if (recommendedStrategy && recommendedStrategy.actionResults) {
+                const results = recommendedStrategy.actionResults;
+                if (results.length > 0) {
+                    markdown += `\n### Action Comparison\n\n`;
+                    markdown += `| Action | Safe | Mass | Trips | Success | Score |\n`;
+                    markdown += `|--------|------|------|-------|---------|-------|\n`;
+                    for (const result of results) {
+                        const mass = (result.act.out + result.act.back).toFixed(1);
+                        const successPct = (result.successRate * 100).toFixed(0);
+                        const scoreInt = Math.round(result.strategyScore * 10000);
+                        const safe = result.guaranteedSafe ? '✓' : '';
+                        markdown += `| ${result.act.label} | ${safe} | ${mass} M | ${result.avgSteps.toFixed(1)} | ${successPct}% | ${scoreInt} |\n`;
+                    }
+                }
+
+                const dist = recommendedStrategy.tripDistribution;
+                if (dist && dist.length > 0) {
+                    const topLabel = results.length > 0 ? results[0].act.label : 'Top Strategy';
+                    markdown += `\n### Trip Distribution (${topLabel})\n\n`;
+                    for (const d of dist) {
+                        markdown += `- ${d.trips} trips: ${Math.round(d.pct * 100)}%\n`;
+                    }
+                }
+
+                if (recommendedStrategy.mctsIterations) {
+                    markdown += `\n*${recommendedStrategy.mctsIterations.toLocaleString()} MCTS iterations*\n`;
+                }
+            }
+
+            navigator.clipboard.writeText(markdown).then(() => {
+                // Brief visual feedback
+                const btn = document.querySelector('.observation-buttons-vertical .btn-copy');
+                if (btn) {
+                    const original = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = original, 1500);
+                }
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        function copyFitting(elementId) {
+            const pre = document.getElementById(elementId);
+            if (!pre) return;
+
+            const text = pre.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Find the button in the same container
+                const container = pre.closest('.fitting-text-container');
+                const btn = container ? container.querySelector('.fitting-copy-btn') : null;
+                if (btn) {
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '&#10003;';  // Checkmark
+                    btn.style.color = '#8f8';
+                    setTimeout(() => {
+                        btn.innerHTML = original;
+                        btn.style.color = '';
+                    }, 1500);
+                }
+            }).catch(err => {
+                console.error('Failed to copy fitting:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
         function undoLast() {
             if (state.history.length > 0) {
                 const last = state.history.pop();
@@ -2379,16 +3582,20 @@
                     alert('Setup actions cannot be undone. Use a new setup instead.');
                     state.history.push(last);
                 } else if (last.type.startsWith('state-')) {
-                    // State changes (shrunk/crit) CAN be undone
+                    // State changes (shrunk/crit/normal) CAN be undone
                     // We need to restore the previous belief state
                     // Since state changes reset massUsed to 0, we need to restore from history
                     // For simplicity, just clear and rebuild from remaining history
                     clearMctsTree();
                     rebuildStateFromHistory();
+                    // After undoing an observation, we're back to awaiting observation (unless already crit)
+                    state.awaitingObservation = !hasHoleCrit();
                 } else {
                     // Normal jump - just subtract mass
                     state.massUsed -= last.mass;
                     clearMctsTree();
+                    // After undoing a jump, we're no longer awaiting observation
+                    state.awaitingObservation = false;
                 }
                 saveState();
                 setTimeout(() => {
@@ -2412,26 +3619,26 @@
             if (setupIndex === -1) {
                 // No setup found, reset to fresh
                 state.massUsed = 0;
-                state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
-                state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                state.knownMinStart = getBaseMass() * (1 - getVariance());
+                state.knownMaxStart = getBaseMass() * (1 + getVariance());
                 state.hasUnknownMass = false;
             } else {
                 // Replay from setup
                 const setup = state.history[setupIndex];
                 // Determine initial state from setup type
                 if (setup.type === 'setup-normal') {
-                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
-                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                    state.knownMinStart = getBaseMass() * (1 - getVariance());
+                    state.knownMaxStart = getBaseMass() * (1 + getVariance());
                 } else if (setup.type === 'setup-reduced') {
-                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
-                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
+                    state.knownMinStart = getBaseMass() * (1 - getVariance()) * CONFIG.critThreshold;
+                    state.knownMaxStart = getBaseMass() * (1 + getVariance()) * CONFIG.shrinkThreshold;
                 } else if (setup.type === 'setup-critical') {
                     state.knownMinStart = 0;
-                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
+                    state.knownMaxStart = getBaseMass() * (1 + getVariance()) * CONFIG.critThreshold;
                 } else {
                     // Legacy setup types
-                    state.knownMinStart = CONFIG.baseMass * (1 - CONFIG.variance);
-                    state.knownMaxStart = CONFIG.baseMass * (1 + CONFIG.variance);
+                    state.knownMinStart = getBaseMass() * (1 - getVariance());
+                    state.knownMaxStart = getBaseMass() * (1 + getVariance());
                 }
                 state.massUsed = setup.mass || 0;
                 state.hasUnknownMass = setup.mass === 0;
@@ -2446,8 +3653,8 @@
                     // Apply shrink narrowing
                     const trackedMin = state.knownMinStart - state.massUsed;
                     const trackedMax = state.knownMaxStart - state.massUsed;
-                    const shrinkMin = CONFIG.baseMass * (1 - CONFIG.variance) * CONFIG.critThreshold;
-                    const shrinkMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.shrinkThreshold;
+                    const shrinkMin = getBaseMass() * (1 - getVariance()) * CONFIG.critThreshold;
+                    const shrinkMax = getBaseMass() * (1 + getVariance()) * CONFIG.shrinkThreshold;
                     state.knownMinStart = Math.max(trackedMin, shrinkMin);
                     state.knownMaxStart = Math.min(trackedMax, shrinkMax);
                     state.massUsed = 0;
@@ -2457,7 +3664,7 @@
                     const trackedMin = state.knownMinStart - state.massUsed;
                     const trackedMax = state.knownMaxStart - state.massUsed;
                     const critMin = 0;
-                    const critMax = CONFIG.baseMass * (1 + CONFIG.variance) * CONFIG.critThreshold;
+                    const critMax = getBaseMass() * (1 + getVariance()) * CONFIG.critThreshold;
                     state.knownMinStart = Math.max(trackedMin, critMin);
                     state.knownMaxStart = Math.min(trackedMax, critMax);
                     state.massUsed = 0;
@@ -2473,8 +3680,9 @@
                     massUsed: 0,
                     history: [],
                     hasUnknownMass: false,
-                    knownMinStart: CONFIG.baseMass * (1 - CONFIG.variance),
-                    knownMaxStart: CONFIG.baseMass * (1 + CONFIG.variance)
+                    knownMinStart: getBaseMass() * (1 - getVariance()),
+                    knownMaxStart: getBaseMass() * (1 + getVariance()),
+                    awaitingObservation: false
                 };
                 saveState();
                 setTimeout(() => {
@@ -2486,6 +3694,10 @@
 
         // Update jump button labels based on position
         function updateJumpButtons(position, shipUsedOut) {
+            const requiredObs = getRequiredObservation();
+            // Block jumps if awaiting observation OR if observation is required
+            const jumpsBlocked = state.awaitingObservation || (requiredObs !== null && position === 'home');
+
             const buttons = document.querySelectorAll('.jump-btn');
             buttons.forEach(btn => {
                 const jumpType = btn.dataset.jump;
@@ -2501,8 +3713,8 @@
                     btn.innerHTML = `← ${jump.label}<br><span style="font-size: 0.8em; opacity: 0.8;">${jump.mass} M</span>`;
                 }
 
-                // Update styling based on position and ship constraint
-                if (isWrongShip) {
+                // Update styling based on position, ship constraint, and observation requirement
+                if (isWrongShip || jumpsBlocked) {
                     btn.disabled = true;
                     btn.style.opacity = '0.3';
                     btn.style.cursor = 'not-allowed';
@@ -2516,7 +3728,16 @@
             // Update direction label
             const dirLabel = document.getElementById('direction-label');
             if (dirLabel) {
-                if (position === 'away') {
+                if (state.awaitingObservation) {
+                    if (requiredObs === 'crit') {
+                        dirLabel.innerHTML = `<span style="color: #f88;">⚠ Record observation (must be CRIT)</span>`;
+                    } else if (requiredObs === 'shrink') {
+                        dirLabel.innerHTML = `<span style="color: #fc8;">⚠ Record observation (SHRUNK or CRIT)</span>`;
+                    } else {
+                        dirLabel.innerHTML = `<span style="color: #8af;">← Record observation</span>`;
+                    }
+                    dirLabel.style.color = '#8af';
+                } else if (position === 'away') {
                     dirLabel.textContent = `← Jumping BACK (${shipUsedOut})`;
                     dirLabel.style.color = '#faa';
                 } else {
@@ -2545,13 +3766,13 @@
 
             // Update mass bar
             const massBar = document.getElementById('mass-bar');
-            const avgPercent = (avgRemaining / CONFIG.baseMass) * 100;
+            const avgPercent = (avgRemaining / getBaseMass()) * 100;
             massBar.style.width = avgPercent + '%';
 
             // Update variance overlay
             const overlay = document.getElementById('variance-overlay');
-            const minPercent = (minRemaining / (CONFIG.baseMass * 1.1)) * 100;
-            const maxPercent = (maxRemaining / (CONFIG.baseMass * 1.1)) * 100;
+            const minPercent = (minRemaining / (getBaseMass() * 1.1)) * 100;
+            const maxPercent = (maxRemaining / (getBaseMass() * 1.1)) * 100;
             overlay.style.left = minPercent + '%';
             overlay.style.width = (maxPercent - minPercent) + '%';
 
@@ -2561,10 +3782,10 @@
 
             // Determine status based on average
             let status, statusClass;
-            if (avgRemaining <= CONFIG.baseMass * CONFIG.critThreshold) {
+            if (avgRemaining <= getCritThreshold()) {
                 status = 'CRITICAL';
                 statusClass = 'crit';
-            } else if (avgRemaining <= CONFIG.baseMass * CONFIG.shrinkThreshold) {
+            } else if (avgRemaining <= getShrinkThreshold()) {
                 status = 'SHRUNK';
                 statusClass = 'shrink';
             } else {
@@ -2602,6 +3823,7 @@
             document.getElementById('range-max').textContent = Math.round(maxRemaining);
 
             updateHistory();
+            updateObservationButtons();
         }
 
         function updateHistory() {
@@ -2628,11 +3850,20 @@
         }
 
         function saveState() {
-            localStorage.setItem('eedvr-wh-calc-v2', JSON.stringify(state));
+            localStorage.setItem('wh-calc-state', JSON.stringify(state));
         }
 
         function loadState() {
-            const saved = localStorage.getItem('eedvr-wh-calc-v2');
+            // Try new key first, then migrate from old key
+            let saved = localStorage.getItem('wh-calc-state');
+            if (!saved) {
+                const oldSaved = localStorage.getItem('eedvr-wh-calc-v2');
+                if (oldSaved) {
+                    saved = oldSaved;
+                    localStorage.setItem('wh-calc-state', oldSaved);
+                    localStorage.removeItem('eedvr-wh-calc-v2');
+                }
+            }
             if (saved) {
                 try {
                     const loaded = JSON.parse(saved);

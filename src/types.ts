@@ -20,7 +20,7 @@ export interface ActionResult {
   successes: number;
   total: number;
   successRate: number;
-  rolloutRate: number;
+  strategyScore: number;
   avgSteps: number;
   mass: number;
   guaranteedSafe: boolean;

@@ -1702,9 +1702,13 @@ Sisters Core Scanner Probe x8</pre>
             const jumps = {};
             for (const ship of activeShips) {
                 const prefix = ship.id.toUpperCase();
-                jumps[`${prefix}_HOT`] = { mass: ship.hot, label: `${ship.name} Hot`, ship: ship.id.toUpperCase() };
-                jumps[`${prefix}_COLD`] = { mass: ship.cold, label: `${ship.name} Cold`, ship: ship.id.toUpperCase() };
-                if (ship.ent !== null) {
+                if (ship.hot) {
+                    jumps[`${prefix}_HOT`] = { mass: ship.hot, label: `${ship.name} Hot`, ship: ship.id.toUpperCase() };
+                }
+                if (ship.cold) {
+                    jumps[`${prefix}_COLD`] = { mass: ship.cold, label: `${ship.name} Cold`, ship: ship.id.toUpperCase() };
+                }
+                if (ship.ent) {
                     jumps[`${prefix}_ENT`] = { mass: ship.ent, label: `${ship.name} Ent`, ship: ship.id.toUpperCase() };
                 }
             }
@@ -1718,13 +1722,21 @@ Sisters Core Scanner Probe x8</pre>
                 const prefix = ship.id.toUpperCase();
                 const isHic = ship.ent !== null; // Has entangler = HIC-like behavior
 
-                actions[`${prefix}_HOT`] = { out: ship.hot, back: ship.hot, label: `${ship.name} H/H`, isHic };
-                actions[`${prefix}_COLD`] = { out: ship.cold, back: ship.cold, label: `${ship.name} C/C`, isHic };
-                actions[`${prefix}_COLD_HOT`] = { out: ship.cold, back: ship.hot, label: `${ship.name} C/H`, isHic };
+                if (ship.hot) {
+                    actions[`${prefix}_HOT`] = { out: ship.hot, back: ship.hot, label: `${ship.name} H/H`, isHic };
+                }
+                if (ship.cold) {
+                    actions[`${prefix}_COLD`] = { out: ship.cold, back: ship.cold, label: `${ship.name} C/C`, isHic };
+                }
+                if (ship.cold && ship.hot) {
+                    actions[`${prefix}_COLD_HOT`] = { out: ship.cold, back: ship.hot, label: `${ship.name} C/H`, isHic };
+                }
 
-                if (ship.ent !== null) {
+                if (ship.ent) {
                     actions[`${prefix}_ENT`] = { out: ship.ent, back: ship.ent, label: `${ship.name} E/E`, isHic };
-                    actions[`${prefix}_ENT_HOT`] = { out: ship.ent, back: ship.hot, label: `${ship.name} E/H`, isHic };
+                    if (ship.hot) {
+                        actions[`${prefix}_ENT_HOT`] = { out: ship.ent, back: ship.hot, label: `${ship.name} E/H`, isHic };
+                    }
                 }
             }
             return actions;
@@ -1881,14 +1893,14 @@ Sisters Core Scanner Probe x8</pre>
                         <span style="color: #888; font-size: 0.85em;">Cold:</span>
                         <input type="number" value="${ship.cold}" step="0.1" data-idx="${idx}" data-field="cold"
                                onchange="updateShipField(${idx}, 'cold', parseFloat(this.value))"
-                               style="width: 70px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
+                               style="width: 90px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
                                       background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
                         <span style="color: #888; font-size: 0.85em;">Hot:</span>
                         <input type="number" value="${ship.hot}" step="0.1" data-idx="${idx}" data-field="hot"
                                onchange="updateShipField(${idx}, 'hot', parseFloat(this.value))"
-                               style="width: 70px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
+                               style="width: 90px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
                                       background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
@@ -1896,7 +1908,7 @@ Sisters Core Scanner Probe x8</pre>
                         <input type="number" value="${ship.ent !== null ? ship.ent : ''}" step="0.01" placeholder="-"
                                data-idx="${idx}" data-field="ent"
                                onchange="updateShipField(${idx}, 'ent', this.value ? parseFloat(this.value) : null)"
-                               style="width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
+                               style="width: 80px; padding: 8px; border-radius: 4px; border: 1px solid #4a6a8a;
                                       background: rgba(20, 30, 50, 0.9); color: #adf; font-family: 'Courier New', monospace;">
                     </div>
                     <button onclick="removeShip(${idx})" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #8a4a4a;

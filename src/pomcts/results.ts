@@ -87,11 +87,12 @@ export function getMCTSActionResults(root: POMCTSNode): ActionResult[] {
     });
   }
 
-  // Sort by strategy score (higher = better), then visits as tiebreaker
+  // Sort by strategy score (higher = better), then fewer trips as tiebreaker
+  // (fewer trips = what higher decay would favor)
   results.sort((a, b) => {
     const scoreDiff = b.strategyScore - a.strategyScore;
     if (scoreDiff !== 0) return scoreDiff;
-    return b.visits - a.visits;
+    return a.avgSteps - b.avgSteps;  // lower trips = better
   });
 
   return results;

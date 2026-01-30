@@ -66,6 +66,7 @@ wormhole-calculator/
 │   ├── types.ts        # TypeScript type definitions
 │   ├── actions.ts      # Ship action definitions
 │   └── pomcts/         # POMCTS algorithm
+│       ├── index.ts    # Module exports
 │       ├── node.ts     # POMCTSNode class
 │       ├── algorithm.ts# Main MCTS algorithm
 │       ├── observation.ts # Belief update logic

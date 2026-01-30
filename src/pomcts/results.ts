@@ -90,7 +90,7 @@ export function getMCTSActionResults(root: POMCTSNode): ActionResult[] {
   // Sort by strategy score (higher = better), then visits as tiebreaker
   results.sort((a, b) => {
     const scoreDiff = b.strategyScore - a.strategyScore;
-    if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+    if (scoreDiff !== 0) return scoreDiff;
     return b.visits - a.visits;
   });
 

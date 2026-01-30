@@ -3062,17 +3062,20 @@ Sisters Core Scanner Probe x8</pre>
         }
 
         // Check if observation is REQUIRED (mass bounds make it impossible NOT to have crossed threshold)
+        // Returns null if the required observation has already been recorded
         function getRequiredObservation() {
             const massUsed = state.massUsed;
             const maxTotal = state.knownMaxStart;
 
             // If massUsed >= 90% of maxTotal, hole MUST be crit
             if (massUsed >= maxTotal * (1 - CONFIG.critThreshold)) {
-                return 'crit';
+                // Return null if crit already observed
+                return hasHoleCrit() ? null : 'crit';
             }
             // If massUsed >= 50% of maxTotal, hole MUST have shrunk
             if (massUsed >= maxTotal * CONFIG.shrinkThreshold) {
-                return 'shrink';
+                // Return null if shrunk already observed
+                return hasHoleShrunk() ? null : 'shrink';
             }
             return null;
         }

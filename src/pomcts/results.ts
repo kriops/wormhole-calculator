@@ -36,7 +36,23 @@ export function getMCTSActionResults(root: POMCTSNode): ActionResult[] {
 
     if (!action) continue;
 
-    const avgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
+    const observedAvgSteps = totalSuccesses > 0 ? totalTrips / totalSuccesses : 0;
+
+    // Estimate avgSteps based on belief distribution
+    // MCTS exploration biases toward collapsed scenarios; correct by estimating
+    // the probability of 1-trip completion vs needing more trips
+    const actionMass = action.out + action.back;
+    let avgSteps = observedAvgSteps;
+    if (remainingBelief.max > action.out) {
+      const validRange = remainingBelief.max - action.out;
+      const oneTrip = Math.min(validRange, Math.max(0, actionMass - action.out));
+      const pOneTrip = oneTrip / validRange;
+      // Correct for MCTS bias when 1-trip isn't guaranteed
+      if (pOneTrip < 0.95 && observedAvgSteps < 1.5) {
+        // Estimate: 1 trip with prob pOneTrip, ~2 trips otherwise
+        avgSteps = pOneTrip * 1 + (1 - pOneTrip) * 2;
+      }
+    }
 
     // Calculate probability of safe outbound jump
     // MCTS only explores actions when trueMass > act.out, so observed rate

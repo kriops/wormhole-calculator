@@ -1437,9 +1437,9 @@
                     <div class="setup-group">
                         <div class="setup-label">Analysis Iterations</div>
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <input type="range" id="iteration-slider" min="10000" max="1000000" step="10000" value="100000"
+                            <input type="range" id="iteration-slider" min="3" max="7" step="1" value="6"
                                    style="flex: 1; max-width: 200px; accent-color: #6af;">
-                            <span id="iteration-value" style="font-size: 0.9em; color: #8af; min-width: 50px;">100k</span>
+                            <span id="iteration-value" style="font-size: 0.9em; color: #8af; min-width: 50px;">1M</span>
                         </div>
                     </div>
 
@@ -2081,30 +2081,54 @@ Sisters Core Scanner Probe x8</pre>
             const valueDisplay = document.getElementById('iteration-value');
             if (!slider || !valueDisplay) return;
 
-            // Load saved value from localStorage (with migration from old key)
-            let savedIterations = localStorage.getItem('wh-calc-iterations');
-            if (!savedIterations) {
-                const oldIterations = localStorage.getItem('eedvr-wh-calc-iterations');
+            // Format iterations for display (1k, 10k, 100k, 1M, 10M)
+            function formatIterations(iterations) {
+                if (iterations >= 1000000) return (iterations / 1000000) + 'M';
+                return (iterations / 1000) + 'k';
+            }
+
+            // Convert exponent (3-7) to iterations (10^x)
+            function expToIterations(exp) {
+                return Math.pow(10, exp);
+            }
+
+            // Convert iterations to nearest exponent
+            function iterationsToExp(iterations) {
+                return Math.round(Math.log10(iterations));
+            }
+
+            // Load saved value from localStorage (with migration from old format)
+            let savedExp = localStorage.getItem('wh-calc-iterations-exp');
+            if (!savedExp) {
+                // Migrate from old linear format
+                const oldIterations = localStorage.getItem('wh-calc-iterations') ||
+                                     localStorage.getItem('eedvr-wh-calc-iterations');
                 if (oldIterations) {
-                    savedIterations = oldIterations;
-                    localStorage.setItem('wh-calc-iterations', oldIterations);
+                    const value = parseInt(oldIterations);
+                    savedExp = Math.max(3, Math.min(7, iterationsToExp(value)));
+                    localStorage.setItem('wh-calc-iterations-exp', savedExp);
+                    localStorage.removeItem('wh-calc-iterations');
                     localStorage.removeItem('eedvr-wh-calc-iterations');
                 }
             }
-            if (savedIterations) {
-                const value = parseInt(savedIterations);
-                if (value >= 10000 && value <= 1000000) {
-                    slider.value = value;
-                    CONFIG.simulations = value;
-                    valueDisplay.textContent = value >= 1000000 ? '1M' : Math.round(value / 1000) + 'k';
+            if (savedExp) {
+                const exp = parseInt(savedExp);
+                if (exp >= 3 && exp <= 7) {
+                    slider.value = exp;
+                    CONFIG.simulations = expToIterations(exp);
+                    valueDisplay.textContent = formatIterations(CONFIG.simulations);
                 }
+            } else {
+                // Default: 10^6 = 1M
+                CONFIG.simulations = expToIterations(parseInt(slider.value));
             }
 
             slider.addEventListener('input', () => {
-                const value = parseInt(slider.value);
-                CONFIG.simulations = value;
-                valueDisplay.textContent = value >= 1000000 ? '1M' : Math.round(value / 1000) + 'k';
-                localStorage.setItem('wh-calc-iterations', value);
+                const exp = parseInt(slider.value);
+                const iterations = expToIterations(exp);
+                CONFIG.simulations = iterations;
+                valueDisplay.textContent = formatIterations(iterations);
+                localStorage.setItem('wh-calc-iterations-exp', exp);
                 updateSettingsSummary();
             });
 

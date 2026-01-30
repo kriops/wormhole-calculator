@@ -1730,6 +1730,7 @@ Sisters Core Scanner Probe x8</pre>
                 }
                 if (ship.cold && ship.hot) {
                     actions[`${prefix}_COLD_HOT`] = { out: ship.cold, back: ship.hot, label: `${ship.name} C/H`, isHic };
+                    actions[`${prefix}_HOT_COLD`] = { out: ship.hot, back: ship.cold, label: `${ship.name} H/C`, isHic };
                 }
 
                 if (ship.ent) {

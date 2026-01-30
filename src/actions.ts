@@ -21,6 +21,7 @@ export const SINGLE_JUMPS: Record<string, SingleJump> = {
 // Round trip combinations (for convenience display, built from single jumps)
 export const ACTIONS: Record<string, Action> = {
   'BS_HOT': { out: CONFIG.bsHot, back: CONFIG.bsHot, label: 'BS H/H', isHic: false },
+  'BS_HOT_COLD': { out: CONFIG.bsHot, back: CONFIG.bsCold, label: 'BS H/C', isHic: false },
   'BS_COLD': { out: CONFIG.bsCold, back: CONFIG.bsCold, label: 'BS C/C', isHic: false },
   'BS_COLD_HOT': { out: CONFIG.bsCold, back: CONFIG.bsHot, label: 'BS C/H', isHic: false },
   'HIC_HOT': { out: CONFIG.hicHot, back: CONFIG.hicHot, label: 'HIC H/H', isHic: true },

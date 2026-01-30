@@ -21,14 +21,6 @@ EVE Online wormhole rolling calculator with POMCTS-based strategy recommendation
 | Battleship | 294.2M | 194.2M | - |
 | HIC | 132.4M | 32.4M | 0.83M |
 
-## Wormhole Mechanics (C247)
-
-| Parameter | Value |
-|-----------|-------|
-| Total mass | 2000M ±10% (1800-2200M) |
-| Shrink threshold | 50% remaining |
-| Crit threshold | 10% remaining |
-
 ## Action Pairs
 
 The calculator evaluates all round-trip combinations:

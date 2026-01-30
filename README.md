@@ -46,13 +46,6 @@ The calculator evaluates all round-trip combinations:
 5. Record observations (Normal/Shrunk/Crit/Closed)
 6. Follow the recommended actions based on strategy score
 
-## Strategy Score
-
-Actions are ranked by strategy score, which combines:
-- **Success rate**: Probability of completing without rollout
-- **Trip decay**: Exponential penalty for more trips (default 0.95^trips)
-- **Tiebreaker**: Fewer expected trips preferred
-
 ## Development
 
 ```bash

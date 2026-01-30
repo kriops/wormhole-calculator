@@ -131,6 +131,58 @@ describe('Belief Update Functions', () => {
   });
 });
 
+describe('avgSteps Bias Correction', () => {
+  it('should estimate realistic trips for HIC H/H when 1-trip probability is partial', () => {
+    // Scenario inspired by real game: after multiple jumps, remaining is 200-600M
+    // HIC H/H = 132.4M out, 132.4M back = 264.8M total
+    // 1-trip range: 200 to 264.8 (64.8M)
+    // Full valid range: 200 to 600 (400M)
+    // P(1 trip) = 64.8 / 400 = 16.2%
+    // Expected trips ≈ 1.84 (definitely not 1.0)
+    const root = runPOMCTS(200, 600, 0, 100000);
+    const results = getMCTSActionResults(root);
+
+    const hicHotHot = results.find(r => r.key === 'HIC_HOT');
+    expect(hicHotHot).toBeDefined();
+    // avgSteps should be around 1.5-2.5, definitely NOT biased to 1.0
+    expect(hicHotHot!.avgSteps).toBeGreaterThan(1.3);
+    expect(hicHotHot!.avgSteps).toBeLessThan(3.0);
+  });
+
+  it('should estimate ~1.7 trips for HIC in narrow remaining range (real game scenario)', () => {
+    // User's real scenario: after BS Hot out + back with shrink observations
+    // Final state: massUsed=588.4, total belief 713-1115, remaining 125-527M
+    // For HIC H/H (132.4M out, 132.4M back):
+    // - Valid range: 132.4 to 527 (need remaining > 132.4M for safe outbound)
+    // - 1-trip range: 132.4 to 264.8 = 132.4M
+    // - Total valid range: 132.4 to 527 = 394.6M
+    // - P(1 trip) ≈ 33.5%
+    // - Expected trips ≈ 1.67
+
+    const root = runPOMCTS(713, 1115, 588, 100000);
+    const results = getMCTSActionResults(root);
+
+    const hicHotHot = results.find(r => r.key === 'HIC_HOT');
+    expect(hicHotHot).toBeDefined();
+    // avgSteps should be around 1.5-2.0, not biased to 1.0
+    expect(hicHotHot!.avgSteps).toBeGreaterThan(1.3);
+    expect(hicHotHot!.avgSteps).toBeLessThan(2.5);
+  });
+
+  it('should show high avgSteps when 1-trip probability is very low', () => {
+    // Remaining 300-1000M
+    // HIC H/H 1-trip range: 300 to 264.8 = 0 (already past 1-trip threshold)
+    // All scenarios need 2+ trips
+    const root = runPOMCTS(300, 1000, 0, 100000);
+    const results = getMCTSActionResults(root);
+
+    const hicHotHot = results.find(r => r.key === 'HIC_HOT');
+    expect(hicHotHot).toBeDefined();
+    // With no 1-trip scenarios, avgSteps should be 2+
+    expect(hicHotHot!.avgSteps).toBeGreaterThanOrEqual(2.0);
+  });
+});
+
 describe('Edge Cases', () => {
   it('should handle nearly empty hole', () => {
     // Very little mass remaining

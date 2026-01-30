@@ -3475,12 +3475,14 @@ Sisters Core Scanner Probe x8</pre>
                 note = `Fresh hole${massUsed > 0 ? ', ≥' + massUsed + 'M passed' : ''} → ${Math.round(minStart)}-${Math.round(maxStart)}M total`;
             } else if (visualState === 'normal') {
                 // Normal: Looks >50% but may have untracked passes
-                // Could be just above 50% of minimum total (900M for C247)
-                const normalMin = baseMin * shrinkThreshold;  // 900M (50% of min total)
-                minStart = normalMin;
-                maxStart = baseMax;  // 2200M
+                // Use full TOTAL mass range; observation constraints won't be applied
+                // strictly since untracked passes mean massUsed is underestimated
+                minStart = baseMin;   // 1800M total
+                maxStart = baseMax;   // 2200M total
                 label = 'Setup: Normal';
-                note = `Normal state (may have passes) → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
+                const minRemaining = Math.max(0, minStart - massUsed);
+                const maxRemaining = maxStart - massUsed;
+                note = `Normal state (may have passes) → ${Math.round(minRemaining)}-${Math.round(maxRemaining)}M remaining`;
             } else if (visualState === 'reduced') {
                 // Reduced: 10-50% remaining
                 // We need TOTAL mass bounds, not remaining bounds

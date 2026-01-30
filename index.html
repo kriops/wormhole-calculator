@@ -2972,7 +2972,7 @@ Sisters Core Scanner Probe x8</pre>
                         const result = actionResults[i];
                         const act = result.act;
                         const mass = (act.out + act.back).toFixed(1);
-                        const successPct = (result.successRate * 100).toFixed(0);
+                        const successPct = (result.successRate * 100).toFixed(2);
                         const scoreInt = Math.round(result.strategyScore * 10000);
                         const scoreColor = result.strategyScore >= 0.90 ? '#8f8' :
                                           (result.strategyScore >= 0.70 ? '#fc8' : '#f88');
@@ -3606,7 +3606,7 @@ Sisters Core Scanner Probe x8</pre>
                     markdown += `|--------|------|------|-------|---------|-------|\n`;
                     for (const result of results) {
                         const mass = (result.act.out + result.act.back).toFixed(1);
-                        const successPct = (result.successRate * 100).toFixed(0);
+                        const successPct = (result.successRate * 100).toFixed(2);
                         const scoreInt = Math.round(result.strategyScore * 10000);
                         const safe = result.guaranteedSafe ? '✓' : '';
                         markdown += `| ${result.act.label} | ${safe} | ${mass} M | ${result.avgSteps.toFixed(1)} | ${successPct}% | ${scoreInt} |\n`;

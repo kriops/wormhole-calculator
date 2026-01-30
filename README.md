@@ -4,39 +4,62 @@ EVE Online wormhole rolling calculator with POMCTS-based strategy recommendation
 
 ## Features
 
-- Track wormhole mass usage across jumps
-- POMCTS (Partially Observable Monte Carlo Tree Search) algorithm for optimal action recommendations
-- Belief state updates from shrink/crit observations
-- Trip distribution predictions
-- Support for different ship configurations (BS, HIC)
+- **POMCTS Algorithm**: Partially Observable Monte Carlo Tree Search for optimal action recommendations
+- **Belief State Tracking**: Maintains min/max bounds on remaining wormhole mass
+- **Visual State Setup**: Start from Fresh, Normal, Reduced, or Critical states
+- **Observation Updates**: Shrink/crit observations narrow belief bounds
+- **Action Comparison**: All actions ranked by strategy score with success rates
+- **Safe Action Indicators**: Shows which actions have zero rollout risk
+- **Trip Distribution**: Probability distribution of expected trips
+- **Configurable Iterations**: 1k to 10M MCTS iterations (logarithmic slider)
+- **Customizable Ships**: Configure ship masses for different fits
+
+## Default Ship Configuration (Apocalypse + Devoter with Higgs)
+
+| Ship | Hot (MWD) | Cold | Entangled |
+|------|-----------|------|-----------|
+| Battleship | 294.2M | 194.2M | - |
+| HIC | 132.4M | 32.4M | 0.83M |
 
 ## Wormhole Mechanics (C247)
 
 | Parameter | Value |
 |-----------|-------|
-| Total mass | 2000M +/-10% (1800-2200M) |
+| Total mass | 2000M ±10% (1800-2200M) |
 | Shrink threshold | 50% remaining |
 | Crit threshold | 10% remaining |
-| BS Hot | 300M |
-| BS Cold | 200M |
-| HIC Hot | 134M |
-| HIC Cold | 30M |
-| HIC Ent | 1.5M |
 
-## Strategy Overview
+## Action Pairs
 
-### Fresh Hole
-- Recommended: 4x BS Cold->Hot (200M out + 300M back = 500M/trip)
-- Total: ~2000M over 4 trips
-- Success rate: >95%
+The calculator evaluates all round-trip combinations:
 
-### After Shrink (50%)
-- Continue with BS if safe
-- Consider HIC for precision near crit
+| Action | Out | Back | Total Mass |
+|--------|-----|------|------------|
+| BS H/H | Hot | Hot | 588.4M |
+| BS H/C | Hot | Cold | 488.4M |
+| BS C/H | Cold | Hot | 488.4M |
+| BS C/C | Cold | Cold | 388.4M |
+| HIC H/H | Hot | Hot | 264.8M |
+| HIC C/H | Cold | Hot | 164.8M |
+| HIC C/C | Cold | Cold | 64.8M |
+| HIC E/H | Ent | Hot | 133.2M |
+| HIC E/E | Ent | Ent | 1.66M |
 
-### Critical (<10%)
-- Use HIC for controlled final passes
-- HIC Ent allows extremely precise mass control
+## Usage
+
+1. Select initial wormhole state (Fresh/Normal/Reduced/Critical)
+2. Optionally enter known mass passed
+3. Click "Start Rolling Session"
+4. Record each jump using the ship buttons
+5. Record observations (Normal/Shrunk/Crit/Closed)
+6. Follow the recommended actions based on strategy score
+
+## Strategy Score
+
+Actions are ranked by strategy score, which combines:
+- **Success rate**: Probability of completing without rollout
+- **Trip decay**: Exponential penalty for more trips (default 0.95^trips)
+- **Tiebreaker**: Fewer expected trips preferred
 
 ## Development
 
@@ -53,33 +76,28 @@ npm run build    # Production build
 ```
 wormhole-calculator/
 ├── index.html          # Main application (standalone)
-├── package.json        # npm configuration
-├── tsconfig.json       # TypeScript configuration
-├── vite.config.ts      # Vite build configuration
 ├── src/
 │   ├── config.ts       # Configuration constants
 │   ├── types.ts        # TypeScript type definitions
 │   ├── actions.ts      # Ship action definitions
 │   └── pomcts/         # POMCTS algorithm
-│       ├── index.ts    # Module exports
 │       ├── node.ts     # POMCTSNode class
 │       ├── algorithm.ts# Main MCTS algorithm
 │       ├── observation.ts # Belief update logic
 │       └── results.ts  # Result extraction
 └── tests/
-    └── pomcts.test.ts  # POMCTS algorithm tests
+    └── pomcts.test.ts  # Algorithm tests (21 tests)
 ```
 
-## Algorithm
+## Algorithm Details
 
-The calculator uses POMCTS (Partially Observable MCTS) which branches on (action, observation) pairs rather than just actions. This properly handles the Bayesian belief updates when observing wormhole state changes.
+The calculator uses POMCTS (Partially Observable MCTS) which branches on (action, observation) pairs to properly handle Bayesian belief updates.
 
-Key features:
-- **Belief tracking**: Maintains min/max bounds on total wormhole mass
-- **Observation branching**: Tree branches handle fresh/shrink/crit observations
-- **UCB1 selection**: Balances exploration and exploitation
-- **Action filtering**: Excludes inefficient actions (e.g., HIC E/E on fresh holes)
-- **Success rate sorting**: Recommends actions by success rate, not just visit count
+- **Belief tracking**: Total mass bounds updated by observations
+- **Observation branching**: Separate tree branches for fresh/shrink/crit
+- **UCB1 selection**: Balances exploration vs exploitation
+- **Safe action detection**: Flags actions with zero rollout risk
+- **avgSteps correction**: Compensates for MCTS exploration bias
 
 ## License
 

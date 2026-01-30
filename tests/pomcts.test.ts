@@ -131,6 +131,58 @@ describe('Belief Update Functions', () => {
   });
 });
 
+describe('Normal State with Shrink Observations', () => {
+  it('should handle multiple shrinks without over-constraining total bounds', () => {
+    // Simulate user scenario: Normal state -> multiple shrinks
+    // This tests that observation constraints don't incorrectly cap total
+
+    // Normal state: total 1800-2200M, massUsed=0
+    let belief = { min: 1800, max: 2200 };
+    let massUsed = 0;
+
+    // Step 1: BS Hot out (294.2M) -> Shrink
+    massUsed += 294.2;
+    // Shrink constraint: total > massUsed/0.9, total <= 2*massUsed
+    // This would give: 327 < total <= 588.4, which conflicts with 1800-2200
+    // In the UI, this triggers fallback to visual bounds
+    // For this test, we simulate the fallback: remaining 180-1100M
+    const visualMin = 1800 * 0.1;  // 180M remaining
+    const visualMax = 2200 * 0.5;  // 1100M remaining
+    belief = { min: massUsed + visualMin, max: massUsed + visualMax };
+    // belief = 474.2 - 1394.2M total
+
+    // Step 2: BS Hot back (294.2M) -> Shrink
+    massUsed += 294.2;
+    belief = updateTotalBelief(belief, massUsed, 'shrink');
+    // After this, belief should still be reasonable
+    expect(belief.max).toBeGreaterThan(massUsed);  // Hole not collapsed
+    expect(belief.max - massUsed).toBeGreaterThan(100);  // Reasonable remaining
+
+    // Step 3: HIC Hot out (132.4M) -> Shrink
+    massUsed += 132.4;
+    belief = updateTotalBelief(belief, massUsed, 'shrink');
+    expect(belief.max).toBeGreaterThan(massUsed);
+
+    // Step 4: HIC Hot back (132.4M) -> Shrink
+    massUsed += 132.4;
+    belief = updateTotalBelief(belief, massUsed, 'shrink');
+    expect(belief.max).toBeGreaterThan(massUsed);
+
+    // Step 5: HIC Hot out (132.4M) - awaiting observation
+    massUsed += 132.4;
+    const remaining = { min: belief.min - massUsed, max: belief.max - massUsed };
+
+    // Verify remaining is positive (hole not collapsed)
+    expect(remaining.max).toBeGreaterThan(0);
+
+    // Verify massUsed is NOT >= 90% of max total (crit not required)
+    const critThreshold = 0.9 * belief.max;
+    expect(massUsed).toBeLessThan(critThreshold);
+
+    // This means shrink observation should be allowed, not just crit
+  });
+});
+
 describe('avgSteps Bias Correction', () => {
   it('should estimate realistic trips for HIC H/H when 1-trip probability is partial', () => {
     // Scenario inspired by real game: after multiple jumps, remaining is 200-600M

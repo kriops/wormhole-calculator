@@ -3236,51 +3236,48 @@ Sisters Core Scanner Probe x8</pre>
             // Record observation for tree reuse
             lastObservation = 'shrink';
 
-            // Calculate current tracked range
-            const trackedMin = state.knownMinStart - state.massUsed;
-            const trackedMax = state.knownMaxStart - state.massUsed;
+            // Shrink observation constrains TOTAL mass bounds:
+            // - 10% < remaining/total ≤ 50%
+            // - total > massUsed/0.9 AND total ≤ 2*massUsed
+            const baseMin = getBaseMass() * (1 - getVariance());
+            const baseMax = getBaseMass() * (1 + getVariance());
 
-            // Shrink means remaining is 10%-50% of original (with variance)
-            const shrinkMin = getBaseMass() * (1 - getVariance()) * CONFIG.critThreshold;  // 180 M
-            const shrinkMax = getBaseMass() * (1 + getVariance()) * CONFIG.shrinkThreshold; // 1100 M
-
-            // Intersect the ranges
-            let newMin = Math.max(trackedMin, shrinkMin);
-            let newMax = Math.min(trackedMax, shrinkMax);
+            let newMin = state.knownMinStart;
+            let newMax = state.knownMaxStart;
             let note;
 
-            // Handle invalid intersection (tracking was wrong)
-            if (newMin > newMax) {
-                // Even when inconsistent, we can use constraints from recent jumps
-                // If hole was fresh before and we jumped X, remaining > 0.5*minOriginal - X
-                const lastJumpMass = getLastJumpMass();
-                const wasFresh = wasHoleFreshBeforeLastJump();
-
-                if (wasFresh && lastJumpMass > 0) {
-                    const minOriginal = getBaseMass() * (1 - getVariance());
-                    const minFromFreshConstraint = 0.5 * minOriginal - lastJumpMass;
-                    newMin = Math.max(shrinkMin, minFromFreshConstraint);
-                } else {
-                    newMin = shrinkMin;
-                }
-                newMax = shrinkMax;
-                note = `Tracking inconsistent, reset to ${Math.round(newMin)}-${Math.round(newMax)} M`;
-                clearMctsTree();  // Tree no longer valid
-            } else {
-                note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
+            if (state.massUsed > 0) {
+                // Apply observation constraints to total bounds
+                const obsMin = state.massUsed / 0.9 + 1;  // total > massUsed/0.9
+                const obsMax = 2 * state.massUsed;        // total ≤ 2*massUsed
+                newMin = Math.max(newMin, obsMin);
+                newMax = Math.min(newMax, obsMax);
             }
 
-            // Reset massUsed and set new narrower starting range
-            // NOTE: Do NOT reset position/shipUsedOut - observation can happen while away
-            state.massUsed = 0;
+            // Validate the intersection
+            if (newMin > newMax) {
+                // Tracking inconsistent - fall back to visual bounds as TOTAL
+                const visualRemainingMin = baseMin * CONFIG.critThreshold;   // 180 M
+                const visualRemainingMax = baseMax * CONFIG.shrinkThreshold; // 1100 M
+                newMin = state.massUsed + visualRemainingMin;
+                newMax = Math.min(baseMax, state.massUsed + visualRemainingMax);
+                note = `Tracking inconsistent, reset to ${Math.round(newMin - state.massUsed)}-${Math.round(newMax - state.massUsed)} M remaining`;
+                clearMctsTree();
+            } else {
+                const minRemaining = Math.max(0, newMin - state.massUsed);
+                const maxRemaining = newMax - state.massUsed;
+                note = `Narrowed to ${Math.round(minRemaining)}-${Math.round(maxRemaining)} M remaining`;
+            }
+
             state.knownMinStart = newMin;
             state.knownMaxStart = newMax;
             state.hasUnknownMass = false;
+            // NOTE: Don't reset massUsed - we're using TOTAL bounds now
 
             state.history.push({
                 type: 'state-shrunk',
-                label: 'Hole Shrunk (Combined)',
-                mass: 0,
+                label: 'Hole Shrunk',
+                mass: state.massUsed,  // Record current mass for replay
                 note: note,
                 timestamp: new Date().toLocaleTimeString()
             });
@@ -3296,49 +3293,44 @@ Sisters Core Scanner Probe x8</pre>
             // Record observation for tree reuse
             lastObservation = 'crit';
 
-            // Calculate current tracked range
-            const trackedMin = state.knownMinStart - state.massUsed;
-            const trackedMax = state.knownMaxStart - state.massUsed;
+            // Crit observation constrains TOTAL mass bounds:
+            // - remaining/total ≤ 10%
+            // - total ≤ massUsed/0.9
+            const baseMax = getBaseMass() * (1 + getVariance());
 
-            // Crit means remaining is 0%-10% of original (with variance)
-            const critMin = 0;
-            const critMax = getBaseMass() * (1 + getVariance()) * CONFIG.critThreshold; // 220 M
-
-            // Intersect the ranges
-            let newMin = Math.max(trackedMin, critMin);
-            let newMax = Math.min(trackedMax, critMax);
+            let newMin = state.knownMinStart;
+            let newMax = state.knownMaxStart;
             let note;
 
-            // Handle invalid intersection (tracking was wrong)
-            if (newMin > newMax) {
-                // Even when inconsistent, we can use constraints from recent jumps
-                // If hole was shrunk before (>10% remaining) and we jumped X, remaining > 0.1*minOriginal - X
-                const lastJumpMass = getLastJumpMass();
-                const wasShrunkBefore = wasHoleShrunkBeforeLastJump();
-
-                if (wasShrunkBefore && lastJumpMass > 0) {
-                    const minOriginal = getBaseMass() * (1 - getVariance());
-                    const minFromShrunkConstraint = CONFIG.critThreshold * minOriginal - lastJumpMass;
-                    newMin = Math.max(critMin, minFromShrunkConstraint);
-                } else {
-                    newMin = critMin;
-                }
-                newMax = critMax;
-                note = `Tracking inconsistent, reset to ${Math.round(newMin)}-${Math.round(newMax)} M`;
-                clearMctsTree();  // Tree no longer valid
-            } else {
-                note = `Narrowed to ${Math.round(newMin)}-${Math.round(newMax)} M`;
+            if (state.massUsed > 0) {
+                // Apply observation constraint to total bounds
+                const obsMax = state.massUsed / 0.9;  // total ≤ massUsed/0.9
+                newMax = Math.min(newMax, obsMax);
             }
 
-            state.massUsed = 0;
+            // Validate the intersection
+            if (newMin > newMax) {
+                // Tracking inconsistent - fall back to visual bounds as TOTAL
+                const visualRemainingMax = baseMax * CONFIG.critThreshold;  // 220 M
+                newMin = state.massUsed;  // Could be 0 remaining
+                newMax = state.massUsed + visualRemainingMax;
+                note = `Tracking inconsistent, reset to 0-${Math.round(visualRemainingMax)} M remaining`;
+                clearMctsTree();
+            } else {
+                const minRemaining = Math.max(0, newMin - state.massUsed);
+                const maxRemaining = newMax - state.massUsed;
+                note = `Narrowed to ${Math.round(minRemaining)}-${Math.round(maxRemaining)} M remaining`;
+            }
+
             state.knownMinStart = newMin;
             state.knownMaxStart = newMax;
             state.hasUnknownMass = false;
+            // NOTE: Don't reset massUsed - we're using TOTAL bounds now
 
             state.history.push({
                 type: 'state-crit',
-                label: 'Hole Crit (Combined)',
-                mass: 0,
+                label: 'Hole Crit',
+                mass: state.massUsed,  // Record current mass for replay
                 note: note,
                 timestamp: new Date().toLocaleTimeString()
             });
@@ -3472,43 +3464,73 @@ Sisters Core Scanner Probe x8</pre>
                 note = `Normal state (may have passes) → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
             } else if (visualState === 'reduced') {
                 // Reduced: 10-50% remaining
-                // Tracked mass is TOTAL since hole was fresh, not since it became reduced
-                // Visual state bounds: 180-1100M (10-50% of 1800-2200M)
-                // Tracked mass only constrains when large enough:
-                //   - Upper bound affected when massUsed > 1100 (remaining ≤ 2200 - massUsed)
-                //   - Lower bound affected when massUsed > 1620 (remaining > massUsed/9)
-                const visualMin = baseMin * critThreshold;  // 180M
-                const visualMax = baseMax * shrinkThreshold;  // 1100M
-                const massConstrainedMax = baseMax - massUsed;  // 2200 - massUsed
-                const massConstrainedMin = massUsed / 9;  // Only relevant for large massUsed
+                // We need TOTAL mass bounds, not remaining bounds
+                // Observation constraints:
+                //   - remaining > 10% of total: total > massUsed / 0.9
+                //   - remaining ≤ 50% of total: total ≤ 2 * massUsed
+                // Visual remaining bounds: 180-1100M (10-50% of base variance)
+                const visualRemainingMin = baseMin * critThreshold;  // 180M
+                const visualRemainingMax = baseMax * shrinkThreshold;  // 1100M
 
-                minStart = massUsed > baseMin * 0.9 ? Math.max(visualMin, massConstrainedMin) : visualMin;
-                maxStart = Math.min(visualMax, massConstrainedMax);
+                // Compute total bounds from observation constraints
+                const obsConstraintMin = massUsed > 0 ? massUsed / 0.9 + 1 : baseMin;
+                const obsConstraintMax = massUsed > 0 ? 2 * massUsed : baseMax;
 
-                // Validate: if min >= max, tracked mass is too high for reduced
+                // Compute total bounds from visual remaining bounds
+                const visualTotalMin = massUsed + visualRemainingMin;
+                const visualTotalMax = massUsed + visualRemainingMax;
+
+                // Combine all constraints
+                minStart = Math.max(baseMin, obsConstraintMin, visualTotalMin);
+                maxStart = Math.min(baseMax, obsConstraintMax, visualTotalMax);
+
+                // If invalid, fall back to visual bounds (indicates untracked mass)
+                if (minStart >= maxStart) {
+                    minStart = massUsed + visualRemainingMin;
+                    maxStart = Math.min(baseMax, massUsed + visualRemainingMax);
+                }
+
+                // Final validation
                 if (minStart >= maxStart) {
                     alert(`With ≥${massUsed}M passed, the hole cannot be reduced (would be critical or collapsed).`);
                     return;
                 }
+
+                const minRemaining = Math.max(0, minStart - massUsed);
+                const maxRemaining = maxStart - massUsed;
                 label = 'Setup: Reduced';
-                note = `Reduced state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
+                note = `Reduced state, ≥${massUsed}M passed → ${Math.round(minRemaining)}-${Math.round(maxRemaining)}M remaining`;
             } else {  // critical
                 // Critical: <10% remaining
-                // Visual state bounds: 0-220M (<10% of 2200M)
-                // Tracked mass constrains upper bound when massUsed > 1980
-                const visualMax = baseMax * critThreshold;  // 220M
-                const massConstrainedMax = baseMax - massUsed;  // 2200 - massUsed
+                // We need TOTAL mass bounds, not remaining bounds
+                // Observation constraint: remaining/total ≤ 10%, so total ≤ massUsed/0.9
+                // Also: remaining = total - massUsed ≤ 220 (10% of max total 2200)
+                // So: total ≤ massUsed + 220
+                const critConstraint = massUsed > 0 ? massUsed / 0.9 : baseMax;
+                const visualConstraint = massUsed + baseMax * critThreshold;  // massUsed + 220
 
-                minStart = 0;
-                maxStart = Math.min(visualMax, massConstrainedMax);
+                // Total must be > massUsed (hole hasn't collapsed) and within base variance
+                minStart = Math.max(baseMin, massUsed + 1);
+                maxStart = Math.min(baseMax, critConstraint, visualConstraint);
 
-                // Validate: if max <= 0, hole is collapsed
-                if (maxStart <= 0) {
+                // Validate: if min >= max, the scenario is impossible
+                if (minStart >= maxStart) {
+                    // With small massUsed, we can't constrain total - use visual bounds only
+                    // This means untracked mass exists; remaining is simply 0-220
+                    minStart = massUsed;  // Could be 0 remaining
+                    maxStart = massUsed + baseMax * critThreshold;  // At most 220 remaining
+                }
+
+                // Final validation
+                if (maxStart <= massUsed) {
                     alert(`With ≥${massUsed}M passed, the hole should be collapsed, not critical.`);
                     return;
                 }
+
+                const minRemaining = Math.max(0, minStart - massUsed);
+                const maxRemaining = maxStart - massUsed;
                 label = 'Setup: Critical';
-                note = `Critical state, ≥${massUsed}M passed → ${Math.round(minStart)}-${Math.round(maxStart)}M remaining`;
+                note = `Critical state, ≥${massUsed}M passed → ${Math.round(minRemaining)}-${Math.round(maxRemaining)}M remaining`;
             }
 
             state.massUsed = massUsed;
@@ -3671,25 +3693,47 @@ Sisters Core Scanner Probe x8</pre>
                 state.knownMaxStart = getBaseMass() * (1 + getVariance());
                 state.hasUnknownMass = false;
             } else {
-                // Replay from setup
+                // Replay from setup - use same logic as applyHoleSetup
                 const setup = state.history[setupIndex];
-                // Determine initial state from setup type
-                if (setup.type === 'setup-normal') {
-                    state.knownMinStart = getBaseMass() * (1 - getVariance());
-                    state.knownMaxStart = getBaseMass() * (1 + getVariance());
+                const setupMass = setup.mass || 0;
+                const baseMin = getBaseMass() * (1 - getVariance());
+                const baseMax = getBaseMass() * (1 + getVariance());
+
+                if (setup.type === 'setup-fresh' || setup.type === 'setup-normal') {
+                    // Fresh/Normal: total bounds, constrained by massUsed if applicable
+                    state.knownMinStart = Math.max(baseMin, setupMass > 0 ? 2 * setupMass + 1 : baseMin);
+                    state.knownMaxStart = baseMax;
                 } else if (setup.type === 'setup-reduced') {
-                    state.knownMinStart = getBaseMass() * (1 - getVariance()) * CONFIG.critThreshold;
-                    state.knownMaxStart = getBaseMass() * (1 + getVariance()) * CONFIG.shrinkThreshold;
+                    // Reduced: compute TOTAL bounds from constraints
+                    const visualRemainingMin = baseMin * CONFIG.critThreshold;
+                    const visualRemainingMax = baseMax * CONFIG.shrinkThreshold;
+                    const obsMin = setupMass > 0 ? setupMass / 0.9 + 1 : baseMin;
+                    const obsMax = setupMass > 0 ? 2 * setupMass : baseMax;
+                    state.knownMinStart = Math.max(baseMin, obsMin, setupMass + visualRemainingMin);
+                    state.knownMaxStart = Math.min(baseMax, obsMax, setupMass + visualRemainingMax);
+                    // Fallback for untracked mass scenario
+                    if (state.knownMinStart >= state.knownMaxStart) {
+                        state.knownMinStart = setupMass + visualRemainingMin;
+                        state.knownMaxStart = Math.min(baseMax, setupMass + visualRemainingMax);
+                    }
                 } else if (setup.type === 'setup-critical') {
-                    state.knownMinStart = 0;
-                    state.knownMaxStart = getBaseMass() * (1 + getVariance()) * CONFIG.critThreshold;
+                    // Critical: compute TOTAL bounds from constraints
+                    const critConstraint = setupMass > 0 ? setupMass / 0.9 : baseMax;
+                    const visualConstraint = setupMass + baseMax * CONFIG.critThreshold;
+                    state.knownMinStart = Math.max(baseMin, setupMass + 1);
+                    state.knownMaxStart = Math.min(baseMax, critConstraint, visualConstraint);
+                    // Fallback for untracked mass scenario
+                    if (state.knownMinStart >= state.knownMaxStart) {
+                        state.knownMinStart = setupMass;
+                        state.knownMaxStart = setupMass + baseMax * CONFIG.critThreshold;
+                    }
                 } else {
                     // Legacy setup types
-                    state.knownMinStart = getBaseMass() * (1 - getVariance());
-                    state.knownMaxStart = getBaseMass() * (1 + getVariance());
+                    state.knownMinStart = baseMin;
+                    state.knownMaxStart = baseMax;
                 }
-                state.massUsed = setup.mass || 0;
-                state.hasUnknownMass = setup.mass === 0;
+                state.massUsed = setupMass;
+                state.hasUnknownMass = setupMass === 0;
             }
 
             // Replay all jumps and state changes after setup
@@ -3698,24 +3742,21 @@ Sisters Core Scanner Probe x8</pre>
                 if (entry.type.startsWith('jump-')) {
                     state.massUsed += entry.mass;
                 } else if (entry.type === 'state-shrunk') {
-                    // Apply shrink narrowing
-                    const trackedMin = state.knownMinStart - state.massUsed;
-                    const trackedMax = state.knownMaxStart - state.massUsed;
-                    const shrinkMin = getBaseMass() * (1 - getVariance()) * CONFIG.critThreshold;
-                    const shrinkMax = getBaseMass() * (1 + getVariance()) * CONFIG.shrinkThreshold;
-                    state.knownMinStart = Math.max(trackedMin, shrinkMin);
-                    state.knownMaxStart = Math.min(trackedMax, shrinkMax);
-                    state.massUsed = 0;
+                    // Apply shrink observation constraint to TOTAL bounds
+                    // Shrink means: 10% < remaining/total ≤ 50%
+                    // Which gives: total > massUsed/0.9 AND total ≤ 2*massUsed
+                    if (state.massUsed > 0) {
+                        state.knownMinStart = Math.max(state.knownMinStart, state.massUsed / 0.9 + 1);
+                        state.knownMaxStart = Math.min(state.knownMaxStart, 2 * state.massUsed);
+                    }
                     state.hasUnknownMass = false;
                 } else if (entry.type === 'state-crit') {
-                    // Apply crit narrowing
-                    const trackedMin = state.knownMinStart - state.massUsed;
-                    const trackedMax = state.knownMaxStart - state.massUsed;
-                    const critMin = 0;
-                    const critMax = getBaseMass() * (1 + getVariance()) * CONFIG.critThreshold;
-                    state.knownMinStart = Math.max(trackedMin, critMin);
-                    state.knownMaxStart = Math.min(trackedMax, critMax);
-                    state.massUsed = 0;
+                    // Apply crit observation constraint to TOTAL bounds
+                    // Crit means: remaining/total ≤ 10%
+                    // Which gives: total ≤ massUsed/0.9
+                    if (state.massUsed > 0) {
+                        state.knownMaxStart = Math.min(state.knownMaxStart, state.massUsed / 0.9);
+                    }
                     state.hasUnknownMass = false;
                 }
             }

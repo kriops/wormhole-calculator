@@ -3142,11 +3142,12 @@ Sisters Core Scanner Probe x8</pre>
 
             // Map MCTS action keys to outbound jump types
             // MCTS keys are like 'BS_HOT' (round trip), button data-jump is same
-            // For round trips like BS_HOT_COLD, we want the outbound (first part)
+            // For round trips like BS_COLD_HOT or HIC_ENT_HOT, we want the outbound (first 2 parts)
             let jumpKey = actionKey;
-            if (actionKey.includes('_COLD_')) {
-                // e.g., BS_COLD_HOT -> outbound is BS_COLD
-                jumpKey = actionKey.split('_').slice(0, 2).join('_');
+            const parts = actionKey.split('_');
+            if (parts.length === 3) {
+                // Mixed action like BS_COLD_HOT or HIC_ENT_HOT -> extract outbound (first 2 parts)
+                jumpKey = parts.slice(0, 2).join('_');
             }
 
             // Find and highlight the matching button
